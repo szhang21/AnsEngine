@@ -1,0 +1,125 @@
+# 任务卡模板（Dispatch Agent 专用）
+
+请严格使用以下结构。  
+说明：任务卡由 `Dispatch Agent` 生成；`Execution Agent` 只消费任务卡执行，不负责拆分。
+
+```md
+# 任务: <ID> <短标题>
+
+## 目标（Goal）
+一句话、可验证的目标。
+
+## 任务来源（TaskSource）
+DispatchAgent
+
+## 计划引用（兼容别名：PlanRef）
+`<plan-id or path>`
+
+## 里程碑引用（兼容别名：MilestoneRef）
+`M1 | M2 | ...`
+
+## 执行代理（ExecutionAgent）
+<agent-name>
+
+## 优先级（Priority）
+P0 | P1 | P2 | P3
+> 说明：优先级主定义来自 `计划引用`；Dispatch 仅允许同里程碑内微调。
+
+## 主模块归属（PrimaryModule）
+Engine.Render | Engine.Scene | Engine.Asset | Engine.Platform | Engine.App | 其他（需说明）
+
+## 次级模块（SecondaryModules）
+- （可选）
+
+## 边界合同路径（BoundaryContractPath）
+- `.ai-workflow/boundaries/<module>.md`
+
+## 基线引用（BaselineRef）
+- `references/project-baseline.md`
+
+## 并行计划（ParallelPlan）
+- ParallelGroup: `G1 | G2 | ...`
+- CanRunParallel: `true | false`
+- DependsOn:
+  - `<TASK-ID>`
+  - `<TASK-ID>`
+
+## 范围（Scope）
+- AllowedModules:
+- AllowedFiles:
+- AllowedPaths:
+> 说明：`AllowedPaths` 仅用于源码/测试改动范围，不包含边界文档路径。
+
+## 跨模块标记（CrossModule）
+true | false
+
+## 非范围（OutOfScope）
+- 
+- 
+- OutOfScopePaths:
+
+## 依赖约束（DependencyContract）
+- AllowedDependsOn:
+- ForbiddenDependsOn:
+
+## 边界同步计划（BoundarySyncPlan）
+- NewFilesExpected: `true | false`
+- BoundaryDocsToUpdate:
+  - `.ai-workflow/boundaries/<module>.md`
+- ChangeLogRequired: `true`
+> 说明：`BoundaryDocsToUpdate` 为独立规则，不受 `AllowedPaths` 限制。
+> 触发条件：仅当 `NewFilesExpected=true` 或执行中实际新增源码/测试文件时，才强制执行边界文档更新。
+
+## 验收标准（Acceptance）
+- Build:
+- Test:
+- Smoke:
+- Perf:
+
+## 交付物（Deliverables）
+- Minimal patch
+- Self-check notes
+- Risk list (high|medium|low)
+- Change summary (what changed and why)
+
+## 状态（Status）
+Todo | InProgress | Verify | Review | Done
+
+## 完成度（Completion）
+`0-100`（整数百分比）
+
+## 归档（Archive）
+- ArchivePath:
+- ClosedAt:
+- Summary:
+- FilesChanged:
+- ValidationEvidence:
+- ModuleAttributionCheck: pass | fail
+```
+
+## 校验规则
+
+- 缺少 `TaskSource=DispatchAgent` 视为任务卡无效。
+- 缺少 `计划引用`（或 `PlanRef`）视为任务卡无效。
+- 缺少 `里程碑引用`（或 `MilestoneRef`）视为任务卡无效。
+- 缺少 `ExecutionAgent` 视为任务卡无效。
+- 缺少 `ParallelPlan` 任一关键字段（`ParallelGroup`、`CanRunParallel`、`DependsOn`）视为任务卡无效。
+- 缺少 `BoundarySyncPlan` 视为任务卡无效。
+- 缺少 `OutOfScope` 视为任务卡无效。
+- 缺少 `Acceptance` 视为任务卡无效。
+- 缺少 `Priority` 视为任务卡无效。
+- 缺少 `PrimaryModule` 视为任务卡无效。
+- 缺少 `BoundaryContractPath` 视为任务卡无效。
+- 缺少 `BaselineRef` 视为任务卡无效。
+- 缺少 `AllowedPaths` 视为任务卡无效。
+- 缺少 `Completion` 视为任务卡无效。
+- 任务关闭时缺少 `Archive` 字段视为无效。
+- 任务涉及跨模块改动但 `CrossModule` 不是 `true` 视为无效。
+- 若一张卡包含多个结果，必须拆卡。
+- 当 `NewFilesExpected=true` 时，归档若无边界文档更新证据视为无效。
+- 代码文件（`src/**`、`tests/**`）必须命中 `AllowedPaths`。
+- 边界文档更新必须命中 `BoundaryDocsToUpdate`，不以 `AllowedPaths` 为判定依据。
+- 当 `NewFilesExpected=false` 且无新增源码/测试文件时，边界文档更新不作为阻塞条件。
+- `Status=Todo` 时 `Completion` 必须为 `0`。
+- `Status=Done` 时 `Completion` 必须为 `100`。
+- `Status=InProgress|Verify|Review` 时 `Completion` 必须为 `10-99`。
