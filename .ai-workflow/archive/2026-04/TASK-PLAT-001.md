@@ -1,4 +1,4 @@
-# TASK-PLAT-001 归档快照
+﻿# TASK-PLAT-001 归档快照
 
 - TaskId: `TASK-PLAT-001`
 - Title: 真实窗口生命周期落地

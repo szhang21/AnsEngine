@@ -1,4 +1,4 @@
-# 任务: TASK-BOOT-001 初始化 AnsEngine 多项目骨架
+﻿# 任务: TASK-BOOT-001 初始化 AnsEngine 多项目骨架
 
 ## 目标（Goal）
 在严格任务流下完成 .NET 8 多项目骨架初始化，并达到 Debug/Release 可编译、单测可运行。

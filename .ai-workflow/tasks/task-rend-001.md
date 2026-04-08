@@ -1,4 +1,4 @@
-# 任务: TASK-REND-001 最小清屏可视反馈
+﻿# 任务: TASK-REND-001 最小清屏可视反馈
 
 ## 目标（Goal）
 让 `Engine.Render` 在真实窗口和主循环稳定后输出持续可见的非默认背景清屏结果，证明 `Platform -> App -> Render` 主链路打通。

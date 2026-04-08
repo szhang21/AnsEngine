@@ -1,4 +1,4 @@
-# 任务归档索引
+﻿# 任务归档索引
 
 > 本文件为已关闭任务的索引入口。详细快照请放在 `.ai-workflow/archive/<yyyy-mm>/<task-id>.md`。
 

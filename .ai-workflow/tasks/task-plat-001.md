@@ -1,4 +1,4 @@
-# 任务: TASK-PLAT-001 真实窗口生命周期落地
+﻿# 任务: TASK-PLAT-001 真实窗口生命周期落地
 
 ## 目标（Goal）
 让 `Engine.Platform` 提供真实窗口创建、事件泵处理、关闭请求感知与释放能力，替代当前运行路径中的 `NullWindowService` 占位实现。

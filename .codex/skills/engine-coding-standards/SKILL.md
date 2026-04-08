@@ -1,4 +1,4 @@
----
+﻿---
 name: engine-coding-standards
 description: 为 C# + OpenTK 个人游戏引擎项目统一编码规范与评审标准。用于功能实现、模块重构、代码评审、模块边界维护、流程门禁更新、提交前自检等场景。触发词包括：编码规范、代码风格、评审清单、边界规则、依赖规则、性能规范、重构、架构一致性、coding standard、code review、boundary rule。
 ---

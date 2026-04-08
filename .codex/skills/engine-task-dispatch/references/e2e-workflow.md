@@ -1,4 +1,4 @@
-## 0) 路径分类硬规则（先读这个）
+﻿## 0) 路径分类硬规则（先读这个）
 
 - `references/*`（包括 `review-checklist.md`）是 skill 规则源，读取位置为 `.codex/skills/**/references/`，只读。
 - `.ai-workflow/**` 是项目流程产物目录，用于任务卡、看板、归档快照、归档索引的写入。
@@ -11,7 +11,7 @@
 ## 1) 总体顺序
 
 1. `Plan Agent` 产出计划并归档
-2. `Dispatch Agent` 基于计划拆卡并落盘
+2. `Dispatch Agent` 先校验 Plan 归档两件套，再基于计划拆卡并落盘
 3. `Human` 仅按任务编号派发
 4. `Execution Agent` 读取任务卡执行并回填状态
 5. 通过门禁后归档并进入 `Done`
@@ -24,7 +24,7 @@
   - 落盘：`.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`
 
 - `Dispatch Agent`
-  - 负责：拆分任务、并行/依赖、任务级排序（仅同里程碑内）
+  - 负责：先做 Plan 前置门禁校验，再拆分任务、并行/依赖、任务级排序（仅同里程碑内）
   - 落盘：
     - 任务卡：`.ai-workflow/tasks/<task-id>.md`
     - 看板同步：`board.md` 的 `Todo`
@@ -90,7 +90,7 @@
 2. 你把计划交给 `Dispatch Agent`
 3. 你只看 `TaskIds + WavePlan`
 4. 你按波次发 `TaskId` 给 `Execution Agent`
-5. 完成后核对归档三件套（任务卡/快照/索引）
+5. 完成后核对归档四件套（任务卡/快照/索引/看板 Done）
 
 ## 9) Plan 归档两件套（新增）
 
@@ -99,3 +99,28 @@ Plan 节点完成归档时，必须原子完成以下两件：
 2. 计划索引：`.ai-workflow/plan-archive/plan-archive-index.md`
 
 任一缺失则视为“未完成归档”，不得口头报完成。
+
+## 10) 失败回退回执（统一）
+
+所有 Agent 在失败/阻塞时统一返回以下字段：
+- `FailureType`
+- `BlockedBy`
+- `RequiredFix`
+- `Owner`
+- `RetryCommand`
+- `Evidence`
+
+执行顺序：
+1. 先判断失败归因与 Owner
+2. 再给最小修复动作（RequiredFix）
+3. 最后给 Human 一条可直接执行的重试指令（RetryCommand）
+
+## 11) 三次检测（必检）
+
+1. Dispatch 落卡后立即检测（脏卡阻断）：
+   - 字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则。
+   - 前置条件：Plan 归档两件套已存在（计划快照 + `plan-archive-index.md` 索引命中）。
+2. Execution 关单前检测（关单完整性）：
+   - 归档四件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全。
+3. 每个里程碑完成时 Plan 检测（计划同步）：
+   - 里程碑状态与任务状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。

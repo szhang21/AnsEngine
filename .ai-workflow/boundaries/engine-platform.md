@@ -1,4 +1,4 @@
-# Engine.Platform 模块边界合同
+﻿# Engine.Platform 模块边界合同
 
 ## 1) 模块信息
 

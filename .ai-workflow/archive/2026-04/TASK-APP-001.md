@@ -1,4 +1,4 @@
-# TASK-APP-001 归档快照
+﻿# TASK-APP-001 归档快照
 
 - TaskId: `TASK-APP-001`
 - Title: 最小主循环与退出编排

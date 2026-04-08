@@ -1,4 +1,4 @@
----
+﻿---
 name: engine-task-dispatch
 description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和治理引擎研发任务。适用于创建任务、分配负责人、推进看板流转、处理阻塞、判断是否可合并等场景。触发词包括：任务派发、任务卡、看板流转、状态流转、WIP、门禁、阻塞处理、task dispatch、kanban、workflow gate。
 ---
@@ -37,6 +37,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Plan 输出强制前推：Plan Agent 不得仅回复“目标不明确/请补充需求”；必须先基于当前仓库与看板状态给出候选计划和默认推荐。
 - Plan 归档强制：Plan Agent 必须输出可落盘的计划归档块（含里程碑快照），归档路径默认 `.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`。
 - Plan 归档触发：新计划生效、里程碑或优先级发生重大调整、计划关闭时，必须更新计划归档。
+- Dispatch 前置门禁：Dispatch Agent 在拆卡前必须先校验 Plan 归档两件套已落盘（计划快照 + `plan-archive-index.md`）；未通过不得创建任务卡。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
 - Execution 关单强制：验收通过后必须完成归档四件套（任务卡 Archive、归档快照、归档索引、看板 Done 更新）才可宣称完成。
 - 路径解析强制：执行阶段遇到相对路径时，必须按“三步解析”自动查找后才能报错：
@@ -131,3 +132,27 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - `plan-archive-index.md` 最少字段：`PlanId`、`Status`、`LastUpdated`、`MilestoneSummary`、`SnapshotPath`。
 - 若归档快照与索引任一未落盘，Plan Agent 不得宣称“归档完成”。
 - Plan Agent 对 Human 的归档完成回执必须包含：`PlanArchivePath`、`IndexPath`、`LastWriteTime`、`文件前5行`（快照与索引各一份）。
+
+## 失败回退协议（统一）
+
+- 任何拒绝、阻塞、修卡请求、未关单、越权回退，都必须使用统一失败回执格式。
+- 统一失败回执字段（全部必填）：
+  - `FailureType`：`MissingField|PathConflict|DependencyBlocked|ScopeViolation|GateFailed|OwnershipMismatch|ArchiveIncomplete|PathNotFound|Other`
+  - `BlockedBy`：触发失败的规则条目（引用规则名或文件+行号）
+  - `RequiredFix`：最小修复动作（1-3 条）
+  - `Owner`：`PlanAgent|DispatchAgent|ExecutionAgent|Human`
+  - `RetryCommand`：给 Human 的下一句可执行指令（单行）
+  - `Evidence`：最小证据（缺失字段名、冲突路径、失败门禁项等）
+- 禁止仅返回“不能执行/请修卡/路径有问题”这类无结构文案。
+
+## 三级检测点（强制）
+
+- 检测点 A（Dispatch 落卡后，必检）：
+  - 目标：阻断“脏卡”进入执行流。
+  - 检查项：字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则（`AllowedPaths` 与 `BoundarySyncPlan`）。
+- 检测点 B（Execution 关单前，必检）：
+  - 目标：阻断“口头完成、归档不全”。
+  - 检查项：归档四件套完整、`AllowedPaths` 命中、`BoundarySyncPlan` 条件满足、验证证据字段齐全。
+- 检测点 C（每个里程碑完成时，Plan 必检）：
+  - 目标：保证计划层与任务层同步。
+  - 检查项：里程碑状态与任务完成状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。

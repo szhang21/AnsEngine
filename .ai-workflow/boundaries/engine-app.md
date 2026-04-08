@@ -1,4 +1,4 @@
-# Engine.App 模块边界合同
+﻿# Engine.App 模块边界合同
 
 ## 1) 模块信息
 

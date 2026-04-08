@@ -1,4 +1,4 @@
-# 任务卡模板（Dispatch Agent 专用）
+﻿# 任务卡模板（Dispatch Agent 专用）
 
 请严格使用以下结构。  
 说明：任务卡由 `Dispatch Agent` 生成；`Execution Agent` 只消费任务卡执行，不负责拆分。

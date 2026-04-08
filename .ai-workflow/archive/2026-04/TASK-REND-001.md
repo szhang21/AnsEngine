@@ -1,4 +1,4 @@
-# TASK-REND-001 归档快照
+﻿# TASK-REND-001 归档快照
 
 - TaskId: `TASK-REND-001`
 - Title: 最小清屏可视反馈

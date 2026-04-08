@@ -1,4 +1,4 @@
-# AI 工作流看板
+﻿# AI 工作流看板
 
 > 用于管理任务状态流转：`Todo -> InProgress -> Verify -> Review -> Done`
 
