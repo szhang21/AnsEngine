@@ -25,12 +25,15 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 3. `BoardTransition`（状态流转及门禁证据）
 4. `DailyPlan`（日计划与 WIP 平衡）
 5. `BlockerReport`（阻塞原因与解阻动作）
+6. `AuditReport`（Steward 只读审计报告）
+7. `FixPlan`（Steward 可执行修复清单）
+8. `ApplyResult`（Steward 已执行修复结果）
 
 如信息不足，必须显式写出假设。
 
 ## 强约束
 
-- 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
+- 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent` / `Workflow Steward Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
 - 字段完整性强制：任务卡若缺少 `计划引用`、`里程碑引用`、`ParallelPlan`（含 `ParallelGroup`、`CanRunParallel`、`DependsOn`）任一字段，必须拒绝流转或执行（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
 - 越权响应强制回退：若收到不属于当前角色职责的请求，只允许返回 `请按 <AgentName> 职责重试`，不得部分执行。
 - 新增文件强制边界同步：仅当 `NewFilesExpected=true` 或执行中实际新增源码/测试文件时，才强制更新 `.ai-workflow/boundaries/` 下至少一个边界文档并写入变更记录；否则不作为阻塞条件。
@@ -38,8 +41,13 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Plan 归档强制：Plan Agent 必须输出可落盘的计划归档块（含里程碑快照），归档路径默认 `.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`。
 - Plan 归档触发：新计划生效、里程碑或优先级发生重大调整、计划关闭时，必须更新计划归档。
 - Dispatch 前置门禁：Dispatch Agent 在拆卡前必须先校验 Plan 归档两件套已落盘（计划快照 + `plan-archive-index.md`）；未通过不得创建任务卡。
+- Steward 审计默认只读：Workflow Steward Agent 默认仅允许审计与建议，不得直接修改任何文件。
+- Steward 修改需显式命令：仅当 Human 明确输入 `执行修复 <IssueId...>` 或 `关单 <TaskId>` 时，Workflow Steward Agent 才允许执行元数据修改。
+- Steward 修改边界：仅允许任务卡/里程碑卡/索引/看板元数据修复；禁止修改业务源码、验收标准、任务目标语义。
+- Steward 关单门禁：收到 `关单 <TaskId>` 时，仅当 `Status=Review`、`HumanSignoff=pass`、归档三件套完整，才允许执行 `Review -> Done` 与看板 Done 更新。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
-- Execution 关单强制：验收通过后必须完成归档四件套（任务卡 Archive、归档快照、归档索引、看板 Done 更新）才可宣称完成。
+- Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
+- Human 最终关单强制：`Review -> Done` 仅允许 Human 在复验通过后执行（含看板 Done 更新与 `HumanSignoff=pass`）。
 - 路径解析强制：执行阶段遇到相对路径时，必须按“三步解析”自动查找后才能报错：
   1) 先按仓库根目录解析；
   2) 再按相关 skill 目录解析（`.codex/skills/<skill>/...`）；
@@ -92,6 +100,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 剩余风险已记录
 - 归档条目已写入（含优先级、改动摘要、验证证据）
 - 模块归属校验结果（`ModuleAttributionCheck=pass`）
+- `HumanSignoff=pass`（由 Human 复验确认）
 
 ## 风险等级
 
@@ -137,13 +146,30 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 - 任何拒绝、阻塞、修卡请求、未关单、越权回退，都必须使用统一失败回执格式。
 - 统一失败回执字段（全部必填）：
-  - `FailureType`：`MissingField|PathConflict|DependencyBlocked|ScopeViolation|GateFailed|OwnershipMismatch|ArchiveIncomplete|PathNotFound|Other`
+  - `FailureType`：`MissingField|PathConflict|DependencyBlocked|ScopeViolation|GateFailed|OwnershipMismatch|ArchiveIncomplete|PathNotFound|AcceptanceDispute|PostAcceptanceBug|Other`
   - `BlockedBy`：触发失败的规则条目（引用规则名或文件+行号）
   - `RequiredFix`：最小修复动作（1-3 条）
   - `Owner`：`PlanAgent|DispatchAgent|ExecutionAgent|Human`
   - `RetryCommand`：给 Human 的下一句可执行指令（单行）
   - `Evidence`：最小证据（缺失字段名、冲突路径、失败门禁项等）
 - 禁止仅返回“不能执行/请修卡/路径有问题”这类无结构文案。
+
+## 缺陷分流规则（即时失败 vs 延迟缺陷）
+
+- 规则 A（即时验收失败）：
+  - 条件：`FailureType=AcceptanceDispute` 且发生在验收窗口内（从 `Verify/Review` 到 Human 首次签收结论前）。
+  - 处理：必须 `ReopenOriginal`（回退原任务），不得新建 Bug 卡。
+  - 要求：任务卡补齐 `ReopenReason`、`DetectedAt`、`HumanSignoff=fail`。
+- 规则 B（延迟发现缺陷）：
+  - 条件：任务已 `Done` 且在后续使用中发现问题（`FailureType=PostAcceptanceBug`）。
+  - 处理：默认 `CreateBugCard`（或 Follow-up），原任务保持 `Done`，不得回退原任务。
+  - 要求：新卡必须记录 `OriginTaskId`、`DetectedAt`，并按常规门禁流转。
+- 证据不足规则：
+  - 条件：缺少可复现实证据或期望/实际不明确。
+  - 处理：`CreateVerifyCard`，先补复现与证据，不直接回退或派修复。
+- 缺省判定规则（防误分流）：
+  - 若 `FailureType` 未显式提供，默认按 `AcceptanceDispute` 处理（`ReopenOriginal`），禁止默认归类为 `PostAcceptanceBug`。
+  - 仅当 Human 明确声明“已通过验收后/数日后/线上回归”或显式给出 `FailureType=PostAcceptanceBug` 时，才允许走 `CreateBugCard`。
 
 ## 三级检测点（强制）
 
@@ -152,7 +178,26 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
   - 检查项：字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则（`AllowedPaths` 与 `BoundarySyncPlan`）。
 - 检测点 B（Execution 关单前，必检）：
   - 目标：阻断“口头完成、归档不全”。
-  - 检查项：归档四件套完整、`AllowedPaths` 命中、`BoundarySyncPlan` 条件满足、验证证据字段齐全。
+  - 检查项：归档三件套完整、`AllowedPaths` 命中、`BoundarySyncPlan` 条件满足、验证证据字段齐全、`HumanSignoff=pending`。
 - 检测点 C（每个里程碑完成时，Plan 必检）：
   - 目标：保证计划层与任务层同步。
   - 检查项：里程碑状态与任务完成状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。
+
+## Workflow Steward Agent（新增）
+
+- 模式定义：
+  - `Audit`（默认）：只读检查，不改文件。
+  - `Apply`（显式命令）：只执行 Human 批准的修复项。
+- 审计范围：
+  - 任务卡字段合法性（含 `Status/Completion/HumanSignoff/FailureType/DetectedAt`）。
+  - 状态流转合法性（仅允许 `Todo -> InProgress -> Verify -> Review -> Done`）。
+  - 归档一致性（任务卡/快照/索引/看板）。
+  - 计划一致性（`plan-archive` 快照与 `plan-archive-index` 命中）。
+  - 里程碑一致性（里程碑状态与所属任务状态对齐）。
+- 命令约定：
+  - `审计任务状态`
+  - `修复建议 <IssueId...>`
+  - `执行修复 <IssueId...>`
+  - `关单 <TaskId>`
+- 关单责任：
+  - Workflow Steward Agent 可代执行 Human 关单动作，但前提是 Human 显式发出 `关单 <TaskId>` 命令。

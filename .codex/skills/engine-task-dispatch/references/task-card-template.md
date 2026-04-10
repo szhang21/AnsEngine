@@ -88,6 +88,13 @@ Todo | InProgress | Verify | Review | Done
 ## 完成度（Completion）
 `0-100`（整数百分比）
 
+## 缺陷回流字段（Defect Triage）
+- FailureType: `AcceptanceDispute | PostAcceptanceBug | Other`
+- DetectedAt:
+- ReopenReason:
+- OriginTaskId:
+- HumanSignoff: `pending | pass | fail`
+
 ## 归档（Archive）
 - ArchivePath:
 - ClosedAt:
@@ -113,6 +120,10 @@ Todo | InProgress | Verify | Review | Done
 - 缺少 `BaselineRef` 视为任务卡无效。
 - 缺少 `AllowedPaths` 视为任务卡无效。
 - 缺少 `Completion` 视为任务卡无效。
+- 缺陷回流场景缺少 `DetectedAt` 视为任务卡无效。
+- 当 `FailureType=AcceptanceDispute` 且走 `ReopenOriginal` 时，缺少 `ReopenReason` 视为无效。
+- 当走 `CreateBugCard|CreateVerifyCard` 时，缺少 `OriginTaskId` 视为无效。
+- 缺少 `HumanSignoff` 视为任务卡无效。
 - 任务关闭时缺少 `Archive` 字段视为无效。
 - 任务涉及跨模块改动但 `CrossModule` 不是 `true` 视为无效。
 - 若一张卡包含多个结果，必须拆卡。

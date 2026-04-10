@@ -44,6 +44,10 @@
 - `BoundarySyncPlan`（新增文件时要更新哪些边界文档）
 - `Status`
 - `Completion`
+- `DetectedAt`（有缺陷分流时必填）
+- `ReopenReason`（仅 `ReopenOriginal` 必填）
+- `OriginTaskId`（仅 `CreateBugCard/CreateVerifyCard` 必填）
+- `HumanSignoff`（`pending|pass|fail`）
 
 字段自检清单（每张卡都必须 pass）：
 
@@ -62,6 +66,10 @@
   - Todo -> 0
   - InProgress/Verify/Review -> 10-99
   - Done -> 100
+- 缺陷分流场景时 `DetectedAt` 非空
+- `ReopenOriginal` 时 `ReopenReason` 非空
+- `CreateBugCard/CreateVerifyCard` 时 `OriginTaskId` 非空
+- `HumanSignoff` 非空（`pending|pass|fail`）
 
 并行约束：
 
@@ -102,3 +110,13 @@
 Plan 前置门禁（必检）：
 - 拆卡前必须检查计划快照文件存在，且 `plan-archive-index.md` 中存在同一 `PlanId` 索引条目。
 - 若前置门禁失败，`Owner` 必须为 `PlanAgent`（计划归档缺失）或 `Human`（输入计划引用错误），并返回统一失败回执。
+
+缺陷分流判定（Human 发现问题时必用）：
+- 输入对象：`HumanRejectionReport`，至少包含 `TaskId/FailureType/Repro/Expected/Actual/Evidence/DetectedAt`。
+- 输出决策仅允许：`ReopenOriginal | CreateBugCard | CreateVerifyCard`。
+- 判定规则：
+  - `FailureType=AcceptanceDispute` 且在验收窗口内：必须 `ReopenOriginal`（回退原任务，不新建 Bug 卡）。
+  - `FailureType=PostAcceptanceBug`：默认 `CreateBugCard`（原任务保持 Done）。
+  - 证据不足：`CreateVerifyCard`。
+  - 若 `FailureType` 缺失：默认按 `AcceptanceDispute` 处理（`ReopenOriginal`），不得直接判定为 `PostAcceptanceBug`。
+  - 仅当 Human 明确声明“已通过验收后/数日后发现”或显式给出 `FailureType=PostAcceptanceBug` 时，允许 `CreateBugCard`。

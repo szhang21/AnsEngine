@@ -4,9 +4,9 @@
 - `.ai-workflow/**` 是项目流程产物目录，用于任务卡、看板、归档快照、归档索引的写入。
 - 执行代理不得因为仓库根目录不存在 `references/review-checklist.md` 而阻塞；必须先按 skill 路径解析规则查找。
 
-# 三 Agent 端到端流程（One-Page）
+# 四角色端到端流程（One-Page）
 
-本文档是 `Plan -> Dispatch -> Execution` 的单页总览，定义每个节点该做什么、落什么盘、何时流转与归档。
+本文档是 `Plan -> Dispatch -> Execution` 主链 + `Workflow Steward` 治理层的单页总览，定义每个节点该做什么、落什么盘、何时流转与归档。
 
 ## 1) 总体顺序
 
@@ -14,7 +14,8 @@
 2. `Dispatch Agent` 先校验 Plan 归档两件套，再基于计划拆卡并落盘
 3. `Human` 仅按任务编号派发
 4. `Execution Agent` 读取任务卡执行并回填状态
-5. 通过门禁后归档并进入 `Done`
+5. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
+6. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`
 
 ## 2) 节点职责
 
@@ -37,8 +38,15 @@
   - 负责：实现、验证、状态推进、关单资料
   - 禁止：重拆需求、越界改动、跨角色决策
 
+- `Workflow Steward Agent`
+  - 默认：`Audit` 只读检查（任务卡/里程碑卡/索引/看板一致性）
+  - 显式命令后：`Apply` 仅做元数据修复（字段、状态、索引、看板）
+  - 禁止：修改业务源码、改写验收标准、改写任务目标语义
+  - 关单权限：仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足时可代执行
+
 - `Human`
   - 负责：确认计划、审核拆卡、按波次派工、最终接受结果
+  - 可选：命令 Steward 执行 `审计任务状态` / `执行修复 <IssueId...>` / `关单 <TaskId>`
 
 ## 3) 落盘与可见性规则
 
@@ -75,12 +83,17 @@
 
 ## 7) 关单与归档事务
 
-从 `Review -> Done` 前，必须原子完成：
+Execution 阶段（技术关单准备）：
 
-1. 更新任务卡 `Archive` 字段
+1. 更新任务卡 `Archive` 字段（保持 `Status=Review`、`HumanSignoff=pending`）
 2. 写归档快照：`.ai-workflow/archive/<yyyy-mm>/<task-id>.md`
 3. 追加归档索引：`.ai-workflow/archive/archive-index.md`
-4. 更新看板到 `Done`
+
+Human/Steward 阶段（最终关单）：
+
+4. Human 复验通过并设置 `HumanSignoff=pass`
+5. Human 执行 `Review -> Done`（或 Human 显式命令 Steward 代执行）
+6. 同步更新看板到 `Done`
 
 任一失败则不得 `Done`，回退处理。
 
@@ -90,7 +103,7 @@
 2. 你把计划交给 `Dispatch Agent`
 3. 你只看 `TaskIds + WavePlan`
 4. 你按波次发 `TaskId` 给 `Execution Agent`
-5. 完成后核对归档四件套（任务卡/快照/索引/看板 Done）
+5. 完成后核对：Execution 三件套 + Human 最终 Done（含看板）
 
 ## 9) Plan 归档两件套（新增）
 
@@ -121,6 +134,24 @@ Plan 节点完成归档时，必须原子完成以下两件：
    - 字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则。
    - 前置条件：Plan 归档两件套已存在（计划快照 + `plan-archive-index.md` 索引命中）。
 2. Execution 关单前检测（关单完整性）：
-   - 归档四件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全。
+   - 归档三件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全、`HumanSignoff=pending`。
 3. 每个里程碑完成时 Plan 检测（计划同步）：
    - 里程碑状态与任务状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。
+
+## 12) Human 发现缺陷后的顺序（新增）
+
+1. Human 提交 `HumanRejectionReport` 给 Dispatch（含 `TaskId/FailureType/Repro/Expected/Actual/Evidence/DetectedAt`）。
+2. Dispatch 先分流，再出卡/回退：
+   - `AcceptanceDispute`（验收窗口内）=> `ReopenOriginal`
+   - `PostAcceptanceBug`（Done 后发现）=> `CreateBugCard`
+   - 证据不足 => `CreateVerifyCard`
+   - 若 `FailureType` 未给出：默认走 `AcceptanceDispute`（防误分流）。
+3. Human 只按 Dispatch 返回的 `TaskId` 派发给 Execution。
+4. Execution 按分流结果执行；不接受口头直派修复。
+
+## 13) Steward 介入时机（新增）
+
+1. Dispatch 落卡后，先执行 `审计任务状态`（只读）。
+2. 若发现元数据问题，先看 `FixPlan`，Human 选定 IssueId 后再下 `执行修复 <IssueId...>`。
+3. Execution 完成后，可再次审计归档一致性（只读）。
+4. 仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足，Steward 才能代执行关单。

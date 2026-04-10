@@ -29,12 +29,12 @@
    - 风险分级（high|medium|low）
 6. 若本任务新增了文件，必须同步提交边界文档更新与 `Boundary Change Log` 记录；否则视为未完成。
 6.1 若 `NewFilesExpected=false` 且执行中未新增源码/测试文件，边界文档更新不是阻塞条件。
-7. 若验收通过并准备关单，必须执行“归档四件套”原子动作：
-   - 更新任务卡：`Status=Done`、`Completion=100`、补齐 `Archive` 字段
+7. 若验收通过并准备关单，Execution 仅执行“归档三件套准备”：
+   - 更新任务卡：`Status=Review`、`Completion=95`、补齐 `Archive` 字段，并设置 `HumanSignoff=pending`
    - 写归档快照：`.ai-workflow/archive/<yyyy-mm>/<TASK-ID>.md`
    - 追加归档索引：`.ai-workflow/archive/archive-index.md`
-   - 更新看板：`board.md` 中该任务移动到 `Done`
-8. 若上述四件套任一步无法完成，必须返回“未关单”状态，不得宣称任务已完成。
+8. Execution 不得自行将任务置为 `Done`，也不得更新看板到 `Done`；最终 `Review -> Done` 由 Human 复验通过后执行。
+9. 若上述三件套任一步无法完成，必须返回“未关单”状态，不得宣称任务已完成。
 
 禁止事项：
 
@@ -65,5 +65,10 @@
 
 检测点 B（关单前必检）：
 - 在宣称完成前，必须执行一次“关单前完整性检查”。
-- 检查项：归档四件套完整、`AllowedPaths` 命中、`BoundarySyncPlan` 条件满足、验证证据字段齐全。
+- 检查项：归档三件套完整、`AllowedPaths` 命中、`BoundarySyncPlan` 条件满足、验证证据字段齐全、`HumanSignoff=pending`。
 - 任一失败必须返回“未关单”并附统一失败回执。
+
+执行入口约束（缺陷回流场景）：
+- 即时验收失败（`AcceptanceDispute`）场景：只接受被回退后的原 `TaskId` 执行，不接受口头“新建修复”指令。
+- 延迟发现缺陷（`PostAcceptanceBug`）场景：只接受 `BUG/FOLLOWUP/VERIFY` 新任务卡的 `TaskId` 执行，不直接改已 Done 原任务。
+- 若收到与 Dispatch 分流决策不一致的执行请求，必须拒绝并返回统一失败回执（`FailureType=OwnershipMismatch`）。
