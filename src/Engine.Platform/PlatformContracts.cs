@@ -13,6 +13,7 @@ public interface IWindowService : IDisposable
     bool Exists { get; }
 
     void ProcessEvents(double timeoutSeconds = 0);
+    void Present();
     void RequestClose();
 }
 

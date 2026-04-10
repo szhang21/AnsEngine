@@ -181,3 +181,30 @@
     - Smoke: pass（`ANS_ENGINE_AUTO_EXIT_SECONDS=10` 下稳定退出，退出码 `0`）
     - Perf: pass（`ANS_ENGINE_AUTO_EXIT_SECONDS=45` 下运行约 55s，无明显异常）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-001.md`
+
+- TaskId: `TASK-REND-002`
+  Title: 首帧三角形最小渲染链路
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-08 10:20`
+  Status: `Cancelled`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 原归档结论已作废：Human 在验收窗口内反馈“未见稳定可见三角形”
+    - 按 `AcceptanceDispute` 规则执行 `ReopenOriginal`，任务已回退至 `InProgress`
+    - 原技术变更记录保留在归档快照，用于审计追溯
+  FilesChanged:
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/tasks/task-rend-002.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-002.md`
+  ValidationEvidence:
+    - Build: pass（Debug/Release 通过，存在环境级 CS1668 警告）
+    - Test: pass（`dotnet test`，首次因锁文件失败后重试通过）
+    - Smoke: fail（`HumanAcceptance` 阶段未观察到稳定可见三角形，触发 `ReopenOriginal`）
+    - Perf: pass（`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，运行约 48.68s，退出码 `0`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-002.md`

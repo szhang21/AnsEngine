@@ -30,6 +30,7 @@ public sealed class NullWindowService : IWindowService
         };
 
         _nativeWindow = new NativeWindow(settings);
+        _nativeWindow.MakeCurrent();
         _nativeWindow.Closing += OnClosing;
     }
 
@@ -59,6 +60,18 @@ public sealed class NullWindowService : IWindowService
         {
             _nativeWindow!.Close();
         }
+    }
+
+    public void Present()
+    {
+        ThrowIfDisposed();
+
+        if (!_usesNativeWindow)
+        {
+            return;
+        }
+
+        _nativeWindow!.Context.SwapBuffers();
     }
 
     public void Dispose()

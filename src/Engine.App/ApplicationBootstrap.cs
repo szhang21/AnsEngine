@@ -65,6 +65,7 @@ public sealed class ApplicationHost : IApplication
                 _ = _inputService.GetSnapshot();
                 _ = _timeService.Current;
                 _renderer.RenderFrame();
+                _windowService.Present();
 
                 if (_autoExitSeconds.HasValue && uptime.Elapsed.TotalSeconds >= _autoExitSeconds.Value)
                 {
@@ -73,6 +74,11 @@ public sealed class ApplicationHost : IApplication
             }
 
             return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Fatal error: {ex}");
+            return 1;
         }
         finally
         {

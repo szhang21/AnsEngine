@@ -17,9 +17,11 @@
 
 ## Todo
 
+- （空）
+
 ## InProgress
 
-- （空）
+- `TASK-REND-002` 首帧三角形最小渲染链路（ReopenOriginal：验收未见稳定可见三角形）
 
 ## Verify
 
