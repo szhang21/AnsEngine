@@ -1,4 +1,4 @@
-# TASK-REND-002 归档快照
+﻿# TASK-REND-002 归档快照
 
 - TaskId: `TASK-REND-002`
 - Title: 首帧三角形最小渲染链路

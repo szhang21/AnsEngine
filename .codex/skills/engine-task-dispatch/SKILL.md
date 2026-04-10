@@ -45,6 +45,8 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Steward 修改需显式命令：仅当 Human 明确输入 `执行修复 <IssueId...>` 或 `关单 <TaskId>` 时，Workflow Steward Agent 才允许执行元数据修改。
 - Steward 修改边界：仅允许任务卡/里程碑卡/索引/看板元数据修复；禁止修改业务源码、验收标准、任务目标语义。
 - Steward 关单门禁：收到 `关单 <TaskId>` 时，仅当 `Status=Review`、`HumanSignoff=pass`、归档三件套完整，才允许执行 `Review -> Done` 与看板 Done 更新。
+- Steward Apply 后强制复审：每次 `执行修复 <IssueId...>` 后必须立即产出一次 `AuditReport`（复审结果）；复审失败不得宣称“修复完成”。
+- Steward 跨文档一致性强制：涉及任务状态修复时，必须在同一轮内同步校验并修复“任务卡 + 归档快照 + 归档索引 + 看板”四件套一致性，不得只改其中一处。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
 - Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
 - Human 最终关单强制：`Review -> Done` 仅允许 Human 在复验通过后执行（含看板 Done 更新与 `HumanSignoff=pass`）。
@@ -160,10 +162,15 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
   - 条件：`FailureType=AcceptanceDispute` 且发生在验收窗口内（从 `Verify/Review` 到 Human 首次签收结论前）。
   - 处理：必须 `ReopenOriginal`（回退原任务），不得新建 Bug 卡。
   - 要求：任务卡补齐 `ReopenReason`、`DetectedAt`、`HumanSignoff=fail`。
+  - 状态联动：原任务卡应为 `InProgress`（或按回退规则状态），归档索引应标记 `Cancelled`，归档快照不得保留 `Done/100` 语义。
+  - 证据联动：当 `FailureType=AcceptanceDispute` 且触发 `ReopenOriginal` 时，`ValidationEvidence.Smoke` 不得为 `pass`。
 - 规则 B（延迟发现缺陷）：
   - 条件：任务已 `Done` 且在后续使用中发现问题（`FailureType=PostAcceptanceBug`）。
   - 处理：默认 `CreateBugCard`（或 Follow-up），原任务保持 `Done`，不得回退原任务。
   - 要求：新卡必须记录 `OriginTaskId`、`DetectedAt`，并按常规门禁流转。
+- `OriginTaskId` 字段约束：
+  - 仅 `CreateBugCard/Follow-up` 场景强制必填，且必须指向原始任务卡。
+  - `ReopenOriginal` 场景不得自指（例如 `OriginTaskId=当前TaskId`）；默认留空。
 - 证据不足规则：
   - 条件：缺少可复现实证据或期望/实际不明确。
   - 处理：`CreateVerifyCard`，先补复现与证据，不直接回退或派修复。

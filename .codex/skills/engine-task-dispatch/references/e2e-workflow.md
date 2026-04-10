@@ -153,5 +153,6 @@ Plan 节点完成归档时，必须原子完成以下两件：
 
 1. Dispatch 落卡后，先执行 `审计任务状态`（只读）。
 2. 若发现元数据问题，先看 `FixPlan`，Human 选定 IssueId 后再下 `执行修复 <IssueId...>`。
-3. Execution 完成后，可再次审计归档一致性（只读）。
-4. 仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足，Steward 才能代执行关单。
+3. 每次 Apply 修复后，Steward 必须立即再跑一次 `AuditReport`（复审），未通过不得报“修复完成”。
+4. Execution 完成后，可再次审计归档一致性（只读）。
+5. 仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足，Steward 才能代执行关单。

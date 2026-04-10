@@ -33,6 +33,7 @@
    - 归档快照
    - 归档索引
    - 看板状态
+   - 四件套联动一致（不得出现“任务卡 InProgress 但快照 Done/100”）
 4. 计划一致性：
    - `.ai-workflow/plan-archive/<yyyy-mm>/<plan-id>.md` 存在
    - `.ai-workflow/plan-archive/plan-archive-index.md` 命中
@@ -50,6 +51,22 @@
   - 业务源码改动
   - 验收标准改写
   - 任务目标语义改写
+
+## Apply 强制闭环
+
+- 每次 `执行修复 <IssueId...>` 后，必须立即执行一次复审并输出 `AuditReport`。
+- 若复审仍有阻塞项，必须返回失败回执，不得宣称“修复完成”。
+- 涉及状态修复时，必须同轮同步修复并校验四件套：任务卡、归档快照、归档索引、看板。
+
+## 缺陷分流字段约束（硬规则）
+
+- 当 `FailureType=AcceptanceDispute` 且 `ReopenOriginal`：
+  - 任务卡应回退到执行态（通常 `InProgress`）。
+  - 归档索引应为 `Cancelled`。
+  - 归档快照不得保留 `Done/100` 语义。
+  - `ValidationEvidence.Smoke` 不得为 `pass`。
+- `OriginTaskId` 仅在 `CreateBugCard/Follow-up` 场景必填。
+- `ReopenOriginal` 场景不得出现 `OriginTaskId=当前TaskId` 的自指写法。
 
 ## 关单权限规则
 

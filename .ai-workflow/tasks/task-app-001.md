@@ -7,7 +7,7 @@
 DispatchAgent
 
 ## 计划引用（兼容别名：PlanRef）
-`PLAN-VISIBLE-001`
+`PLAN-M1M2-2026-04-08`
 
 ## 里程碑引用（兼容别名：MilestoneRef）
 `M1-WindowLoopVisible`

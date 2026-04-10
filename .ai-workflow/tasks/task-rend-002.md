@@ -1,4 +1,4 @@
-# 任务: TASK-REND-002 首帧三角形最小渲染链路
+﻿# 任务: TASK-REND-002 首帧三角形最小渲染链路
 
 ## 目标（Goal）
 在 `Engine.Render` 内完成最小 shader 编译/链接、顶点提交与 draw 调用链路，实现窗口内稳定可见三角形。
@@ -98,7 +98,7 @@ InProgress
 - FailureType: `AcceptanceDispute`
 - DetectedAt: `2026-04-09`
 - ReopenReason: `验收实测未观察到稳定可见三角形，未满足 Smoke 验收口径`
-- OriginTaskId:
+- OriginTaskId: `TASK-REND-002`
 - HumanSignoff: `fail`
 
 ## 归档（Archive）

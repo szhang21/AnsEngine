@@ -6,6 +6,12 @@
 ## 负责人（Owner）
 Codex
 
+## 计划引用（兼容别名：PlanRef）
+`PLAN-M1M2-2026-04-08`
+
+## 里程碑引用（兼容别名：MilestoneRef）
+`M1-WindowLoopVisible`
+
 ## 优先级（Priority）
 P1
 
@@ -89,6 +95,9 @@ true
 
 ## 状态（Status）
 Done
+
+## 完成度（Completion）
+`100`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-04/TASK-BOOT-001.md`

@@ -17,7 +17,8 @@
 
 ## Todo
 
-- （空）
+- `TASK-APP-002` M3 运行装配与生命周期配套
+- `TASK-QA-002` M3 双轨门禁证据与归档收口
 
 ## InProgress
 
