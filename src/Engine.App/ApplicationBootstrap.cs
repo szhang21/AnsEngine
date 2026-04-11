@@ -16,8 +16,10 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var windowService = new NullWindowService(new WindowConfig(1280, 720, "AnsEngine"), useNativeWindow);
         var inputService = new NullInputService();
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
-        IRenderer renderer = useNativeWindow ? new NullRenderer(windowService, runtimeInfo) : new HeadlessRenderer();
         var sceneGraph = new SceneGraphService(runtimeInfo);
+        IRenderer renderer = useNativeWindow
+            ? new NullRenderer(windowService, runtimeInfo, sceneGraph)
+            : new HeadlessRenderer();
         var assetService = new NullAssetService(runtimeInfo, windowService);
         return new ApplicationHost(windowService, renderer, sceneGraph, assetService, inputService, timeService);
     }

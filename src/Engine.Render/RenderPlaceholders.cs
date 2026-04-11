@@ -1,5 +1,6 @@
 using Engine.Core;
 using Engine.Platform;
+using Engine.Scene;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Engine.Render;
@@ -27,28 +28,29 @@ public sealed class NullRenderer : IRenderer
     private const string VertexShaderSource = """
                                              #version 330 core
                                              layout (location = 0) in vec3 aPosition;
+                                             layout (location = 1) in vec3 aColor;
+                                             out vec3 vColor;
                                              void main()
                                              {
+                                                 vColor = aColor;
                                                  gl_Position = vec4(aPosition, 1.0);
                                              }
                                              """;
     private const string FragmentShaderSource = """
                                                #version 330 core
+                                               in vec3 vColor;
                                                out vec4 fragColor;
                                                void main()
                                                {
-                                                   fragColor = vec4(0.95, 0.85, 0.25, 1.0);
+                                                   fragColor = vec4(vColor, 1.0);
                                                }
                                                """;
-    private static readonly float[] TriangleVertices =
-    {
-        0.0f, 0.6f, 0.0f,
-        -0.6f, -0.6f, 0.0f,
-        0.6f, -0.6f, 0.0f
-    };
+    private const int VertexStride = 6;
+    private static readonly float[] EmptyVertices = [];
 
     private readonly IWindowService _windowService;
     private readonly EngineRuntimeInfo _runtimeInfo;
+    private readonly ISceneRenderContractProvider _sceneProvider;
     private int _shaderProgramHandle;
     private int _vertexShaderHandle;
     private int _fragmentShaderHandle;
@@ -56,9 +58,18 @@ public sealed class NullRenderer : IRenderer
     private int _vertexBufferHandle;
 
     public NullRenderer(IWindowService windowService, EngineRuntimeInfo runtimeInfo)
+        : this(windowService, runtimeInfo, new DefaultSceneRenderContractProvider())
+    {
+    }
+
+    public NullRenderer(
+        IWindowService windowService,
+        EngineRuntimeInfo runtimeInfo,
+        ISceneRenderContractProvider sceneProvider)
     {
         _windowService = windowService;
         _runtimeInfo = runtimeInfo;
+        _sceneProvider = sceneProvider;
     }
 
     public bool IsInitialized { get; private set; }
@@ -80,10 +91,27 @@ public sealed class NullRenderer : IRenderer
             throw new InvalidOperationException("Renderer is not initialized.");
         }
 
+        var sceneFrame = _sceneProvider.BuildRenderFrame();
+        var submission = SceneRenderSubmissionBuilder.Build(sceneFrame);
+        var vertices = submission.Vertices.Count == 0 ? EmptyVertices : Flatten(submission.Vertices);
+
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        if (vertices.Length == 0)
+        {
+            GL.Flush();
+            return;
+        }
+
+        GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferHandle);
+        GL.BufferData(
+            BufferTarget.ArrayBuffer,
+            vertices.Length * sizeof(float),
+            vertices,
+            BufferUsageHint.DynamicDraw);
+
         GL.UseProgram(_shaderProgramHandle);
         GL.BindVertexArray(_vertexArrayHandle);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, vertices.Length / VertexStride);
         GL.BindVertexArray(0);
         GL.Flush();
     }
@@ -114,13 +142,11 @@ public sealed class NullRenderer : IRenderer
         _vertexBufferHandle = GL.GenBuffer();
         GL.BindVertexArray(_vertexArrayHandle);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferHandle);
-        GL.BufferData(
-            BufferTarget.ArrayBuffer,
-            TriangleVertices.Length * sizeof(float),
-            TriangleVertices,
-            BufferUsageHint.StaticDraw);
+        GL.BufferData(BufferTarget.ArrayBuffer, 0, IntPtr.Zero, BufferUsageHint.DynamicDraw);
         GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, VertexStride * sizeof(float), 0);
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, VertexStride * sizeof(float), 3 * sizeof(float));
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
     }
@@ -138,6 +164,24 @@ public sealed class NullRenderer : IRenderer
         }
 
         return shaderHandle;
+    }
+
+    private static float[] Flatten(IReadOnlyList<SceneRenderVertex> vertices)
+    {
+        var flattened = new float[vertices.Count * VertexStride];
+        var writeIndex = 0;
+        foreach (var vertex in vertices)
+        {
+            flattened[writeIndex] = vertex.X;
+            flattened[writeIndex + 1] = vertex.Y;
+            flattened[writeIndex + 2] = vertex.Z;
+            flattened[writeIndex + 3] = vertex.R;
+            flattened[writeIndex + 4] = vertex.G;
+            flattened[writeIndex + 5] = vertex.B;
+            writeIndex += VertexStride;
+        }
+
+        return flattened;
     }
 
     private void ReleaseTrianglePipeline()
