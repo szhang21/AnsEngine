@@ -28,12 +28,13 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 6. `AuditReport`（Steward 只读审计报告）
 7. `FixPlan`（Steward 可执行修复清单）
 8. `ApplyResult`（Steward 已执行修复结果）
+9. `QAReport`（QA 验证与质疑处理结论）
 
 如信息不足，必须显式写出假设。
 
 ## 强约束
 
-- 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent` / `Workflow Steward Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
+- 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent` / `QA Agent` / `Workflow Steward Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
 - 字段完整性强制：任务卡若缺少 `计划引用`、`里程碑引用`、`ParallelPlan`（含 `ParallelGroup`、`CanRunParallel`、`DependsOn`）任一字段，必须拒绝流转或执行（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
 - 越权响应强制回退：若收到不属于当前角色职责的请求，只允许返回 `请按 <AgentName> 职责重试`，不得部分执行。
 - 新增文件强制边界同步：仅当 `NewFilesExpected=true` 或执行中实际新增源码/测试文件时，才强制更新 `.ai-workflow/boundaries/` 下至少一个边界文档并写入变更记录；否则不作为阻塞条件。
@@ -50,6 +51,8 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Steward 跨文档一致性强制：涉及任务状态修复时，必须在同一轮内同步校验并修复“任务卡 + 归档快照 + 归档索引 + 看板”四件套一致性，不得只改其中一处。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
 - Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
+- QA Agent 职责边界：仅可执行 `TASK-QA-*` 与 Human 质疑复核（复现/证据比对/QA 报告），不得实现功能任务（如 `TASK-REND-*`、`TASK-APP-*`、`TASK-PLAT-*`）。
+- QA Agent 越权回退：收到实现类任务或代码重构请求时，必须拒绝并回退 `请按 Execution Agent 职责重试`。
 - Human 最终关单强制：`Review -> Done` 仅允许 Human 在复验通过后执行（含看板 Done 更新与 `HumanSignoff=pass`）。
 - 路径解析强制：执行阶段遇到相对路径时，必须按“三步解析”自动查找后才能报错：
   1) 先按仓库根目录解析；

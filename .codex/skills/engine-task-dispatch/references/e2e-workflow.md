@@ -4,9 +4,9 @@
 - `.ai-workflow/**` 是项目流程产物目录，用于任务卡、看板、归档快照、归档索引的写入。
 - 执行代理不得因为仓库根目录不存在 `references/review-checklist.md` 而阻塞；必须先按 skill 路径解析规则查找。
 
-# 四角色端到端流程（One-Page）
+# 五角色端到端流程（One-Page）
 
-本文档是 `Plan -> Dispatch -> Execution` 主链 + `Workflow Steward` 治理层的单页总览，定义每个节点该做什么、落什么盘、何时流转与归档。
+本文档是 `Plan -> Dispatch -> Execution` 主链 + `QA` 质量复核层 + `Workflow Steward` 治理层的单页总览，定义每个节点该做什么、落什么盘、何时流转与归档。
 
 ## 1) 总体顺序
 
@@ -14,8 +14,9 @@
 2. `Dispatch Agent` 先校验 Plan 归档两件套，再基于计划拆卡并落盘
 3. `Human` 仅按任务编号派发
 4. `Execution Agent` 读取任务卡执行并回填状态
-5. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
-6. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`
+5. `QA Agent` 执行 QA 验证卡并处理 Human 质疑（复现与证据核对）
+6. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
+7. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`
 
 ## 2) 节点职责
 
@@ -38,6 +39,11 @@
   - 负责：实现、验证、状态推进、关单资料
   - 禁止：重拆需求、越界改动、跨角色决策
 
+- `QA Agent`
+  - 负责：执行 `TASK-QA-*`、输出 `QAReport`、处理 Human 质疑（复现步骤、Expected/Actual、证据补齐）
+  - 禁止：实现功能卡、修改业务源码、代替 Dispatch 拆卡、代替 Steward 做元数据治理
+  - 输入：`TASK-QA-*` 或 Human 质疑报告（建议含 `TaskId/Repro/Expected/Actual/Evidence`）
+
 - `Workflow Steward Agent`
   - 默认：`Audit` 只读检查（任务卡/里程碑卡/索引/看板一致性）
   - 显式命令后：`Apply` 仅做元数据修复（字段、状态、索引、看板）
@@ -47,7 +53,7 @@
 
 - `Human`
   - 负责：确认计划、审核拆卡、按波次派工、最终接受结果
-  - 可选：命令 Steward 执行 `审计任务状态` / `执行修复 <IssueId...>` / `关单 <TaskId>`
+  - 可选：命令 QA 执行 `TASK-QA-*` 或质疑复核；命令 Steward 执行 `审计任务状态` / `执行修复 <IssueId...>` / `关单 <TaskId>`
 
 ## 3) 落盘与可见性规则
 
