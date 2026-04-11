@@ -75,6 +75,15 @@ true | false
 - Test:
 - Smoke:
 - Perf:
+- CodeQuality: （QA 验证卡必填；非 QA 卡可选）
+  - NoNewHighRisk: `true | false`
+  - MustFixCount: `<number>`
+  - MustFixDisposition: `none | accepted | follow-up-created`
+- DesignQuality: （QA 验证卡必填；非 QA 卡可选）
+  - DQ-1 职责单一（SRP）: `pass | fail`
+  - DQ-2 依赖反转（DIP）: `pass | fail`
+  - DQ-3 扩展点保留（OCP-oriented）: `pass | fail`
+  - DQ-4 开闭性评估（可选）: `pass | warn | fail`
 
 ## 交付物（Deliverables）
 - Minimal patch
@@ -114,6 +123,7 @@ Todo | InProgress | Verify | Review | Done
 - 缺少 `BoundarySyncPlan` 视为任务卡无效。
 - 缺少 `OutOfScope` 视为任务卡无效。
 - 缺少 `Acceptance` 视为任务卡无效。
+- 当任务为 QA 验证卡（`TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA`）时，`Acceptance` 缺少 `CodeQuality` 或 `DesignQuality` 视为无效。
 - 缺少 `Priority` 视为任务卡无效。
 - 缺少 `PrimaryModule` 视为任务卡无效。
 - 缺少 `BoundaryContractPath` 视为任务卡无效。
@@ -134,3 +144,4 @@ Todo | InProgress | Verify | Review | Done
 - `Status=Todo` 时 `Completion` 必须为 `0`。
 - `Status=Done` 时 `Completion` 必须为 `100`。
 - `Status=InProgress|Verify|Review` 时 `Completion` 必须为 `10-99`。
+- QA 验证卡若 `CodeQuality.MustFixCount>0` 且 `MustFixDisposition=none`，不得流转到 `Review`。

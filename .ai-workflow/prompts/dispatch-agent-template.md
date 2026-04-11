@@ -39,6 +39,10 @@
 - `CanRunParallel (true|false)`
 - `DependsOn`
 - `Acceptance (Build/Test/Smoke/Perf)`
+- `Acceptance (Build/Test/Smoke/Perf)`
+- QA 验证卡附加验收（当 `TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA` 时必填）：
+  - `CodeQuality`（`NoNewHighRisk`、`MustFixCount`、`MustFixDisposition`）
+  - `DesignQuality`（`DQ-1`、`DQ-2`、`DQ-3`，`DQ-4` 可选）
 - `OutOfScope`
 - `ExecutionAgent`（建议执行代理）
 - `BoundarySyncPlan`（新增文件时要更新哪些边界文档）
@@ -54,6 +58,8 @@
 - `计划引用`（或 `PlanRef`）非空
 - `里程碑引用`（或 `MilestoneRef`）非空
 - `Acceptance` 四项齐全（Build/Test/Smoke/Perf）
+- QA 验证卡时 `CodeQuality` 与 `DesignQuality` 非空且字段齐全
+- QA 验证卡时 `CodeQuality.MustFixCount>0` 不得将任务预设为可入 `Review`
 - `AllowedPaths` 非空
 - `AllowedPaths` 仅包含源码/测试路径，不包含边界文档路径
 - `DependsOn` 明确（无依赖也要写空列表）

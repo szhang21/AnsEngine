@@ -94,6 +94,10 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Smoke 结果
 - Perf 说明（基线对比或无明显退化说明）
 - 变更文件路径检查结果（全部命中 `AllowedPaths`）
+- 当任务为 QA 验证卡（`TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA`）时，必须额外具备：
+  - `CodeQuality` 结论（至少包含：`NoNewHighRisk=true`、`MustFixCount=0` 或转卡说明）
+  - `DesignQuality` 结论（至少包含：`DQ-1 职责单一`、`DQ-2 依赖反转`、`DQ-3 扩展点保留`）
+  - 若 `MustFixCount>0`，不得进入 `Review`，必须转新卡并记录 `Owner/计划引用/里程碑引用`
 
 `Review -> Done` 前必须具备：
 

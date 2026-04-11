@@ -26,6 +26,7 @@
    - 变更摘要
    - 文件清单
    - 验证结果（Build/Test/Smoke/Perf）
+   - QA 验证卡附加结果（CodeQuality/DesignQuality，若卡面要求）
    - 风险分级（high|medium|low）
 6. 若本任务新增了文件，必须同步提交边界文档更新与 `Boundary Change Log` 记录；否则视为未完成。
 6.1 若 `NewFilesExpected=false` 且执行中未新增源码/测试文件，边界文档更新不是阻塞条件。
@@ -35,6 +36,10 @@
    - 追加归档索引：`.ai-workflow/archive/archive-index.md`
 8. Execution 不得自行将任务置为 `Done`，也不得更新看板到 `Done`；最终 `Review -> Done` 由 Human 复验通过后执行。
 9. 若上述三件套任一步无法完成，必须返回“未关单”状态，不得宣称任务已完成。
+10. 当任务为 QA 验证卡（`TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA`）且卡面包含质量验收时：
+   - 必须输出 `CodeQuality` 结论（`NoNewHighRisk`、`MustFixCount`、`MustFixDisposition`）。
+   - 必须输出 `DesignQuality` 结论（`DQ-1`、`DQ-2`、`DQ-3`，`DQ-4` 若有）。
+   - 若 `MustFixCount>0` 且未完成转卡，不得推进到 `Review`。
 
 禁止事项：
 

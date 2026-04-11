@@ -135,6 +135,7 @@ Plan 节点完成归档时，必须原子完成以下两件：
    - 前置条件：Plan 归档两件套已存在（计划快照 + `plan-archive-index.md` 索引命中）。
 2. Execution 关单前检测（关单完整性）：
    - 归档三件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全、`HumanSignoff=pending`。
+   - QA 验证卡额外检测：`CodeQuality` 与 `DesignQuality` 结论齐全，且 `MustFixCount=0` 或已转卡。
 3. 每个里程碑完成时 Plan 检测（计划同步）：
    - 里程碑状态与任务状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。
 
