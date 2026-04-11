@@ -89,15 +89,29 @@ false
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-QA-002.md`
+- ClosedAt: `2026-04-11 11:00`
+- HumanSignoff: `pass`
 - Summary:
+  - 完成 M3 双轨门禁复核：Build/Test/Smoke/Perf 证据统一回填并对齐任务链
+  - 对齐 `TASK-REND-002`（三角形可见）与 `TASK-APP-002`（生命周期配套）的验收结论，形成可追溯闭环
+  - 补齐归档三件套（任务卡 Archive、归档快照、归档索引），并将看板推进到 `Review`
 - FilesChanged:
+  - `.ai-workflow/tasks/task-qa-002.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-QA-002.md`
+  - `.ai-workflow/boundaries/engine-app.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build(Debug): fail -> pass（首轮 `CS2012` 文件占用；复跑 `dotnet build -c Debug -m:1` 通过，存在环境级 CS1668 警告）
+  - Build(Release): pass（`dotnet build -c Release -m:1`，存在环境级 CS1668 警告）
+  - Test: pass（`dotnet test -m:1`）
+  - Smoke: pass（图形口径引用 `TASK-REND-002` 人工复验通过；无图形环境口径 `ANS_ENGINE_USE_NATIVE_WINDOW=false`，`30.19s`，`ExitCode=0`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`45.24s`，`ExitCode=0`，相对 M2 无明显退化）
+- ModuleAttributionCheck: pass

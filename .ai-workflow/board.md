@@ -17,12 +17,11 @@
 
 ## Todo
 
-- `TASK-APP-002` M3 运行装配与生命周期配套
-- `TASK-QA-002` M3 双轨门禁证据与归档收口
+- （空）
 
 ## InProgress
 
-- `TASK-REND-002` 首帧三角形最小渲染链路（ReopenOriginal：验收未见稳定可见三角形）
+- （空）
 
 ## Verify
 
@@ -39,6 +38,9 @@
 - `TASK-APP-001` 最小主循环与退出编排（Build/Test/Smoke/Perf 通过，已归档）
 - `TASK-REND-001` 最小清屏可视反馈（Build/Test/Smoke/Perf 通过，已归档）
 - `TASK-QA-001` 可见反馈门禁证据补齐（Build/Test/Smoke/Perf 证据已归档）
+- `TASK-REND-002` 首帧三角形最小渲染链路（人工复验通过，已归档）
+- `TASK-APP-002` M3 运行装配与生命周期配套（人工验收通过，已归档）
+- `TASK-QA-002` M3 双轨门禁证据与归档收口（人工验收通过，已归档）
 
 ## Blocked
 

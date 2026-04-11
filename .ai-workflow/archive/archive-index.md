@@ -188,13 +188,13 @@
   PrimaryModule: `Engine.Render`
   BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
   Owner: `Exec-Render`
-  ClosedAt: `2026-04-08 10:20`
-  Status: `Cancelled`
+  ClosedAt: `2026-04-11 10:30`
+  Status: `Done`
   ModuleAttributionCheck: `pass`
   Summary:
-    - 原归档结论已作废：Human 在验收窗口内反馈“未见稳定可见三角形”
-    - 按 `AcceptanceDispute` 规则执行 `ReopenOriginal`，任务已回退至 `InProgress`
-    - 原技术变更记录保留在归档快照，用于审计追溯
+    - 任务经修复后再次提交人工验收，确认“稳定可见三角形”达成
+    - 关闭流程完成：任务卡、归档快照、归档索引与看板状态已对齐
+    - 保留回流与复验记录，满足审计追溯
   FilesChanged:
     - `src/Engine.Render/RenderPlaceholders.cs`
     - `.ai-workflow/boundaries/engine-render.md`
@@ -205,6 +205,62 @@
   ValidationEvidence:
     - Build: pass（Debug/Release 通过，存在环境级 CS1668 警告）
     - Test: pass（`dotnet test`，首次因锁文件失败后重试通过）
-    - Smoke: fail（`HumanAcceptance` 阶段未观察到稳定可见三角形，触发 `ReopenOriginal`）
+    - Smoke: pass（人工复验通过：稳定可见三角形并可正常退出）
     - Perf: pass（`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，运行约 48.68s，退出码 `0`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-002.md`
+
+- TaskId: `TASK-APP-002`
+  Title: M3 运行装配与生命周期配套
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-11 10:45`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 将渲染初始化纳入统一 `try/finally`，初始化失败也可执行收口
+    - 异常路径补充 `RequestClose`，避免窗口生命周期悬挂
+    - 增加 `ANS_ENGINE_USE_NATIVE_WINDOW` 装配开关，默认仍为真实窗口路径
+    - 新增 `HeadlessRenderer` 适配无图形环境 smoke/perf 验证
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-002.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-002.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，约 `15.64s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，约 `45.14s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-002.md`
+
+- TaskId: `TASK-QA-002`
+  Title: M3 双轨门禁证据与归档收口
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-11 11:00`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 M3 Build/Test/Smoke/Perf 证据复核与汇总
+    - 对齐 `TASK-REND-002`（可视验收）与 `TASK-APP-002`（运行收口）的联合验收链
+    - 完成归档三件套与看板 Review 推进，待 Human 最终关单
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-002.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-002.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  ValidationEvidence:
+    - Build: fail -> pass（Debug 首次 `CS2012` 文件占用；复跑 Debug 通过；Release 通过）
+    - Test: pass（`dotnet test -m:1`）
+    - Smoke: pass（图形口径引用 `TASK-REND-002` 人工复验；当前环境口径 30.19s，退出码 `0`）
+    - Perf: pass（45.24s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-002.md`

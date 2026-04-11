@@ -89,21 +89,21 @@ false
 - Change summary (what changed and why)
 
 ## 状态（Status）
-InProgress
+Done
 
 ## 完成度（Completion）
-`80`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `AcceptanceDispute`
 - DetectedAt: `2026-04-09`
 - ReopenReason: `验收实测未观察到稳定可见三角形，未满足 Smoke 验收口径`
 - OriginTaskId: `TASK-REND-002`
-- HumanSignoff: `fail`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-04/TASK-REND-002.md`
-- ClosedAt: `2026-04-08 10:20`
+- ClosedAt: `2026-04-11 10:30`
 - Summary:
   - 在 `Engine.Render` 完成最小三角形链路：shader 编译/链接、VBO/VAO 顶点提交、`DrawArrays` 绘制。
   - 保留非默认清屏作为背景反馈，并在每帧执行绘制与 `GL.Flush`。
@@ -120,6 +120,6 @@ InProgress
   - Build(Debug): pass（`dotnet build -c Debug`，存在环境级 CS1668 警告）
   - Build(Release): pass（`dotnet build -c Release`，存在环境级 CS1668 警告）
   - Test: pass（`dotnet test`；重试一次后通过，首次因进程锁文件失败）
-  - Smoke: fail（`HumanAcceptance` 阶段反馈“未见稳定可见三角形”，触发 `ReopenOriginal`）
+  - Smoke: pass（人工复验通过：稳定可见三角形并可正常退出）
   - Perf: pass（`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，运行约 48.68s，退出码 `0`）
 - ModuleAttributionCheck: pass

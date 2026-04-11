@@ -12,13 +12,49 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
     public IApplication Build()
     {
         var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
-        var windowService = new NullWindowService(new WindowConfig(1280, 720, "AnsEngine"));
+        var useNativeWindow = ResolveUseNativeWindow();
+        var windowService = new NullWindowService(new WindowConfig(1280, 720, "AnsEngine"), useNativeWindow);
         var inputService = new NullInputService();
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
-        var renderer = new NullRenderer(windowService, runtimeInfo);
+        IRenderer renderer = useNativeWindow ? new NullRenderer(windowService, runtimeInfo) : new HeadlessRenderer();
         var sceneGraph = new SceneGraphService(runtimeInfo);
         var assetService = new NullAssetService(runtimeInfo, windowService);
         return new ApplicationHost(windowService, renderer, sceneGraph, assetService, inputService, timeService);
+    }
+
+    private static bool ResolveUseNativeWindow()
+    {
+        var value = Environment.GetEnvironmentVariable("ANS_ENGINE_USE_NATIVE_WINDOW");
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)
+               && !string.Equals(value, "0", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+internal sealed class HeadlessRenderer : IRenderer
+{
+    public bool IsInitialized { get; private set; }
+
+    public void Initialize()
+    {
+        IsInitialized = true;
+    }
+
+    public void RenderFrame()
+    {
+        if (!IsInitialized)
+        {
+            throw new InvalidOperationException("Renderer is not initialized.");
+        }
+    }
+
+    public void Shutdown()
+    {
+        IsInitialized = false;
     }
 }
 
@@ -51,11 +87,10 @@ public sealed class ApplicationHost : IApplication
 
     public int Run()
     {
-        _renderer.Initialize();
-        var uptime = Stopwatch.StartNew();
-
         try
         {
+            _renderer.Initialize();
+            var uptime = Stopwatch.StartNew();
             _sceneGraph.AddRootNode();
             _ = _assetService.Load("bootstrap://placeholder");
 
@@ -77,6 +112,11 @@ public sealed class ApplicationHost : IApplication
         }
         catch (Exception ex)
         {
+            if (_windowService.Exists && !_windowService.IsCloseRequested)
+            {
+                _windowService.RequestClose();
+            }
+
             Console.Error.WriteLine($"Fatal error: {ex}");
             return 1;
         }

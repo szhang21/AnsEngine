@@ -89,15 +89,31 @@ false
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-APP-002.md`
+- ClosedAt: `2026-04-11 10:45`
+- HumanSignoff: `pass`
 - Summary:
+  - 将 `ApplicationHost.Run` 的渲染初始化纳入统一 `try/finally`，保证初始化异常时也执行窗口收口
+  - 异常路径增加关闭意图发出，避免失败后窗口状态悬挂
+  - `RuntimeBootstrap` 增加 `ANS_ENGINE_USE_NATIVE_WINDOW` 装配开关；默认仍启用真实窗口
+  - 在无窗口模式下装配 `HeadlessRenderer`，用于无图形环境的稳定运行验证
 - FilesChanged:
+  - `src/Engine.App/ApplicationBootstrap.cs`
+  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/tasks/task-app-002.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-APP-002.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build(Debug): pass（`dotnet build -c Debug -m:1`，存在环境级 MSB3101/CS1668 警告）
+  - Build(Release): pass（`dotnet build -c Release -m:1`，存在环境级 MSB3101/CS1668 警告）
+  - Test: pass（`dotnet test -m:1`）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `dotnet .../Engine.App.dll`，`ExitCode=0`，约 `15.64s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `dotnet .../Engine.App.dll`，`ExitCode=0`，约 `45.14s`）
+- ModuleAttributionCheck: pass
