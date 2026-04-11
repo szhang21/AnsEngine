@@ -44,6 +44,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Steward 审计默认只读：Workflow Steward Agent 默认仅允许审计与建议，不得直接修改任何文件。
 - Steward 修改需显式命令：仅当 Human 明确输入 `执行修复 <IssueId...>` 或 `关单 <TaskId>` 时，Workflow Steward Agent 才允许执行元数据修改。
 - Steward 修改边界：仅允许任务卡/里程碑卡/索引/看板元数据修复；禁止修改业务源码、验收标准、任务目标语义。
+- Steward 禁止执行实现任务：收到 `执行TASK-*`、`实现*`、`跑门禁*`、`修功能*` 等执行类指令时，必须拒绝并回退 `请按 Execution Agent 职责重试`，不得读取任务卡后进入实现流程。
 - Steward 关单门禁：收到 `关单 <TaskId>` 时，仅当 `Status=Review`、`HumanSignoff=pass`、归档三件套完整，才允许执行 `Review -> Done` 与看板 Done 更新。
 - Steward Apply 后强制复审：每次 `执行修复 <IssueId...>` 后必须立即产出一次 `AuditReport`（复审结果）；复审失败不得宣称“修复完成”。
 - Steward 跨文档一致性强制：涉及任务状态修复时，必须在同一轮内同步校验并修复“任务卡 + 归档快照 + 归档索引 + 看板”四件套一致性，不得只改其中一处。

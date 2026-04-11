@@ -238,6 +238,122 @@
     - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，约 `45.14s`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-002.md`
 
+- TaskId: `TASK-SCENE-002`
+  Title: M4 最小场景渲染数据输出
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-11 11:40`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 场景提交数据增加最小动态变化（首节点材质按帧切换）
+    - 保持 Scene-Render 契约稳定，不扩展跨模块依赖面
+    - 补充场景输出测试并通过
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-002.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-002.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Scene.Tests` 4/4）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.15s，退出码 `0`）
+    - Perf: pass（45.12s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-002.md`
+
+- TaskId: `TASK-REND-004`
+  Title: M4 场景驱动渲染消费
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-11 11:40`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 渲染模块改为消费 `SceneRenderFrame`，替代固定 demo 提交路径
+    - 新增提交构建器并按场景提交动态更新 VBO 绘制
+    - 新增渲染消费链路最小测试项目并通过
+  FilesChanged:
+    - `src/Engine.Render/Engine.Render.csproj`
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/Engine.Render.Tests.csproj`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/tasks/task-rend-004.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-004.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.15s，退出码 `0`）
+    - Perf: pass（45.12s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-004.md`
+
+- TaskId: `TASK-APP-003`
+  Title: M4 提交流程编排配套
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-11 11:55`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 组合根注入 Scene 提交提供器到 Render，完成 M4 场景提交链路编排
+    - 主循环保持编排职责边界，不引入渲染后端或场景内部实现
+    - 同步更新 App 边界合同与任务归档资料
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-003.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-003.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: fail -> pass（`dotnet test -m:1` 首次 `CS2012`，清理进程后复跑通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.15s，退出码 `0`）
+    - Perf: pass（45.15s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-003.md`
+
+- TaskId: `TASK-QA-003`
+  Title: M4 验证与关单收敛
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-11 12:05`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 M4 Build/Test/Smoke/Perf 全量门禁复核与证据回填
+    - 纳入 `Engine.Render.Tests` 独立测试链路验证并通过
+    - 质量结论收敛：NoNewHighRisk=true，MustFixCount=0
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-003.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-003.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.14s，退出码 `0`）
+    - Perf: pass（45.13s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-003.md`
+
 - TaskId: `TASK-QA-002`
   Title: M3 双轨门禁证据与归档收口
   Priority: `P0`
@@ -264,3 +380,35 @@
     - Smoke: pass（图形口径引用 `TASK-REND-002` 人工复验；当前环境口径 30.19s，退出码 `0`）
     - Perf: pass（45.24s，退出码 `0`，无明显退化）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-002.md`
+
+- TaskId: `TASK-SCENE-001`
+  Title: M4 Scene-Render 最小契约定义
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-11 11:25`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 在 `Engine.Scene` 定义最小 Scene-Render 提交契约基线
+    - `SceneGraphService` 输出只读提交快照，维持模块边界不侵入渲染实现
+    - 新增契约测试并通过，形成 M4 后续任务统一依赖面
+  FilesChanged:
+    - `src/Engine.Scene/SceneRenderContracts.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-001.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-001.md`
+  ValidationEvidence:
+    - Build: fail -> pass（Debug 首次 `CS2012` 文件占用；复跑 Debug 通过；Release 通过）
+    - Test: pass（`dotnet test -m:1`，`Engine.Scene.Tests` 3/3 通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.22s，退出码 `0`）
+    - Perf: pass（45.17s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-001.md`
+
+
