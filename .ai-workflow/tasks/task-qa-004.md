@@ -1,13 +1,13 @@
-﻿# 任务: TASK-QA-003 M4 验证与关单收敛
+﻿# 任务: TASK-QA-004 M4 解耦门禁与质量复验
 
 ## 目标（Goal）
-完成 M4 的 Build/Test/Smoke/Perf 与质量门禁收敛，补齐归档三件套并提交 Human 复验关单。
+补齐并执行“Render 不得直接引用 Scene”的门禁校验，完成 M4 解耦改造后的质量与验收证据收敛。
 
 ## 任务来源（TaskSource）
 DispatchAgent
 
 ## 计划引用（兼容别名：PlanRef）
-`PLAN-M4-2026-04-11`
+`PLAN-M4B-2026-04-13`
 
 ## 里程碑引用（兼容别名：MilestoneRef）
 `M4-SceneRenderPipeline`
@@ -23,8 +23,8 @@ P0
 Engine.App
 
 ## 次级模块（SecondaryModules）
-- Engine.Scene
 - Engine.Render
+- Engine.Scene
 - Engine.Platform
 
 ## 边界合同路径（BoundaryContractPath）
@@ -34,18 +34,19 @@ Engine.App
 - `references/project-baseline.md`
 
 ## 并行计划（ParallelPlan）
-- ParallelGroup: `G4`
+- ParallelGroup: `G5`
 - CanRunParallel: `false`
 - DependsOn:
-  - `TASK-SCENE-002`
-  - `TASK-REND-004`
-  - `TASK-APP-003`
+  - `TASK-CONTRACT-001`
+  - `TASK-SCENE-003`
+  - `TASK-REND-006`
+  - `TASK-APP-004`
 
 ## 范围（Scope）
 - AllowedModules:
   - Engine.App
 - AllowedFiles:
-  - M4 验证证据与关单准备相关文件
+  - QA 证据与门禁校验相关文件
   - 必要测试文件
 - AllowedPaths:
   - `src/Engine.App/**`
@@ -56,21 +57,20 @@ Engine.App
 false
 
 ## 非范围（OutOfScope）
-- 不新增 M4 以外功能。
-- 不修复 Scene/Render 业务逻辑目标（本卡只做验证与证据收敛）。
-- 不替代 Human 执行最终关单裁决。
+- 不新增业务功能。
+- 不修复 Render/Scene 功能目标（本卡只做验证与证据收敛）。
+- 不替代 Human 最终关单裁决。
 - OutOfScopePaths:
-  - `src/Engine.Scene/**`
   - `src/Engine.Render/**`
+  - `src/Engine.Scene/**`
   - `src/Engine.Asset/**`
 
 ## 依赖约束（DependencyContract）
 - AllowedDependsOn:
-  - `Engine.App -> Engine.Scene`
   - `Engine.App -> Engine.Render`
-  - `Engine.App -> Engine.Platform`
+  - `Engine.App -> Engine.Scene`
 - ForbiddenDependsOn:
-  - 为过门禁扩大任务范围
+  - 为过门禁扩大功能范围
   - 隐式修改已验收语义
 
 ## 边界变更请求（BoundaryChangeRequest）
@@ -91,8 +91,8 @@ false
 ## 验收标准（Acceptance）
 - Build: `dotnet build -c Debug` 与 `dotnet build -c Release` 通过
 - Test: `dotnet test` 通过；新契约调整最小链路测试通过
-- Smoke: 可启动并持续渲染 30 秒以上，关闭后退出码 `0`
-- Perf: 相比 M3 无明显退化（帧时间无异常抖动）
+- Smoke: 场景驱动渲染稳定运行 30 秒以上，退出码 `0`
+- Perf: 相比 M4 既有实现无明显退化
 - CodeQuality:
   - NoNewHighRisk: `true`
   - MustFixCount: `0`
@@ -101,7 +101,7 @@ false
   - DQ-1 职责单一（SRP）: `pass`
   - DQ-2 依赖反转（DIP）: `pass`
   - DQ-3 扩展点保留（OCP-oriented）: `pass`
-  - DQ-4 开闭性评估（可选）: `warn`
+  - DQ-4 开闭性评估（可选）: `pass`
 
 ## 交付物（Deliverables）
 - Minimal patch
@@ -123,26 +123,24 @@ Done
 - HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath: `.ai-workflow/archive/2026-04/TASK-QA-003.md`
-- ClosedAt: `2026-04-11 12:05`
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-QA-004.md`
+- ClosedAt: `2026-04-14 01:28`
 - Summary:
-  - 完成 M4 Build/Test/Smoke/Perf 全量门禁复核并回填证据。
-  - 补充 `Engine.Render.Tests` 独立测试链路验证，覆盖场景提交消费最小链路。
-  - 收敛 M4 质量条目：NoNewHighRisk=true、MustFixCount=0、MustFixDisposition=none。
-  - 完成归档三件套并关单完成，与 Human 验收结论对齐。
+  - 完成 M4 解耦门禁复验，确认 `Engine.Render` 不再直接编译依赖 `Engine.Scene`。
+  - 完成 Build/Test/Smoke/Perf 全量复核并回填证据。
+  - 输出代码质量与设计质量结论，当前无新增高风险阻塞项。
 - FilesChanged:
-  - `.ai-workflow/tasks/task-qa-003.md`
+  - `.ai-workflow/tasks/task-qa-004.md`
   - `.ai-workflow/board.md`
   - `.ai-workflow/archive/archive-index.md`
-  - `.ai-workflow/archive/2026-04/TASK-QA-003.md`
-  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/archive/2026-04/TASK-QA-004.md`
 - ValidationEvidence:
-  - Build(Debug): pass（`dotnet build -c Debug -m:1`，存在环境级 CS1668 警告）
-  - Build(Release): pass（`dotnet build -c Release -m:1`）
-  - Test: pass（`dotnet test -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
-  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，约 `30.14s`）
-  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，`ExitCode=0`，约 `45.13s`）
+  - Build(Debug): pass（`dotnet build AnsEngine.sln -c Debug -m:1`，0 警告 0 错误）
+  - Build(Release): pass（`dotnet build AnsEngine.sln -c Release -m:1`，0 警告 0 错误）
+  - Test: pass（`dotnet test AnsEngine.sln -m:1`，全部测试通过）
+  - DependencyGate: pass（`RenderSceneRef=absent`，`RenderContractsRef=present`）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.87s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，`ExitCode=0`，`45.83s`）
   - CodeQuality: pass（NoNewHighRisk=true，MustFixCount=0，MustFixDisposition=none）
-  - DesignQuality: DQ-1 pass / DQ-2 pass / DQ-3 pass / DQ-4 warn（可接受）
+  - DesignQuality: DQ-1 pass / DQ-2 pass / DQ-3 pass / DQ-4 pass
 - ModuleAttributionCheck: pass
-

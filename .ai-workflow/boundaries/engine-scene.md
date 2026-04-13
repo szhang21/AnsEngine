@@ -32,6 +32,7 @@
 
 - 可直接依赖模块：
   - `Engine.Core`
+  - `Engine.Contracts`（渲染输入契约层）
 - 可使用基础库/第三方：
   - `System.Numerics`（如项目采用）
   - 项目内部数学工具（若在 `Engine.Core`）
@@ -79,6 +80,18 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-14
+  - 变更人：Exec-Render
+  - 变更内容：确认 `Engine.Render` 已切换为仅消费 `Engine.Contracts`，`Engine.Scene` 不再被渲染模块编译期直接引用。
+  - 变更原因：对应 `TASK-REND-006` 的依赖反转落地，巩固 Scene 模块边界隔离。
+  - 风险与回滚方案：若后续出现接口兼容问题，通过契约层适配器处理，避免恢复跨模块直接引用。
+
+- 2026-04-13
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 新增 `Engine.Contracts.ISceneRenderContractProvider` 适配实现，并将 `Engine.Scene` 项目依赖接入 `Engine.Contracts`；保留 `Engine.Scene` 旧契约返回用于过渡兼容。
+  - 变更原因：支撑 `TASK-SCENE-003`，将渲染输入契约消费方向从 Scene 内部类型下沉到独立契约层。
+  - 风险与回滚方案：若下游迁移节奏不一致，继续维持双接口兼容窗口；待 `TASK-REND-006` 完成后可清理旧兼容路径。
+
 - 2026-04-04
   - 变更人：初始化
   - 变更内容：创建 `Engine.Scene` 初版边界合同
@@ -94,3 +107,8 @@
   - 变更内容：在不扩展契约结构的前提下补充最小动态输出口径（首节点材质参数按帧变化）
   - 变更原因：支撑 `TASK-SCENE-002` 的“至少一个场景节点驱动画面变化”验收
   - 风险与回滚方案：若后续需要显式动画曲线参数，新增可选字段并保持默认行为兼容
+- 2026-04-12
+  - 变更人：Workflow
+  - 变更内容：补充 `Engine.Scene -> Engine.Contracts` 为允许依赖，明确 Scene 仅输出契约层数据，不直接面向 Render 实现层。
+  - 变更原因：配合 M4 解耦治理，建立 `Scene -> Contracts -> Render` 依赖方向基线。
+  - 风险与回滚方案：若后续契约拆分为 `Engine.Render.Contracts`，保留一段兼容窗口并同步更新任务卡依赖约束。

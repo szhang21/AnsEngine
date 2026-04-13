@@ -354,6 +354,33 @@
     - Perf: pass（45.13s，退出码 `0`，无明显退化）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-003.md`
 
+- TaskId: `TASK-REND-005`
+  Title: M4 渲染边界文档对齐当前依赖
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-13 20:38`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 对齐 Render 边界文档到当前真实依赖状态（当前为 `Engine.Render -> Engine.Scene`）
+    - 修正 `Engine.Contracts` 依赖表述为后续目标态，消除文档与实现漂移
+    - 记录后续解耦回切条件与路径
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/tasks/task-rend-005.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-005.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，15.17s，退出码 `0`）
+    - Perf: pass（30.17s，退出码 `0`，无明显退化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-005.md`
+
 - TaskId: `TASK-QA-002`
   Title: M3 双轨门禁证据与归档收口
   Priority: `P0`
@@ -410,5 +437,161 @@
     - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.22s，退出码 `0`）
     - Perf: pass（45.17s，退出码 `0`，无明显退化）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-001.md`
+
+- TaskId: `TASK-CONTRACT-001`
+  Title: M4 独立契约层建立与边界落盘
+  Priority: `P0`
+  PrimaryModule: `Engine.Contracts`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-contracts.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-13 21:00`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新建独立契约层 `src/Engine.Contracts` 并定义最小渲染输入契约类型
+    - 新建 `Engine.Contracts.Tests` 并补充最小契约用例，验证契约可直接消费
+    - 同步边界文档 `engine-contracts` 变更日志，完成归档三件套准备
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.Contracts/Engine.Contracts.csproj`
+    - `src/Engine.Contracts/SceneRenderContracts.cs`
+    - `tests/Engine.Contracts.Tests/Engine.Contracts.Tests.csproj`
+    - `tests/Engine.Contracts.Tests/SceneRenderContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/tasks/task-contract-001.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-CONTRACT-001.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Contracts.Tests` 2/2）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，22.82s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，37.83s，退出码 `0`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-001.md`
+
+- TaskId: `TASK-SCENE-003`
+  Title: M4 渲染输入契约下沉到独立层
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-14 00:40`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `Engine.Scene` 接入 `Engine.Contracts` 引用，建立 `Scene -> Contracts` 稳定依赖方向
+    - `SceneGraphService` 完成双接口适配，内部以契约层类型输出并保持旧接口兼容
+    - 新增契约接口链路测试并通过，同步更新 Scene 边界变更日志
+  FilesChanged:
+    - `src/Engine.Scene/Engine.Scene.csproj`
+    - `src/Engine.Scene/SceneRenderContracts.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-003.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-003.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Scene.Tests` 5/5）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，24.74s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，62.53s，退出码 `0`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-003.md`
+
+- TaskId: `TASK-REND-006`
+  Title: M4 Render 依赖反转与解耦
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-14 00:49`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `Engine.Render` 编译期依赖由 `Engine.Scene` 切换到 `Engine.Contracts`
+    - `Render` 提交构建链路统一消费契约层 `SceneRenderFrame/SceneRenderItem`
+    - `Engine.Render.Tests` 切换契约层引用并验证消费路径通过
+  FilesChanged:
+    - `src/Engine.Render/Engine.Render.csproj`
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/Engine.Render.Tests.csproj`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-rend-006.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-006.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，Render 契约消费测试通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，20.68s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，35.66s，退出码 `0`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-006.md`
+
+- TaskId: `TASK-APP-004`
+  Title: M4 App 契约 Provider 装配
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-14 01:06`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `Engine.App` 显式装配 `Engine.Contracts.ISceneRenderContractProvider` 并注入 Render
+    - 抽出可测试渲染器创建路径，规避 GLFW 主线程限制
+    - 新增 `Engine.App.Tests` 覆盖装配路径并通过
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `tests/Engine.App.Tests/Engine.App.Tests.csproj`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-004.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-004.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.App.Tests` 1/1）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，18.88s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，33.85s，退出码 `0`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-004.md`
+
+- TaskId: `TASK-QA-004`
+  Title: M4 解耦门禁与质量复验
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-14 01:28`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 “Render 不得直接引用 Scene” 的门禁复验并通过
+    - 完成 Build/Test/Smoke/Perf 全量复核并回填证据
+    - 质量结论收敛：NoNewHighRisk=true，MustFixCount=0
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-004.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-004.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，30.87s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，45.83s，退出码 `0`）
+    - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-004.md`
 
 

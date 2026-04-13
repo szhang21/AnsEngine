@@ -1,6 +1,7 @@
-﻿# TASK-QA-003 褰掓。蹇収锛圗xecution Prepared锛?
+﻿# TASK-QA-003 归档快照（Execution Prepared）
+
 - TaskId: `TASK-QA-003`
-- Title: `M4 楠岃瘉涓庡叧鍗曟敹鏁沗
+- Title: `M4 验证与关单收敛`
 - Priority: `P0`
 - PrimaryModule: `Engine.App`
 - BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
@@ -12,7 +13,11 @@
 
 ## Summary
 
-- 瀹屾垚 M4 鍏ㄩ噺闂ㄧ澶嶆牳锛圔uild/Test/Smoke/Perf锛夈€?- 琛ュ厖骞堕獙璇?`Engine.Render.Tests` 鐙珛娴嬭瘯閾捐矾锛岃鐩栧満鏅┍鍔ㄦ覆鏌撴秷璐规渶灏忚矾寰勩€?- 璐ㄩ噺缁撹锛歚NoNewHighRisk=true`銆乣MustFixCount=0`銆乣MustFixDisposition=none`銆?- 瀹屾垚褰掓。涓変欢濂楀苟鎺ㄨ繘 `Review`锛屽緟 Human 鏈€缁堝叧鍗曘€?
+- 完成 M4 全量门禁复核（Build/Test/Smoke/Perf）。
+- 补充并验证 `Engine.Render.Tests` 独立测试链路，覆盖场景驱动渲染消费最小路径。
+- 质量结论：`NoNewHighRisk=true`、`MustFixCount=0`、`MustFixDisposition=none`。
+- 完成归档三件套并推进 `Review`，待 Human 最终关单。
+
 ## FilesChanged
 
 - `.ai-workflow/tasks/task-qa-003.md`
@@ -23,8 +28,15 @@
 
 ## ValidationEvidence
 
-- Build(Debug): `pass`锛坄dotnet build -c Debug -m:1`锛岀幆澧冪骇 CS1668 璀﹀憡锛?- Build(Release): `pass`锛坄dotnet build -c Release -m:1`锛?- Test: `pass`锛坄dotnet test -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`锛?- Smoke: `pass`锛坄ANS_ENGINE_USE_NATIVE_WINDOW=false`锛宍30.14s`锛宍ExitCode=0`锛?- Perf: `pass`锛坄ANS_ENGINE_USE_NATIVE_WINDOW=false`锛宍45.13s`锛宍ExitCode=0`锛?- CodeQuality: `pass`锛圢oNewHighRisk=true锛孧ustFixCount=0锛孧ustFixDisposition=none锛?- DesignQuality: `DQ-1 pass / DQ-2 pass / DQ-3 pass / DQ-4 warn`
+- Build(Debug): `pass`（`dotnet build -c Debug -m:1`，环境级 CS1668 警告）
+- Build(Release): `pass`（`dotnet build -c Release -m:1`）
+- Test: `pass`（`dotnet test -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+- Smoke: `pass`（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`30.14s`，`ExitCode=0`）
+- Perf: `pass`（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`45.13s`，`ExitCode=0`）
+- CodeQuality: `pass`（NoNewHighRisk=true，MustFixCount=0，MustFixDisposition=none）
+- DesignQuality: `DQ-1 pass / DQ-2 pass / DQ-3 pass / DQ-4 warn`
 
 ## Risks
 
-- `medium`锛氬綋鍓嶇幆澧冧粛浠?headless 鍙ｅ緞浣滀负鍙墽琛?smoke/perf 璇佹嵁锛涘缓璁懆鏈熸€цˉ鍥惧舰绐楀彛鎶芥牱澶嶉獙銆?
+- `medium`: 当前环境仍以 headless 口径作为可执行 smoke/perf 证据；建议周期性补图形窗口抽样复验。
+

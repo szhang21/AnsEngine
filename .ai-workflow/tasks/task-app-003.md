@@ -1,86 +1,86 @@
-﻿# 浠诲姟: TASK-APP-003 M4 鎻愪氦娴佺▼缂栨帓閰嶅
+﻿# 任务: TASK-APP-003 M4 提交流程编排配套
 
-## 鐩爣锛圙oal锛?淇濇寔 `Engine.App` 缂栨帓鑱岃矗涓嶅彉锛屽畬鎴?M4 鍦烘櫙鏇存柊/鎻愪氦/娓叉煋闃舵琛旀帴涓庣敓鍛藉懆鏈熸敹鍙ｉ厤濂椼€?
-## 浠诲姟鏉ユ簮锛圱askSource锛?DispatchAgent
+## 目标（Goal�?保持 `Engine.App` 编排职责不变，完�?M4 场景更新/提交/渲染阶段衔接与生命周期收口配套�?
+## 任务来源（TaskSource�?DispatchAgent
 
-## 璁″垝寮曠敤锛堝吋瀹瑰埆鍚嶏細PlanRef锛?`PLAN-M4-2026-04-11`
+## 计划引用（兼容别名：PlanRef�?`PLAN-M4-2026-04-11`
 
-## 閲岀▼纰戝紩鐢紙鍏煎鍒悕锛歁ilestoneRef锛?`M4-SceneRenderPipeline`
+## 里程碑引用（兼容别名：MilestoneRef�?`M4-SceneRenderPipeline`
 
-## 鎵ц浠ｇ悊锛圗xecutionAgent锛?Exec-App
+## 执行代理（ExecutionAgent�?Exec-App
 
-## 浼樺厛绾э紙Priority锛?P0
-> 璇存槑锛氫紭鍏堢骇涓诲畾涔夋潵鑷?`璁″垝寮曠敤`锛汥ispatch 浠呭厑璁稿悓閲岀▼纰戝唴寰皟銆?
-## 涓绘ā鍧楀綊灞烇紙PrimaryModule锛?Engine.App
+## 优先级（Priority�?P0
+> 说明：优先级主定义来�?`计划引用`；Dispatch 仅允许同里程碑内微调�?
+## 主模块归属（PrimaryModule�?Engine.App
 
-## 娆＄骇妯″潡锛圫econdaryModules锛?- Engine.Scene
+## 次级模块（SecondaryModules�?- Engine.Scene
 - Engine.Render
 
-## 杈圭晫鍚堝悓璺緞锛圔oundaryContractPath锛?- `.ai-workflow/boundaries/engine-app.md`
+## 边界合同路径（BoundaryContractPath�?- `.ai-workflow/boundaries/engine-app.md`
 
-## 鍩虹嚎寮曠敤锛圔aselineRef锛?- `references/project-baseline.md`
+## 基线引用（BaselineRef�?- `references/project-baseline.md`
 
-## 骞惰璁″垝锛圥arallelPlan锛?- ParallelGroup: `G3`
+## 并行计划（ParallelPlan�?- ParallelGroup: `G3`
 - CanRunParallel: `false`
 - DependsOn:
   - `TASK-SCENE-002`
   - `TASK-REND-004`
 
-## 鑼冨洿锛圫cope锛?- AllowedModules:
+## 范围（Scope�?- AllowedModules:
   - Engine.App
 - AllowedFiles:
-  - 搴旂敤缂栨帓涓庣敓鍛藉懆鏈熼厤濂楁枃浠?  - 搴旂敤妯″潡娴嬭瘯鏂囦欢
+  - 应用编排与生命周期配套文�?  - 应用模块测试文件
 - AllowedPaths:
   - `src/Engine.App/**`
   - `tests/**`
 
-## 璺ㄦā鍧楁爣璁帮紙CrossModule锛?false
+## 跨模块标记（CrossModule�?false
 
-## 闈炶寖鍥达紙OutOfScope锛?- 涓嶅湪 `Engine.App` 瀹炵幇鍏蜂綋缁樺埗閫昏緫
-- 涓嶆墿灞曟潗璐?璧勬簮绯荤粺
-- 涓嶅苟琛屾帹杩?M5 鑼冨洿
+## 非范围（OutOfScope�?- 不在 `Engine.App` 实现具体绘制逻辑
+- 不扩展材�?资源系统
+- 不并行推�?M5 范围
 - OutOfScopePaths:
   - `src/Engine.Render/**`
   - `src/Engine.Scene/**`
   - `src/Engine.Asset/**`
 
-## 渚濊禆绾︽潫锛圖ependencyContract锛?- AllowedDependsOn:
+## 依赖约束（DependencyContract�?- AllowedDependsOn:
   - `Engine.App -> Engine.Core`
   - `Engine.App -> Engine.Scene`
   - `Engine.App -> Engine.Render`
 - ForbiddenDependsOn:
-  - `Engine.App` 鍐呯洿鎺ュ疄鐜版覆鏌撳悗绔粏鑺?  - `Engine.App` 鍐呯洿鎺ュ疄鐜板満鏅唴閮ㄩ€昏緫
+  - `Engine.App` 内直接实现渲染后端细�?  - `Engine.App` 内直接实现场景内部逻辑
 
-## 杈圭晫鍚屾璁″垝锛圔oundarySyncPlan锛?- NewFilesExpected: `false`
+## 边界同步计划（BoundarySyncPlan�?- NewFilesExpected: `false`
 - BoundaryDocsToUpdate:
   - `[]`
 - ChangeLogRequired: `true`
 
-## 楠屾敹鏍囧噯锛圓cceptance锛?- Build: `dotnet build -c Debug` 涓?`dotnet build -c Release` 閫氳繃
-- Test: `dotnet test` 閫氳繃锛岀紪鎺掗摼璺浉鍏虫祴璇曢€氳繃
-- Smoke: 搴旂敤鍙惎鍔ㄥ苟鎸佺画娓叉煋 30 绉掍互涓婏紝鍏抽棴鍚庨€€鍑虹爜 `0`
-- Perf: 涓诲惊鐜皟搴︽棤鏄庢樉閫€鍖?
-## 浜や粯鐗╋紙Deliverables锛?- Minimal patch
+## 验收标准（Acceptance�?- Build: `dotnet build -c Debug` �?`dotnet build -c Release` 通过
+- Test: `dotnet test` 通过，编排链路相关测试通过
+- Smoke: 应用可启动并持续渲染 30 秒以上，关闭后退出码 `0`
+- Perf: 主循环调度无明显退�?
+## 交付物（Deliverables�?- Minimal patch
 - Self-check notes
 - Risk list (high|medium|low)
 - Change summary (what changed and why)
 
-## 鐘舵€侊紙Status锛?Review
+## 状态（Status�?Review
 
-## 瀹屾垚搴︼紙Completion锛?`95`
+## 完成度（Completion�?`95`
 
-## 缂洪櫡鍥炴祦瀛楁锛圖efect Triage锛?- FailureType: `Other`
+## 缺陷回流字段（Defect Triage�?- FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
 - HumanSignoff: `pass`
 
-## 褰掓。锛圓rchive锛?- ArchivePath: `.ai-workflow/archive/2026-04/TASK-APP-003.md`
+## 归档（Archive�?- ArchivePath: `.ai-workflow/archive/2026-04/TASK-APP-003.md`
 - ClosedAt: `2026-04-11 11:55`
 - Summary:
-  - `Engine.App` 鍦ㄧ粍鍚堟牴涓皢 `SceneGraphService` 浣滀负 `ISceneRenderContractProvider` 娉ㄥ叆 `NullRenderer`
-  - 涓诲惊鐜淮鎸?`ProcessEvents -> Input/Time -> Render -> Present` 缂栨帓鑱岃矗锛屼笉寮曞叆娓叉煋鍚庣缁嗚妭
-  - M4 閾捐矾瀹炵幇鈥滃満鏅緭鍑?-> 娓叉煋娑堣垂鈥濈殑搴旂敤灞傝鎺?  - 鍚屾鏇存柊 `Engine.App` 杈圭晫鍚堝悓鍙樻洿璁板綍
+  - `Engine.App` 在组合根中将 `SceneGraphService` 作为 `ISceneRenderContractProvider` 注入 `NullRenderer`
+  - 主循环维�?`ProcessEvents -> Input/Time -> Render -> Present` 编排职责，不引入渲染后端细节
+  - M4 链路实现“场景输�?-> 渲染消费”的应用层衔�?  - 同步更新 `Engine.App` 边界合同变更记录
 - FilesChanged:
   - `src/Engine.App/ApplicationBootstrap.cs`
   - `.ai-workflow/boundaries/engine-app.md`
@@ -89,5 +89,5 @@
   - `.ai-workflow/archive/archive-index.md`
   - `.ai-workflow/archive/2026-04/TASK-APP-003.md`
 - ValidationEvidence:
-  - Build(Debug): pass锛坄dotnet build -c Debug -m:1`锛屽瓨鍦ㄧ幆澧冪骇 CS1668 璀﹀憡锛?  - Build(Release): pass锛坄dotnet build -c Release -m:1`锛屽瓨鍦ㄧ幆澧冪骇 CS1668 璀﹀憡锛?  - Test: fail -> pass锛堥杞?`dotnet test -m:1` 鍥?`CS2012` 鏂囦欢鍗犵敤澶辫触锛屾竻鐞嗚繘绋嬪悗澶嶈窇閫氳繃锛?  - Smoke: pass锛坄ANS_ENGINE_USE_NATIVE_WINDOW=false`锛宍ANS_ENGINE_AUTO_EXIT_SECONDS=30`锛宍ExitCode=0`锛岀害 `30.15s`锛?  - Perf: pass锛坄ANS_ENGINE_USE_NATIVE_WINDOW=false`锛宍ANS_ENGINE_AUTO_EXIT_SECONDS=45`锛宍ExitCode=0`锛岀害 `45.15s`锛?- ModuleAttributionCheck: pass
+  - Build(Debug): pass（`dotnet build -c Debug -m:1`，存在环境级 CS1668 警告�?  - Build(Release): pass（`dotnet build -c Release -m:1`，存在环境级 CS1668 警告�?  - Test: fail -> pass（首�?`dotnet test -m:1` �?`CS2012` 文件占用失败，清理进程后复跑通过�?  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，约 `30.15s`�?  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，`ExitCode=0`，约 `45.15s`�?- ModuleAttributionCheck: pass
 

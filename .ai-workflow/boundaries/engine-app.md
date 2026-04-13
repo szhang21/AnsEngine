@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-14
+  - 变更人：Exec-App
+  - 变更内容：组合根显式装配 `Engine.Contracts.ISceneRenderContractProvider` 并注入 `Engine.Render`，补充可测试的渲染器创建路径。
+  - 变更原因：支撑 `TASK-APP-004`，确保 Render 仅消费契约且不感知 Scene 具体实现。
+  - 风险与回滚方案：若后续装配链路进一步复杂化，可拆分 `RendererCompositionFactory` 并保持现有入口兼容。
+
 - 2026-04-04
   - 变更人：初始化
   - 变更内容：创建 `Engine.App` 初版边界合同

@@ -33,6 +33,7 @@
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Platform`（仅上下文/窗口相关抽象）
+  - `Engine.Contracts`（仅消费渲染输入契约）
 - 可使用基础库/第三方：
   - `OpenTK`
   - `System.Numerics`（如项目采用）
@@ -40,7 +41,7 @@
 ## 6) 禁止依赖（Forbidden Dependencies）
 
 - 禁止直接依赖模块：
-  - `Engine.Scene` 的内部实现细节
+  - `Engine.Scene`（禁止编译期项目引用；仅允许通过 `Engine.Contracts` 交互）
   - `Engine.Asset` 的导入器实现细节
 - 禁止跨层调用模式：
   - 从 `Engine.Render` 直接修改场景图结构
@@ -80,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-14
+  - 变更人：Exec-Render
+  - 变更内容：`Engine.Render` 从 `Engine.Scene` 编译期依赖切换为 `Engine.Contracts`，`Render` 内部消费类型统一为契约层类型。
+  - 变更原因：落实 `TASK-REND-006` 依赖反转目标，恢复 `Scene -> Contracts <- Render` 解耦方向。
+  - 风险与回滚方案：若下游装配未及时切换，可短期保留适配器桥接；禁止回退到 `Render -> Scene` 项目引用。
+
 - 2026-04-04
   - 变更人：初始化
   - 变更内容：创建 `Engine.Render` 初版边界合同
@@ -100,3 +107,13 @@
   - 变更内容：明确渲染模块可消费 `Engine.Scene` 契约层提交（`SceneRenderFrame`），并将固定 demo 提交路径替换为场景驱动提交构建器
   - 变更原因：支撑 `TASK-REND-004` 的 M4 场景驱动渲染消费链路
   - 风险与回滚方案：若提交字段扩展导致构建器复杂度上升，拆分 `SubmissionTranslator` 分层并保留最小回归路径
+- 2026-04-12
+  - 变更人：Workflow
+  - 变更内容：补充 `Engine.Render -> Engine.Contracts` 为允许依赖，明确 Render 只消费契约层输入。
+  - 变更原因：落实 `Render` 与 `Scene` 解耦，避免直接模块编译期耦合固化。
+  - 风险与回滚方案：若契约层字段调整频繁，采用版本化契约并保留兼容解析层。
+- 2026-04-13
+  - 变更人：Exec-Render
+  - 变更内容：按当前真实实现回对边界依赖：`Engine.Render` 直接依赖 `Engine.Scene`（契约消费），暂未落地 `Engine.Contracts` 物理模块。
+  - 变更原因：支撑 `TASK-REND-005` 文档与实现一致性修正，消除边界文档漂移。
+  - 风险与回滚方案：在后续 `TASK-SCENE-003/TASK-REND-006` 完成契约下沉后，再将依赖回切到 `Engine.Contracts`。

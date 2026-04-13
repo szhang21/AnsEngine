@@ -18,6 +18,7 @@
   - `engine-asset.md`
   - `engine-platform.md`
   - `engine-app.md`
+  - `engine-contracts.md`
 
 ## 3) 任务卡引用规范
 
@@ -39,6 +40,7 @@
 - `Engine.Asset` -> `src/Engine.Asset/**`
 - `Engine.Platform` -> `src/Engine.Platform/**`
 - `Engine.App` -> `src/Engine.App/**`
+- `Engine.Contracts` -> `src/Engine.Contracts/**`（或 `src/Engine.Render.Contracts/**`，二选一）
 
 ## 5) 变更管理
 
