@@ -1,4 +1,4 @@
-using Engine.Scene;
+using Engine.Contracts;
 
 namespace Engine.Render;
 

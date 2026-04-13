@@ -1,6 +1,6 @@
 using Engine.Core;
+using Engine.Contracts;
 using Engine.Platform;
-using Engine.Scene;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Engine.Render;

@@ -1,9 +1,11 @@
 using Engine.Asset;
+using Engine.Contracts;
 using Engine.Core;
 using Engine.Platform;
 using Engine.Render;
 using Engine.Scene;
 using System.Diagnostics;
+using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
 namespace Engine.App;
 
@@ -17,11 +19,21 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var inputService = new NullInputService();
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
         var sceneGraph = new SceneGraphService(runtimeInfo);
-        IRenderer renderer = useNativeWindow
-            ? new NullRenderer(windowService, runtimeInfo, sceneGraph)
-            : new HeadlessRenderer();
+        ContractsProvider renderInputProvider = sceneGraph;
+        var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider);
         var assetService = new NullAssetService(runtimeInfo, windowService);
         return new ApplicationHost(windowService, renderer, sceneGraph, assetService, inputService, timeService);
+    }
+
+    private static IRenderer CreateRenderer(
+        bool useNativeWindow,
+        IWindowService windowService,
+        EngineRuntimeInfo runtimeInfo,
+        ContractsProvider renderInputProvider)
+    {
+        return useNativeWindow
+            ? new NullRenderer(windowService, runtimeInfo, renderInputProvider)
+            : new HeadlessRenderer();
     }
 
     private static bool ResolveUseNativeWindow()

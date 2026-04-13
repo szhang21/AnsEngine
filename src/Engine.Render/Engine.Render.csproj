@@ -2,8 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
     <ProjectReference Include="..\Engine.Platform\Engine.Platform.csproj" />
-    <ProjectReference Include="..\Engine.Scene\Engine.Scene.csproj" />
   </ItemGroup>
 
   <ItemGroup>

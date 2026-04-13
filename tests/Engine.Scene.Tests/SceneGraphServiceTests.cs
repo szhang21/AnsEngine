@@ -1,5 +1,6 @@
 using Engine.Core;
 using Engine.Scene;
+using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
 namespace Engine.Scene.Tests;
 
@@ -61,5 +62,21 @@ public sealed class SceneGraphServiceTests
         Assert.NotEqual(firstItem.MaterialId, secondItem.MaterialId);
         Assert.Equal(0, firstFrame.FrameNumber);
         Assert.Equal(1, secondFrame.FrameNumber);
+    }
+
+    [Fact]
+    public void BuildRenderFrame_FromContractsInterface_ReturnsContractsFrame()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+        ContractsProvider contractsProvider = sceneGraph;
+
+        var frame = contractsProvider.BuildRenderFrame();
+
+        var item = Assert.Single(frame.Items);
+        Assert.Equal(1, item.NodeId);
+        Assert.Equal("mesh://triangle", item.MeshId);
+        Assert.Equal("material://default", item.MaterialId);
     }
 }
