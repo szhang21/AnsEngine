@@ -19,6 +19,7 @@
   - 再按相关 skill 目录解析（`.codex/skills/<skill>/...`）；
   - 再在 `.codex/skills/**/references/` 中按文件名兜底搜索。
 2.2 三步都失败后，才允许返回“路径未找到”；不得直接要求 Human 手动给路径。
+2.3 若 `DependencyContract.AllowedDependsOn` 超出 `BoundaryContractPath` 合同允许范围，必须立即停止执行并返回“边界变更请求”；未见 `BoundaryChangeRequest.Status=approved` 不得进入实现流程。
 3. 若 `Status=Done` 或 `Completion=100`，默认不执行实现，仅返回“任务已完成”确认。
 4. 只在 `AllowedPaths` 内改动源码/测试文件。
 4.1 边界文档改动按 `BoundaryDocsToUpdate` 执行，不受 `AllowedPaths` 限制。
@@ -67,6 +68,7 @@
 - 回执字段必须包含：`FailureType`、`BlockedBy`、`RequiredFix`、`Owner`、`RetryCommand`、`Evidence`。
 - `Owner` 仅允许：`DispatchAgent`（任务卡修订）、`PlanAgent`（计划/里程碑冲突）、`Human`（人工确认）、`ExecutionAgent`（可自修后重试）。
 - 禁止仅回复“不能执行/修卡请求/未关单”而不附结构化回执。
+- 依赖越界场景必须返回 `FailureType=ScopeViolation`，并将 `Owner` 指向 `Human`（审批）或 `DispatchAgent`（修卡）。
 
 检测点 B（关单前必检）：
 - 在宣称完成前，必须执行一次“关单前完整性检查”。

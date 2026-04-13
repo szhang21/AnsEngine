@@ -50,6 +50,9 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Steward Apply 后强制复审：每次 `执行修复 <IssueId...>` 后必须立即产出一次 `AuditReport`（复审结果）；复审失败不得宣称“修复完成”。
 - Steward 跨文档一致性强制：涉及任务状态修复时，必须在同一轮内同步校验并修复“任务卡 + 归档快照 + 归档索引 + 看板”四件套一致性，不得只改其中一处。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
+- 工作流文档编码强制：所有工作流 Markdown（`.ai-workflow/**/*.md`、`.codex/skills/**/references/*.md`）必须使用 UTF-8（建议带 BOM），禁止以“ANSI/GBK”写入。
+- 编码写入硬规则（PowerShell）：读文件必须显式指定 `-Encoding UTF8`（如 `Get-Content -Raw -Encoding UTF8`），写文件必须显式指定 `-Encoding UTF8`（如 `Set-Content -Encoding UTF8`），禁止使用不带编码的 `Out-File`/`Set-Content` 生成任务卡与归档。
+- 编码自检强制：Dispatch/Execution/Steward 在落盘任务卡、归档快照、索引后必须自检是否出现典型 mojibake 片段（例如 `浠诲姟`、`锛`、`鏂囨`、`瀵归綈`）；若命中，必须立即修复并用权威模板重写对应文件，禁止将“乱码文件”标记为落盘成功。
 - Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
 - QA Agent 职责边界：仅可执行 `TASK-QA-*` 与 Human 质疑复核（复现/证据比对/QA 报告），不得实现功能任务（如 `TASK-REND-*`、`TASK-APP-*`、`TASK-PLAT-*`）。
 - QA Agent 越权回退：收到实现类任务或代码重构请求时，必须拒绝并回退 `请按 Execution Agent 职责重试`。
@@ -75,6 +78,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 每张任务卡必须且只能归属一个主模块。
 - 新建文件必须归属到主模块的允许路径内。
 - 与 `project-baseline.md` 冲突的实施任务，必须先走“基线变更任务卡”。
+- 依赖边界硬约束：任务卡 `DependencyContract.AllowedDependsOn` 必须是对应 `BoundaryContractPath` 允许依赖的子集；若超出边界合同，必须先提出“边界变更请求”并等待 Human 明确批准，未批准不得创建/执行该任务卡。
 
 ## 派发算法
 
@@ -185,6 +189,15 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 缺省判定规则（防误分流）：
   - 若 `FailureType` 未显式提供，默认按 `AcceptanceDispute` 处理（`ReopenOriginal`），禁止默认归类为 `PostAcceptanceBug`。
   - 仅当 Human 明确声明“已通过验收后/数日后/线上回归”或显式给出 `FailureType=PostAcceptanceBug` 时，才允许走 `CreateBugCard`。
+
+## 边界变更请求（新增）
+
+- 触发条件：任务卡需要新增/放宽模块依赖，且与 `BoundaryContractPath` 当前合同不一致。
+- 强制流程：
+  1) Dispatch/Execution 必须中止当前任务流转；
+  2) 先向 Human 提交“边界变更请求”（包含：变更项、理由、影响模块、回滚策略）；
+  3) 仅在 Human 明确批准后，才允许更新边界合同并重建/修订任务卡。
+- 未经批准直接把越界依赖写入任务卡，视为 `FailureType=ScopeViolation`。
 
 ## 三级检测点（强制）
 

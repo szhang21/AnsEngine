@@ -62,6 +62,14 @@ true | false
 - AllowedDependsOn:
 - ForbiddenDependsOn:
 
+## 边界变更请求（BoundaryChangeRequest）
+- Required: `true | false`
+- Status: `none | pending | approved | rejected`
+- RequestReason:
+- ImpactModules:
+- HumanApprovalRef:
+> 说明：仅当 `DependencyContract` 超出 `BoundaryContractPath` 允许范围时，`Required=true` 且必须先经 Human 批准。
+
 ## 边界同步计划（BoundarySyncPlan）
 - NewFilesExpected: `true | false`
 - BoundaryDocsToUpdate:
@@ -129,6 +137,7 @@ Todo | InProgress | Verify | Review | Done
 - 缺少 `BoundaryContractPath` 视为任务卡无效。
 - 缺少 `BaselineRef` 视为任务卡无效。
 - 缺少 `AllowedPaths` 视为任务卡无效。
+- `DependencyContract.AllowedDependsOn` 超出边界合同允许范围且 `BoundaryChangeRequest.Status` 非 `approved`，视为任务卡无效。
 - 缺少 `Completion` 视为任务卡无效。
 - 缺陷回流场景缺少 `DetectedAt` 视为任务卡无效。
 - 当 `FailureType=AcceptanceDispute` 且走 `ReopenOriginal` 时，缺少 `ReopenReason` 视为无效。

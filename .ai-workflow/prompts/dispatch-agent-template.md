@@ -46,6 +46,7 @@
 - `OutOfScope`
 - `ExecutionAgent`（建议执行代理）
 - `BoundarySyncPlan`（新增文件时要更新哪些边界文档）
+- `BoundaryChangeRequest`（仅依赖越界时必填）
 - `Status`
 - `Completion`
 - `DetectedAt`（有缺陷分流时必填）
@@ -64,6 +65,8 @@
 - `AllowedPaths` 仅包含源码/测试路径，不包含边界文档路径
 - `DependsOn` 明确（无依赖也要写空列表）
 - `BoundarySyncPlan` 非空
+- 依赖边界校验通过：`AllowedDependsOn` 不得超出 `BoundaryContractPath` 合同允许范围
+- 若存在依赖越界：必须设置 `BoundaryChangeRequest.Required=true` 且 `Status=approved`；否则不得落卡
 - `BoundaryDocsToUpdate` 条件校验：
   - 若 `NewFilesExpected=true`，则必须非空且为 `.ai-workflow/boundaries/*.md`
   - 若 `NewFilesExpected=false`，允许 `[]`
@@ -107,6 +110,7 @@
 - 回执字段必须包含：`FailureType`、`BlockedBy`、`RequiredFix`、`Owner`、`RetryCommand`、`Evidence`。
 - `Owner` 仅允许：`DispatchAgent`（可自修）、`PlanAgent`（计划冲突）、`Human`（需人工确认）。
 - 禁止仅回复“不能派发/请修卡”。
+- 依赖越界时必须返回 `FailureType=ScopeViolation`，并要求先走“边界变更请求”。
 
 检测点 A（落卡后必检）：
 - 任务卡写入 `.ai-workflow/tasks/<task-id>.md` 后，必须立即执行一次“脏卡阻断检查”。

@@ -139,6 +139,7 @@ Plan 节点完成归档时，必须原子完成以下两件：
 
 1. Dispatch 落卡后立即检测（脏卡阻断）：
    - 字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则。
+   - 依赖合法性必须以 `BoundaryContractPath` 为准，发现越界依赖时先走“边界变更请求”，未批准不得落卡。
    - 前置条件：Plan 归档两件套已存在（计划快照 + `plan-archive-index.md` 索引命中）。
 2. Execution 关单前检测（关单完整性）：
    - 归档三件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全、`HumanSignoff=pending`。
