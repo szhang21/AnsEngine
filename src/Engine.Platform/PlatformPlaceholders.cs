@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 
@@ -6,17 +6,17 @@ namespace Engine.Platform;
 
 public sealed class NullWindowService : IWindowService
 {
-    private readonly NativeWindow? _nativeWindow;
-    private readonly bool _usesNativeWindow;
-    private bool _closeRequested;
-    private bool _disposed;
+    private readonly NativeWindow? nativeWindow;
+    private readonly bool usesNativeWindow;
+    private bool closeRequested;
+    private bool disposed;
 
     public NullWindowService(WindowConfig configuration, bool useNativeWindow = true)
     {
         Configuration = configuration;
-        _usesNativeWindow = useNativeWindow;
+        usesNativeWindow = useNativeWindow;
 
-        if (!_usesNativeWindow)
+        if (!usesNativeWindow)
         {
             return;
         }
@@ -29,36 +29,36 @@ public sealed class NullWindowService : IWindowService
             StartFocused = true
         };
 
-        _nativeWindow = new NativeWindow(settings);
-        _nativeWindow.MakeCurrent();
-        _nativeWindow.Closing += OnClosing;
+        nativeWindow = new NativeWindow(settings);
+        nativeWindow.MakeCurrent();
+        nativeWindow.Closing += OnClosing;
     }
 
     public WindowConfig Configuration { get; }
-    public bool IsCloseRequested => _closeRequested || (_nativeWindow?.IsExiting ?? false);
-    public bool Exists => !_disposed && (_nativeWindow?.Exists ?? true);
+    public bool IsCloseRequested => closeRequested || (nativeWindow?.IsExiting ?? false);
+    public bool Exists => !disposed && (nativeWindow?.Exists ?? true);
 
     public void ProcessEvents(double timeoutSeconds = 0)
     {
         ThrowIfDisposed();
 
-        if (!_usesNativeWindow)
+        if (!usesNativeWindow)
         {
             return;
         }
 
-        _nativeWindow!.ProcessEvents(timeoutSeconds);
-        _closeRequested |= _nativeWindow.IsExiting;
+        nativeWindow!.ProcessEvents(timeoutSeconds);
+        closeRequested |= nativeWindow.IsExiting;
     }
 
     public void RequestClose()
     {
         ThrowIfDisposed();
-        _closeRequested = true;
+        closeRequested = true;
 
-        if (_usesNativeWindow)
+        if (usesNativeWindow)
         {
-            _nativeWindow!.Close();
+            nativeWindow!.Close();
         }
     }
 
@@ -66,12 +66,12 @@ public sealed class NullWindowService : IWindowService
     {
         ThrowIfDisposed();
 
-        if (!_usesNativeWindow)
+        if (!usesNativeWindow)
         {
             return;
         }
 
-        _nativeWindow!.Context.SwapBuffers();
+        nativeWindow!.Context.SwapBuffers();
     }
 
     public void Dispose()
@@ -82,28 +82,28 @@ public sealed class NullWindowService : IWindowService
 
     private void Dispose(bool disposing)
     {
-        if (_disposed)
+        if (disposed)
         {
             return;
         }
 
-        if (disposing && _nativeWindow is not null)
+        if (disposing && nativeWindow is not null)
         {
-            _nativeWindow.Closing -= OnClosing;
-            _nativeWindow.Dispose();
+            nativeWindow.Closing -= OnClosing;
+            nativeWindow.Dispose();
         }
 
-        _disposed = true;
+        disposed = true;
     }
 
     private void OnClosing(CancelEventArgs _)
     {
-        _closeRequested = true;
+        closeRequested = true;
     }
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
+        if (disposed)
         {
             throw new ObjectDisposedException(nameof(NullWindowService));
         }

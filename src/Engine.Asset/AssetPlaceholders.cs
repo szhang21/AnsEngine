@@ -1,4 +1,4 @@
-using Engine.Core;
+﻿using Engine.Core;
 using Engine.Platform;
 
 namespace Engine.Asset;
@@ -18,19 +18,19 @@ public sealed class AssetHandle : IAssetHandle
 
 public sealed class NullAssetService : IAssetService
 {
-    private readonly EngineRuntimeInfo _runtimeInfo;
-    private readonly IWindowService _windowService;
+    private readonly EngineRuntimeInfo runtimeInfo;
+    private readonly IWindowService windowService;
 
     public NullAssetService(EngineRuntimeInfo runtimeInfo, IWindowService windowService)
     {
-        _runtimeInfo = runtimeInfo;
-        _windowService = windowService;
+        this.runtimeInfo = runtimeInfo;
+        this.windowService = windowService;
     }
 
     public IAssetHandle Load(string assetId)
     {
-        _ = _runtimeInfo.Version;
-        _ = _windowService.Configuration.Title;
+        _ = runtimeInfo.Version;
+        _ = windowService.Configuration.Title;
         var isValid = !string.IsNullOrWhiteSpace(assetId);
         return new AssetHandle(assetId, isValid);
     }

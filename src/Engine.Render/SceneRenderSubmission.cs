@@ -43,19 +43,3 @@ public static class SceneRenderSubmissionBuilder
         return new SceneRenderSubmission(vertices);
     }
 }
-
-internal sealed class DefaultSceneRenderContractProvider : ISceneRenderContractProvider
-{
-    private int _frameNumber;
-
-    public SceneRenderFrame BuildRenderFrame()
-    {
-        var items = new[]
-        {
-            new SceneRenderItem(1, "mesh://triangle", "material://default")
-        };
-        var frame = new SceneRenderFrame(_frameNumber, items);
-        _frameNumber += 1;
-        return frame;
-    }
-}

@@ -1,4 +1,4 @@
-using Engine.Asset;
+﻿using Engine.Asset;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Platform;
@@ -19,10 +19,11 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var inputService = new NullInputService();
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
         var sceneGraph = new SceneGraphService(runtimeInfo);
+        ISceneRuntime sceneRuntime = new SceneRuntimeAdapter(sceneGraph);
         ContractsProvider renderInputProvider = sceneGraph;
         var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider);
         var assetService = new NullAssetService(runtimeInfo, windowService);
-        return new ApplicationHost(windowService, renderer, sceneGraph, assetService, inputService, timeService);
+        return new ApplicationHost(windowService, renderer, sceneRuntime, assetService, inputService, timeService);
     }
 
     private static IRenderer CreateRenderer(
@@ -46,6 +47,21 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
 
         return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)
                && !string.Equals(value, "0", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+internal sealed class SceneRuntimeAdapter : ISceneRuntime
+{
+    private readonly SceneGraphService sceneGraphService;
+
+    public SceneRuntimeAdapter(SceneGraphService sceneGraphService)
+    {
+        this.sceneGraphService = sceneGraphService ?? throw new ArgumentNullException(nameof(sceneGraphService));
+    }
+
+    public void InitializeScene()
+    {
+        sceneGraphService.AddRootNode();
     }
 }
 
@@ -74,51 +90,51 @@ internal sealed class HeadlessRenderer : IRenderer
 
 public sealed class ApplicationHost : IApplication
 {
-    private readonly IWindowService _windowService;
-    private readonly IRenderer _renderer;
-    private readonly SceneGraphService _sceneGraph;
-    private readonly IAssetService _assetService;
-    private readonly IInputService _inputService;
-    private readonly ITimeService _timeService;
-    private readonly double? _autoExitSeconds;
+    private readonly IWindowService windowService;
+    private readonly IRenderer renderer;
+    private readonly ISceneRuntime sceneRuntime;
+    private readonly IAssetService assetService;
+    private readonly IInputService inputService;
+    private readonly ITimeService timeService;
+    private readonly double? autoExitSeconds;
 
     public ApplicationHost(
         IWindowService windowService,
         IRenderer renderer,
-        SceneGraphService sceneGraph,
+        ISceneRuntime sceneRuntime,
         IAssetService assetService,
         IInputService inputService,
         ITimeService timeService)
     {
-        _windowService = windowService;
-        _renderer = renderer;
-        _sceneGraph = sceneGraph;
-        _assetService = assetService;
-        _inputService = inputService;
-        _timeService = timeService;
-        _autoExitSeconds = ResolveAutoExitSeconds();
+        this.windowService = windowService;
+        this.renderer = renderer;
+        this.sceneRuntime = sceneRuntime;
+        this.assetService = assetService;
+        this.inputService = inputService;
+        this.timeService = timeService;
+        autoExitSeconds = ResolveAutoExitSeconds();
     }
 
     public int Run()
     {
         try
         {
-            _renderer.Initialize();
+            renderer.Initialize();
             var uptime = Stopwatch.StartNew();
-            _sceneGraph.AddRootNode();
-            _ = _assetService.Load("bootstrap://placeholder");
+            sceneRuntime.InitializeScene();
+            _ = assetService.Load("bootstrap://placeholder");
 
-            while (_windowService.Exists && !_windowService.IsCloseRequested)
+            while (windowService.Exists && !windowService.IsCloseRequested)
             {
-                _windowService.ProcessEvents();
-                _ = _inputService.GetSnapshot();
-                _ = _timeService.Current;
-                _renderer.RenderFrame();
-                _windowService.Present();
+                windowService.ProcessEvents();
+                _ = inputService.GetSnapshot();
+                _ = timeService.Current;
+                renderer.RenderFrame();
+                windowService.Present();
 
-                if (_autoExitSeconds.HasValue && uptime.Elapsed.TotalSeconds >= _autoExitSeconds.Value)
+                if (autoExitSeconds.HasValue && uptime.Elapsed.TotalSeconds >= autoExitSeconds.Value)
                 {
-                    _windowService.RequestClose();
+                    windowService.RequestClose();
                 }
             }
 
@@ -126,9 +142,9 @@ public sealed class ApplicationHost : IApplication
         }
         catch (Exception ex)
         {
-            if (_windowService.Exists && !_windowService.IsCloseRequested)
+            if (windowService.Exists && !windowService.IsCloseRequested)
             {
-                _windowService.RequestClose();
+                windowService.RequestClose();
             }
 
             Console.Error.WriteLine($"Fatal error: {ex}");
@@ -136,8 +152,8 @@ public sealed class ApplicationHost : IApplication
         }
         finally
         {
-            _renderer.Shutdown();
-            _windowService.Dispose();
+            renderer.Shutdown();
+            windowService.Dispose();
         }
     }
 
