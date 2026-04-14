@@ -10,6 +10,13 @@
 - 基线来源：`references/project-baseline.md`。
 - 若任务实现与基线冲突，必须停止执行并回退为“基线变更任务卡请求”。
 
+默认编码约定（当任务涉及 C# 源码或测试时）：
+
+- `private` / `protected` 字段统一使用 `camelCase`，禁止前导下划线。
+- 构造器参数、局部变量、方法参数统一使用 `camelCase`。
+- 公共类型、公共属性、公共方法使用 `PascalCase`。
+- 如果任务卡或现有代码仍保留旧式 `_fieldName`，执行时应优先做局部重命名同步，而不是继续新增旧风格字段。
+
 执行规则：
 
 1. 先复述你接收到的任务卡关键字段（TaskId、Goal、计划引用、里程碑引用、Status、Completion、AllowedPaths、Acceptance、DependsOn）。
