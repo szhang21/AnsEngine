@@ -94,14 +94,38 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `PostAcceptanceBug`
 - DetectedAt: `2026-04-14`
 - ReopenReason:
 - OriginTaskId: `TASK-SCENE-003`
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## 归档（Archive）
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-SCENE-004.md`
+- ClosedAt: `2026-04-14 10:43`
+- Summary:
+  - `Engine.Scene` 渲染出口收敛为单一 `Engine.Contracts` 契约，移除双轨转换。
+  - 删除 `src/Engine.Scene/SceneRenderContracts.cs`，清除 `SceneRenderFrame.FromContracts` 每帧转换路径。
+  - `SceneGraphService` 仅实现 `Engine.Contracts.ISceneRenderContractProvider`，输出链路保持行为一致。
+- FilesChanged:
+  - `src/Engine.Scene/SceneGraphService.cs`
+  - `src/Engine.Scene/SceneRenderContracts.cs`（删除）
+  - `.ai-workflow/boundaries/engine-scene.md`
+  - `.ai-workflow/boundaries/engine-contracts.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-SCENE-004.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build -c Debug -m:1`）
+  - Build(Release): pass（`dotnet build -c Release -m:1`）
+  - Test: pass（`dotnet test -m:1`；`Engine.Scene.Tests` 5/5）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，`26.59s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，`41.48s`）
+  - HotPathEvidence: pass（`src/Engine.Scene` 无 `FromContracts` 调用，仅单契约 `SceneRenderFrame/SceneRenderItem` 构建）
+- ModuleAttributionCheck: pass

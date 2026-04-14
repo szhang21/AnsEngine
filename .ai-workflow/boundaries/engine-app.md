@@ -83,6 +83,12 @@
 
 - 2026-04-14
   - 变更人：Exec-App
+  - 变更内容：`ApplicationHost` 从直接依赖 `SceneGraphService` 调整为依赖 `ISceneRuntime` 最小运行时接口；组合根新增 `SceneRuntimeAdapter` 绑定 Scene 实现。
+  - 变更原因：支撑 `TASK-APP-005`，消除 App 运行主循环对 Scene 具体实现的硬编码耦合。
+  - 风险与回滚方案：若后续出现跨模块初始化时序问题，可临时回滚到适配器内部兼容层，不恢复 `ApplicationHost` 对具体类型依赖。
+
+- 2026-04-14
+  - 变更人：Exec-App
   - 变更内容：组合根显式装配 `Engine.Contracts.ISceneRenderContractProvider` 并注入 `Engine.Render`，补充可测试的渲染器创建路径。
   - 变更原因：支撑 `TASK-APP-004`，确保 Render 仅消费契约且不感知 Scene 具体实现。
   - 风险与回滚方案：若后续装配链路进一步复杂化，可拆分 `RendererCompositionFactory` 并保持现有入口兼容。

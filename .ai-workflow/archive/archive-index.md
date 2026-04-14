@@ -594,4 +594,126 @@
     - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-004.md`
 
+- TaskId: `TASK-QA-005`
+  Title: M4b MustFix 关口复验与双轨门禁收口
+  Priority: `P0`
+  PrimaryModule: `QA`
+  BoundaryContractPath:
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-14 17:19`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成三张 MustFix 修复卡统一复验并形成关口收口证据
+    - Build/Test/Smoke/Perf 全量门禁通过
+    - 依赖门禁通过：Render 不直接引用 Scene，仅消费 Contracts
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-005.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-005.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，31.15s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，46.09s，退出码 `0`）
+    - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-005.md`
+
+- TaskId: `TASK-SCENE-004`
+  Title: M4b Scene 单契约出口收敛
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-14 10:43`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Scene 渲染出口收敛为单一 `Engine.Contracts` 契约，移除双轨兼容层
+    - 删除 `SceneRenderContracts.cs` 并清除 `FromContracts` 每帧转换路径
+    - 保持场景输出行为一致，同时降低热路径分配与语义分叉风险
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `src/Engine.Scene/SceneRenderContracts.cs`（删除）
+    - `.ai-workflow/tasks/task-scene-004.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-004.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Scene.Tests` 5/5）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，26.59s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，41.48s，退出码 `0`）
+    - HotPathEvidence: pass（`src/Engine.Scene` 无 `FromContracts` 调用，仅单契约构建）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-004.md`
+
+- TaskId: `TASK-REND-007`
+  Title: M4b Render 默认回退 Provider 清理
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-14 15:24`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 移除 `NullRenderer` 默认回退 provider 构造入口，渲染器必须显式注入 `ISceneRenderContractProvider`
+    - 删除 `DefaultSceneRenderContractProvider`，防止生产路径静默兜底掩盖装配遗漏
+    - 新增漏注入失败测试，验证 provider 为 `null` 时快速失败并抛出可诊断异常
+  FilesChanged:
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/NullRendererTests.cs`
+    - `.ai-workflow/tasks/task-rend-007.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-007.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`，存在环境级 CS1668 警告）
+    - Test: pass（`dotnet test -m:1`，`NullRendererTests` 通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，`51.83s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ExitCode=0`，`67.36s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-007.md`
+
+- TaskId: `TASK-APP-005`
+  Title: M4b App 场景运行时抽象依赖修复
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-14 17:14`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 在 `Engine.App` 新增 `ISceneRuntime` 并将 `ApplicationHost` 改为依赖该接口
+    - 组合根新增 `SceneRuntimeAdapter` 绑定 `SceneGraphService`，保持 Render 契约 provider 注入不变
+    - 新增抽象驱动测试，验证主循环可在场景替身下完成初始化与退出
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/tasks/task-app-005.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-005.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.App.Tests` 2/2）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`18.63s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`32.37s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-005.md`
+
 

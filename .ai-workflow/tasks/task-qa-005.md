@@ -111,14 +111,37 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `PostAcceptanceBug`
 - DetectedAt: `2026-04-14`
 - ReopenReason:
 - OriginTaskId: `TASK-QA-004`
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## 归档（Archive）
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-QA-005.md`
+- ClosedAt: `2026-04-14 17:19`
+- Summary:
+  - 完成 `TASK-SCENE-004`、`TASK-REND-007`、`TASK-APP-005` 三张 MustFix 修复卡统一复验。
+  - 完成 Build/Test/Smoke/Perf 与依赖门禁复核，确认解耦与注入关口均闭环。
+  - QA 质量结论：NoNewHighRisk=true，三项 MustFix 均已按处置项落地。
+- FilesChanged:
+  - `.ai-workflow/tasks/task-qa-005.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-QA-005.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build AnsEngine.sln -c Debug -m:1`，0 警告 0 错误）
+  - Build(Release): pass（`dotnet build AnsEngine.sln -c Release -m:1`，0 警告 0 错误）
+  - Test: pass（`dotnet test AnsEngine.sln -m:1`，全部测试通过）
+  - DependencyGate: pass（`RenderSceneRef=absent`，`RenderContractsRef=present`）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`31.15s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=45`，`ExitCode=0`，`46.09s`）
+  - CodeQuality: pass（NoNewHighRisk=true，MustFixCount=3，三项处置均已落地）
+  - DesignQuality: pass（DQ-1/DQ-2/DQ-3/DQ-4）
+- ModuleAttributionCheck: pass

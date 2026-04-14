@@ -83,6 +83,12 @@
 
 - 2026-04-14
   - 变更人：Exec-Render
+  - 变更内容：移除 `NullRenderer` 默认回退 provider 与 `DefaultSceneRenderContractProvider`，Render 生产路径改为强制外部显式注入 `ISceneRenderContractProvider`。
+  - 变更原因：支撑 `TASK-REND-007`，暴露组合根漏注入问题，避免静默兜底掩盖装配缺陷。
+  - 风险与回滚方案：若临时脚手架需本地调试兜底，可在测试工厂显式提供 provider，不恢复生产默认回退。
+
+- 2026-04-14
+  - 变更人：Exec-Render
   - 变更内容：`Engine.Render` 从 `Engine.Scene` 编译期依赖切换为 `Engine.Contracts`，`Render` 内部消费类型统一为契约层类型。
   - 变更原因：落实 `TASK-REND-006` 依赖反转目标，恢复 `Scene -> Contracts <- Render` 解耦方向。
   - 风险与回滚方案：若下游装配未及时切换，可短期保留适配器桥接；禁止回退到 `Render -> Scene` 项目引用。

@@ -83,6 +83,12 @@
 ## 10) 变更记录（Boundary Change Log）
 
 - 2026-04-14
+  - 变更人：Exec-Scene
+  - 变更内容：`Engine.Scene` 完成单契约出口收敛，移除 Scene 内部镜像契约定义，Scene->Render 路径仅保留 `Engine.Contracts` 类型。
+  - 变更原因：支撑 `TASK-SCENE-004`，巩固契约层作为跨模块唯一共享语义源。
+  - 风险与回滚方案：若后续字段演进影响下游，按契约层版本策略扩展字段并保持向后兼容。
+
+- 2026-04-14
   - 变更人：Exec-Render
   - 变更内容：`Engine.Render` 完成契约层消费迁移，移除对 `Engine.Scene` 的编译期依赖，改为只消费 `Engine.Contracts`。
   - 变更原因：支撑 `TASK-REND-006`，闭合 M4 `Scene/Render` 解耦链路。

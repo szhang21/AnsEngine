@@ -81,6 +81,18 @@
 ## 10) 变更记录（Boundary Change Log）
 
 - 2026-04-14
+  - 变更人：Exec-App
+  - 变更内容：App 组合根通过 `SceneRuntimeAdapter` 以 `ISceneRuntime` 抽象消费 Scene 运行时能力，Scene 侧保持 `SceneGraphService` 作为具体实现提供方。
+  - 变更原因：支撑 `TASK-APP-005`，将主循环调度与场景具体实现解耦。
+  - 风险与回滚方案：若后续抽象能力不足，再扩展 `ISceneRuntime` 接口，不回退为 App 直接依赖 Scene 具体类型。
+
+- 2026-04-14
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 渲染输出收敛为单一 `Engine.Contracts` 契约出口，删除 `SceneRenderContracts.cs` 双轨兼容层与 `FromContracts` 转换路径。
+  - 变更原因：支撑 `TASK-SCENE-004`，消除热路径每帧双轨转换分配与语义分叉风险。
+  - 风险与回滚方案：若下游仍存在旧类型调用，短期通过适配器桥接，不恢复 Scene 内部契约副本。
+
+- 2026-04-14
   - 变更人：Exec-Render
   - 变更内容：确认 `Engine.Render` 已切换为仅消费 `Engine.Contracts`，`Engine.Scene` 不再被渲染模块编译期直接引用。
   - 变更原因：对应 `TASK-REND-006` 的依赖反转落地，巩固 Scene 模块边界隔离。

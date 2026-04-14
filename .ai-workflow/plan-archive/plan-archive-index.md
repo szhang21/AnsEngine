@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M5-2026-04-14`
+  Status: `Active`
+  LastUpdated: `2026-04-14 19:17`
+  MilestoneSummary: `M5 进行中（契约兼容扩展 + 可变换渲染）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M5-2026-04-14.md`
+
 - PlanId: `PLAN-M4B-2026-04-13`
   Status: `Active`
   LastUpdated: `2026-04-14 09:32`

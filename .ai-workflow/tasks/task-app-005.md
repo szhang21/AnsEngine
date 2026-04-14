@@ -4,7 +4,7 @@
 `TASK-APP-005`
 
 ## 目标（Goal）
-将 `ApplicationHost` 对 `SceneGraphService` 的具体类型依赖改为最小场景运行时接口依赖（例如 `ISceneRuntime`），由组合根完成实现绑定。
+将 `ApplicationHost` 对 `SceneGraphService` 的具体实现依赖替换为最小场景运行时接口依赖（`ISceneRuntime`），并由组合根完成绑定。
 
 ## 任务来源（TaskSource）
 DispatchAgent
@@ -86,7 +86,7 @@ true
 
 ## 验收标准（Acceptance）
 - Build: `dotnet build -c Debug` 与 `dotnet build -c Release` 通过
-- Test: `dotnet test` 通过；ApplicationHost 可由场景接口替身驱动
+- Test: `dotnet test` 通过，`ApplicationHost` 可由场景接口替身驱动
 - Smoke: 启动后窗口/渲染行为与当前基线一致，关闭退出码 `0`
 - Perf: 主循环无明显退化
 
@@ -97,14 +97,40 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `PostAcceptanceBug`
 - DetectedAt: `2026-04-14`
 - ReopenReason:
 - OriginTaskId: `TASK-APP-004`
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## 归档（Archive）
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-APP-005.md`
+- ClosedAt: `2026-04-14 17:14`
+- Summary:
+  - 在 `Engine.App` 新增最小场景运行时接口 `ISceneRuntime`，`ApplicationHost` 改为只依赖该接口。
+  - 组合根新增 `SceneRuntimeAdapter`，负责将 `SceneGraphService` 绑定为 `ISceneRuntime`，维持现有场景与渲染提供器装配不变。
+  - 新增 `ApplicationHost` 抽象驱动测试，验证场景初始化通过接口被调用并保持主循环退出行为稳定。
+- FilesChanged:
+  - `src/Engine.App/ApplicationBootstrap.cs`
+  - `src/Engine.App/SceneRuntimeContracts.cs`
+  - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+  - `.ai-workflow/tasks/task-app-005.md`
+  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/boundaries/engine-scene.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-APP-005.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build -c Debug -m:1`）
+  - Build(Release): pass（`dotnet build -c Release -m:1`）
+  - Test: pass（`dotnet test -m:1`，`Engine.App.Tests` 2/2）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`18.63s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`32.37s`）
+- ModuleAttributionCheck: pass
+
