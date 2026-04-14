@@ -13,9 +13,9 @@
 ## 当前记录
 
 - PlanId: `PLAN-M4B-2026-04-13`
-  Status: `Closed`
-  LastUpdated: `2026-04-14 01:29`
-  MilestoneSummary: `M4b 完成（契约下沉 + 依赖反转）`
+  Status: `Active`
+  LastUpdated: `2026-04-14 09:32`
+  MilestoneSummary: `M4b 进行中（契约下沉 + 依赖反转）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M4B-2026-04-13.md`
 
 - PlanId: `PLAN-M4-2026-04-11`

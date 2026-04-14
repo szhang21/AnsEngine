@@ -17,7 +17,10 @@
 
 ## Todo
 
-- （空）
+- `TASK-SCENE-004` M4b Scene 单契约出口收敛（消除双轨转换与语义分叉）
+- `TASK-REND-007` M4b Render 默认回退 Provider 清理（暴露漏注入）
+- `TASK-APP-005` M4b App 场景运行时抽象依赖修复（ApplicationHost 去具体实现耦合）
+- `TASK-QA-005` M4b MustFix 关口复验与双轨门禁收口
 
 ## InProgress
 
