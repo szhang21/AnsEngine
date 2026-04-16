@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using System.Numerics;
 
 namespace Engine.Render;
 
@@ -35,11 +36,31 @@ public static class SceneRenderSubmissionBuilder
             var green = 0.55f + (materialHash % 30) / 120f;
             var blue = 0.65f + (materialHash % 20) / 140f;
 
-            vertices.Add(new SceneRenderVertex(centerX, BaseY + TriangleHalfHeight, 0f, red, green, blue));
-            vertices.Add(new SceneRenderVertex(centerX - TriangleHalfWidth, BaseY - TriangleHalfHeight, 0f, red, green, blue));
-            vertices.Add(new SceneRenderVertex(centerX + TriangleHalfWidth, BaseY - TriangleHalfHeight, 0f, red, green, blue));
+            var top = new Vector3(centerX, BaseY + TriangleHalfHeight, 0f);
+            var left = new Vector3(centerX - TriangleHalfWidth, BaseY - TriangleHalfHeight, 0f);
+            var right = new Vector3(centerX + TriangleHalfWidth, BaseY - TriangleHalfHeight, 0f);
+
+            top = ApplyTransform(top, item.Transform);
+            left = ApplyTransform(left, item.Transform);
+            right = ApplyTransform(right, item.Transform);
+
+            vertices.Add(new SceneRenderVertex(top.X, top.Y, top.Z, red, green, blue));
+            vertices.Add(new SceneRenderVertex(left.X, left.Y, left.Z, red, green, blue));
+            vertices.Add(new SceneRenderVertex(right.X, right.Y, right.Z, red, green, blue));
         }
 
         return new SceneRenderSubmission(vertices);
+    }
+
+    private static Vector3 ApplyTransform(Vector3 vertex, SceneTransform transform)
+    {
+        if (transform.Equals(SceneTransform.Identity))
+        {
+            return vertex;
+        }
+
+        var scaled = vertex * transform.Scale;
+        var rotated = Vector3.Transform(scaled, transform.Rotation);
+        return rotated + transform.Position;
     }
 }

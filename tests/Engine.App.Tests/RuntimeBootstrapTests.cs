@@ -6,6 +6,7 @@ using Engine.Platform;
 using Engine.Render;
 using Engine.Scene;
 using System.Reflection;
+using System.Numerics;
 using Xunit;
 using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
@@ -29,6 +30,16 @@ public sealed class RuntimeBootstrapTests
         var wiredProvider = Assert.IsAssignableFrom<ContractsProvider>(providerField!.GetValue(renderer));
 
         Assert.Same(provider, wiredProvider);
+
+        sceneGraph.AddRootNode();
+        var firstFrame = wiredProvider.BuildRenderFrame();
+        var secondFrame = wiredProvider.BuildRenderFrame();
+        var firstItem = Assert.Single(firstFrame.Items);
+        var secondItem = Assert.Single(secondFrame.Items);
+
+        Assert.Equal(Vector3.Zero, firstItem.Transform.Position);
+        Assert.Equal(Quaternion.Identity, firstItem.Transform.Rotation);
+        Assert.NotEqual(firstItem.Transform, secondItem.Transform);
     }
 
     [Fact]
