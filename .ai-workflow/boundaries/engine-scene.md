@@ -80,6 +80,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-15
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 输出项补充 `SceneTransform`（Position/Scale/Rotation）并在连续帧提供轻量动态 transform；首帧保持 identity 兼容。
+  - 变更原因：支撑 `TASK-SCENE-005`，让 Scene 侧稳定产出 M5 变换契约输入。
+  - 风险与回滚方案：若下游暂未消费 transform，可继续按 identity 路径运行；必要时仅关闭动态量，不回退契约输出字段。
+
 - 2026-04-14
   - 变更人：Exec-App
   - 变更内容：App 组合根通过 `SceneRuntimeAdapter` 以 `ISceneRuntime` 抽象消费 Scene 运行时能力，Scene 侧保持 `SceneGraphService` 作为具体实现提供方。

@@ -12,10 +12,16 @@
 
 ## 当前记录
 
-- PlanId: `PLAN-M5-2026-04-14`
+- PlanId: `PLAN-M6-2026-04-17`
   Status: `Active`
-  LastUpdated: `2026-04-14 19:17`
-  MilestoneSummary: `M5 进行中（契约兼容扩展 + 可变换渲染）`
+  LastUpdated: `2026-04-17 00:04`
+  MilestoneSummary: `M6 进行中（最小真实 MVP 渲染管线）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M6-2026-04-17.md`
+
+- PlanId: `PLAN-M5-2026-04-14`
+  Status: `Closed`
+  LastUpdated: `2026-04-16 22:58`
+  MilestoneSummary: `M5 完成（契约兼容扩展 + 可变换渲染）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M5-2026-04-14.md`
 
 - PlanId: `PLAN-M4B-2026-04-13`

@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-15
+  - 变更人：Exec-App
+  - 变更内容：补充 M5 装配校准测试，验证 App 注入的 Scene 契约 provider 在初始化后可输出含 rotation 的连续帧 transform；主循环保持“仅装配不计算”边界。
+  - 变更原因：支撑 `TASK-APP-006`，确保 M5 transform 链路在 App 组合根下可用且职责不越界。
+  - 风险与回滚方案：若后续装配验证继续扩展，统一沉淀到组合根测试套件，不在 App 层引入 transform 计算逻辑。
+
 - 2026-04-14
   - 变更人：Exec-App
   - 变更内容：`ApplicationHost` 从直接依赖 `SceneGraphService` 调整为依赖 `ISceneRuntime` 最小运行时接口；组合根新增 `SceneRuntimeAdapter` 绑定 Scene 实现。

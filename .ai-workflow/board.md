@@ -17,7 +17,12 @@
 
 ## Todo
 
-- （空）
+- `TASK-CONTRACT-003` M6 相机与 MVP 最小契约扩展
+- `TASK-SCENE-006` M6 Scene 对象与相机语义输出
+- `TASK-REND-009` M6 Render MVP Uniform 渲染改造
+- `TASK-REND-010` M6 Mesh 数据统一入口收敛
+- `TASK-APP-007` M6 App 装配与生命周期校准
+- `TASK-QA-007` M6 MVP 渲染链路门禁与回归复验
 
 ## InProgress
 
@@ -56,6 +61,11 @@
 - `TASK-REND-007` M4b Render 默认回退 Provider 清理（人工验收通过，已归档）
 - `TASK-APP-005` M4b App 场景运行时抽象依赖修复（人工验收通过，已归档）
 - `TASK-QA-005` M4b MustFix 关口复验与双轨门禁收口（人工验收通过，已归档）
+- `TASK-CONTRACT-002` M5 渲染变换契约兼容扩展（人工验收通过，已归档）
+- `TASK-APP-006` M5 App 装配兼容校准（人工验收通过，已归档）
+- `TASK-SCENE-005` M5 Scene 变换渲染帧输出（人工验收通过，已归档）
+- `TASK-REND-008` M5 Render 变换消费与提交应用（人工验收通过，已归档）
+- `TASK-QA-006` M5 变换链路门禁与回归复验（含 Rotation）（人工验收通过，已归档）
 
 ## Blocked
 

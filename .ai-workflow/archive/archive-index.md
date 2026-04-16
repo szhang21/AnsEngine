@@ -716,4 +716,152 @@
     - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`32.37s`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-005.md`
 
+- TaskId: `TASK-CONTRACT-002`
+  Title: M5 渲染变换契约兼容扩展
+  Priority: `P0`
+  PrimaryModule: `Engine.Contracts`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-contracts.md`
+  Owner: `Exec-Contracts`
+  ClosedAt: `2026-04-15 13:46`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `SceneTransform`（Position/Scale/Rotation）并提供 `Identity`
+    - `SceneRenderItem` 扩展 `Transform` 字段并保留旧三参构造默认 identity 兼容行为
+    - 新增契约测试覆盖默认兼容路径与 Rotation 保真路径
+  FilesChanged:
+    - `src/Engine.Contracts/SceneRenderContracts.cs`
+    - `tests/Engine.Contracts.Tests/SceneRenderContractsTests.cs`
+    - `.ai-workflow/tasks/task-contract-002.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-CONTRACT-002.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Contracts.Tests` 4/4）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`19.37s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`34.38s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-002.md`
+
+- TaskId: `TASK-SCENE-005`
+  Title: M5 Scene 变换渲染帧输出
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-15 19:32`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneGraphService` 输出项显式携带 `SceneTransform`，首帧保持 identity 兼容
+    - 连续帧对首节点输出轻量 transform 动态（Position.X 与 Rotation.Yaw）
+    - 场景测试补充 transform/rotation 验证并通过
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/tasks/task-scene-005.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-005.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Scene.Tests` 5/5）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`25.50s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`40.36s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-005.md`
+
+- TaskId: `TASK-REND-008`
+  Title: M5 Render 变换消费与提交应用
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-15 19:32`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 提交顶点应用 `Scale -> Rotation -> Translation` 变换
+    - identity 路径保持旧布局兼容
+    - 渲染测试新增 identity 回归与 rotation 生效断言并通过
+  FilesChanged:
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/tasks/task-rend-008.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-008.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Render.Tests` 6/6）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`25.50s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`40.36s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-008.md`
+
+- TaskId: `TASK-APP-006`
+  Title: M5 App 装配兼容校准
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-15 15:23`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 保持 App 仅装配不计算边界，维持 `Scene -> Contracts -> Render` 链路
+    - 补充装配测试校准，验证 provider 初始化后可输出含 rotation 的连续帧 transform
+    - 复核 M5 链路下主循环生命周期稳定性
+  FilesChanged:
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/tasks/task-app-006.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-006.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`）
+    - Smoke: pass（`dotnet run --no-build` + `ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.80s`）
+    - Perf: pass（`dotnet run --no-build` + `ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.80s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-006.md`
+
+- TaskId: `TASK-QA-006`
+  Title: M5 变换链路门禁与回归复验（含 Rotation）
+  Priority: `P1`
+  PrimaryModule: `QA`
+  BoundaryContractPath:
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-16 22:55`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 M5 变换链路（Position/Scale/Rotation）门禁复验与兼容回归检查
+    - Build/Test/Smoke/Perf 全量证据补齐，并补充 Render 专项测试
+    - 依赖方向复验通过：Render 仅依赖 Contracts，不直接引用 Scene
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-006.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-006.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`，存在 MSB3101 写缓存告警）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1 --no-restore --no-build`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，31.45s，退出码 `0`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，46.25s，退出码 `0`）
+    - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-006.md`
+
 

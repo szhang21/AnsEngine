@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-15
+  - 变更人：Exec-Render
+  - 变更内容：`SceneRenderSubmissionBuilder` 新增顶点 transform 应用（Scale -> Rotation -> Translation），并保留 identity 快路径兼容旧布局。
+  - 变更原因：支撑 `TASK-REND-008`，实现 Render 对 M5 变换契约（含 Rotation）的消费落地。
+  - 风险与回滚方案：若后续出现提交抖动，可在构建器层增加阈值与缓存策略；不恢复到忽略 transform 的提交行为。
+
 - 2026-04-14
   - 变更人：Exec-Render
   - 变更内容：移除 `NullRenderer` 默认回退 provider 与 `DefaultSceneRenderContractProvider`，Render 生产路径改为强制外部显式注入 `ISceneRenderContractProvider`。
