@@ -93,14 +93,41 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## ExecutionStatus
+- Status: `Done`
+- Completion: `100`
+
+## Archive
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-003.md`
+- ClosedAt: `2026-04-17 10:58`
+- Summary:
+  - 新增最小相机契约 `SceneCamera(View, Projection)` 并提供 `Identity` 默认值。
+  - `SceneRenderFrame` 扩展 `Camera` 字段，保留旧双参构造兼容路径（默认 identity 相机）。
+  - 新增 Contracts 测试覆盖默认相机兼容与显式相机保真路径。
+- FilesChanged:
+  - `src/Engine.Contracts/SceneRenderContracts.cs`
+  - `tests/Engine.Contracts.Tests/SceneRenderContractsTests.cs`
+  - `.ai-workflow/tasks/task-contract-003.md`
+  - `.ai-workflow/boundaries/engine-contracts.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-CONTRACT-003.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build -c Debug -m:1`）
+  - Build(Release): pass（`dotnet build -c Release -m:1`）
+  - Test: pass（`dotnet test -m:1`，`Engine.Contracts.Tests` 6/6）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`19.04s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`34.21s`）
+- ModuleAttributionCheck: pass

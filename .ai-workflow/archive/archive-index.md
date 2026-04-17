@@ -833,6 +833,35 @@
     - Perf: pass（`dotnet run --no-build` + `ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.80s`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-006.md`
 
+- TaskId: `TASK-CONTRACT-003`
+  Title: M6 相机与 MVP 最小契约扩展
+  Priority: `P0`
+  PrimaryModule: `Engine.Contracts`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-contracts.md`
+  Owner: `Exec-Contracts`
+  ClosedAt: `2026-04-17 10:58`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `SceneCamera(View, Projection)` 契约并提供 identity 默认值
+    - `SceneRenderFrame` 扩展 `Camera` 字段并保留旧双参构造兼容路径
+    - 新增契约测试覆盖默认相机兼容与显式相机保真
+  FilesChanged:
+    - `src/Engine.Contracts/SceneRenderContracts.cs`
+    - `tests/Engine.Contracts.Tests/SceneRenderContractsTests.cs`
+    - `.ai-workflow/tasks/task-contract-003.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-CONTRACT-003.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build -c Debug -m:1` / `dotnet build -c Release -m:1`）
+    - Test: pass（`dotnet test -m:1`，`Engine.Contracts.Tests` 6/6）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`19.04s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`34.21s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-003.md`
+
 - TaskId: `TASK-QA-006`
   Title: M5 变换链路门禁与回归复验（含 Rotation）
   Priority: `P1`
@@ -863,5 +892,149 @@
     - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，46.25s，退出码 `0`）
     - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-006.md`
+
+- TaskId: `TASK-REND-010`
+  Title: M6 Mesh 数据统一入口收敛（已并入 TASK-REND-009）
+  Priority: `P1`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-17 00:47`
+  Status: `Cancelled`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 已并入 `TASK-REND-009`，不再作为独立执行卡
+    - M6 Render 只保留一个主执行单元，mesh 数据统一入口收敛收进主卡范围
+  FilesChanged:
+    - `.ai-workflow/tasks/task-rend-010.md`
+    - `.ai-workflow/tasks/task-rend-009.md`
+    - `.ai-workflow/plan-archive/2026-04/PLAN-M6-2026-04-17.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: N/A（卡片合并，无独立实现）
+    - Test: N/A（卡片合并，无独立实现）
+    - Smoke: N/A（卡片合并，无独立实现）
+    - Perf: N/A（卡片合并，无独立实现）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-010.md`
+
+- TaskId: `TASK-QA-007`
+  Title: M6 MVP 渲染链路门禁与回归复验
+  Priority: `P1`
+  PrimaryModule: `QA`
+  BoundaryContractPath:
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-17 17:50`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 M6 MVP 渲染链路（含 Camera 与 mesh 统一入口）的 Build/Test/Smoke/Perf 全量门禁复验
+    - 回归验证通过：Render 仅依赖 Contracts、不直接依赖 Scene；MVP uniform 路径在渲染主链路生效
+    - 边界文档与实现一致性复核通过，未发现新的高风险问题
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-007.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-007.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + M6 关键专项测试通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`16.22s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.80s`）
+    - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-007.md`
+
+- TaskId: `TASK-SCENE-006`
+  Title: M6 Scene 对象与相机语义输出
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-17 12:45`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Scene 输出帧新增 `SceneCamera(View/Projection)`，补齐最小真实相机语义
+    - 保持 transform/material 动态输出，并新增轻量相机视图变化
+    - 场景测试补充相机语义与有效性断言
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/tasks/task-scene-006.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-006.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.94s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-006.md`
+
+- TaskId: `TASK-REND-009`
+  Title: M6 Render MVP Uniform 渲染改造（合并 M6 Mesh 数据统一入口收敛）
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-17 12:45`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Render 提交链路改为“模型空间顶点 + MVP uniform”并由 shader 执行变换
+    - 收敛 `MeshId` 统一 mesh 入口，吸收 `TASK-REND-010` 目标
+    - Render 测试补齐 identity/rotation/camera/multi-batch 回归
+  FilesChanged:
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/tasks/task-rend-009.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-009.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.94s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-009.md`
+
+- TaskId: `TASK-APP-007`
+  Title: M6 App 装配与生命周期校准
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-17 13:20`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 保持 App “仅装配不计算”边界，M6 MVP 计算仍由 Scene/Render 消费
+    - 装配测试新增相机语义校准断言（连续帧 `Camera.View` 变化）
+    - 生命周期测试覆盖渲染异常收口（`RequestClose -> Shutdown -> Dispose`）
+  FilesChanged:
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/tasks/task-app-007.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-APP-007.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.63s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.58s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-007.md`
 
 

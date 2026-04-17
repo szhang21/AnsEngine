@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-17
+  - 变更人：Exec-App
+  - 变更内容：补充 M6 装配与生命周期校准测试：验证 App native 路径注入的 Scene provider 可产出相机语义（View 连续帧变化），并验证渲染异常路径仍完成 `RequestClose -> Shutdown -> Dispose` 收口。
+  - 变更原因：支撑 `TASK-APP-007`，确保 M6 MVP 链路下 App 保持“仅装配不计算”职责且生命周期稳定。
+  - 风险与回滚方案：若后续异常收口策略变化，统一在 `ApplicationHost` 测试集中调整断言，不在 App 中引入渲染/矩阵计算实现。
+
 - 2026-04-15
   - 变更人：Exec-App
   - 变更内容：补充 M5 装配校准测试，验证 App 注入的 Scene 契约 provider 在初始化后可输出含 rotation 的连续帧 transform；主循环保持“仅装配不计算”边界。

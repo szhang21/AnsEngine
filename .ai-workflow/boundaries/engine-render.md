@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-17
+  - 变更人：Exec-Render
+  - 变更内容：渲染主路径从“CPU 直接写最终裁剪空间顶点”切换为“模型空间顶点 + shader `uMvp` uniform”，并在提交构建器中收敛 `MeshId -> 统一 mesh 入口`。
+  - 变更原因：支撑 `TASK-REND-009`（合并 `TASK-REND-010` 目标），落地 M6 MVP uniform 最小真实渲染链路。
+  - 风险与回滚方案：若发现个别驱动上的 uniform 兼容问题，可在提交层保留调试开关比对 CPU/GPU 路径，不回退 `Render -> Contracts` 依赖方向。
+
 - 2026-04-15
   - 变更人：Exec-Render
   - 变更内容：`SceneRenderSubmissionBuilder` 新增顶点 transform 应用（Scale -> Rotation -> Translation），并保留 identity 快路径兼容旧布局。

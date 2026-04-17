@@ -3,10 +3,10 @@
 ## 1) 模块信息
 
 - 模块名：`Engine.Contracts`
-- 版本：`v1.2`
+- 版本：`v1.3`
 - 负责人：`待指定`
 - 生效日期：`2026-04-12`
-- 关联任务卡：`TASK-CONTRACT-001`, `TASK-CONTRACT-002`, `TASK-SCENE-005`, `TASK-REND-008`
+- 关联任务卡：`TASK-CONTRACT-001`, `TASK-CONTRACT-002`, `TASK-CONTRACT-003`, `TASK-SCENE-005`, `TASK-REND-008`
 
 ## 2) 目标与范围
 
@@ -16,7 +16,7 @@
 
 ## 3) 职责（Responsibilities）
 
-- 定义跨模块共享契约类型（如 `SceneRenderItem`、`SceneRenderFrame`、`SceneTransform`）。
+- 定义跨模块共享契约类型（如 `SceneRenderItem`、`SceneRenderFrame`、`SceneTransform`、`SceneCamera`）。
 - 定义渲染输入提供器接口（`ISceneRenderContractProvider`）。
 - 维持向后兼容策略（新增字段优先可选，避免破坏性改动）。
 - 提供最小语义注释，确保调用方理解输入输出约束。
@@ -57,7 +57,7 @@
   - 生命周期约束：由上层（`Engine.App`）装配并管理生命周期。
 
 - `SceneRenderFrame`
-  - 用途：承载单帧渲染输入集合。
+  - 用途：承载单帧渲染输入集合与相机语义。
   - 输入/输出：作为只读传输对象供 `Render` 消费。
   - 错误语义：空集合合法；字段值需可校验。
   - 生命周期约束：值语义/只读语义，消费侧不修改源数据。
@@ -69,6 +69,10 @@
 - `SceneTransform`
   - 用途：承载位置、缩放、旋转（四元数）变换输入。
   - 兼容约束：提供 `Identity` 作为无显式 transform 场景的默认值。
+
+- `SceneCamera`
+  - 用途：承载最小视图/投影语义（View/Projection）。
+  - 兼容约束：提供 `Identity`，保证下游未显式提供相机时的默认兼容路径。
 
 ## 8) 数据与状态边界
 
@@ -90,6 +94,18 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-17
+  - 变更人：Exec-Scene / Exec-Render
+  - 变更内容：`Engine.Scene` 与 `Engine.Render` 已在生产链路实消费 `SceneCamera + SceneRenderFrame.Camera`；M6 MVP uniform 路径以该契约字段作为唯一相机输入。
+  - 变更原因：同步 `TASK-SCENE-006` 与 `TASK-REND-009` 落地状态，避免契约文档与实际消费链路漂移。
+  - 风险与回滚方案：若后续引入多相机策略，保持 `SceneRenderFrame` 单相机字段向后兼容并通过扩展字段演进，不回退现有最小契约。
+
+- 2026-04-17
+  - 变更人：Exec-Contracts
+  - 变更内容：新增 `SceneCamera(View, Projection)`，`SceneRenderFrame` 扩展 `Camera` 字段并提供 identity 默认兼容路径。
+  - 变更原因：支撑 `TASK-CONTRACT-003`，为 M6 MVP 链路提供最小视图/投影契约语义。
+  - 风险与回滚方案：若下游尚未消费相机字段，继续使用 identity 相机运行；后续通过可选字段方式演进保持向后兼容。
+
 - 2026-04-15
   - 变更人：Exec-Render
   - 变更内容：确认 Render 提交构建链路已消费 `SceneTransform` 并应用 Position/Scale/Rotation，identity 路径保持兼容。
@@ -108,18 +124,6 @@
   - 变更原因：支撑 `TASK-CONTRACT-002`，为 M5 变换链路（含 Rotation）提供稳定契约。
   - 风险与回滚方案：若下游对 transform 消费未完成，仍可沿用默认 identity 路径；必要时仅禁用新字段消费，不回退契约结构。
 
-- 2026-04-14
-  - 变更人：Exec-Scene
-  - 变更内容：`Engine.Scene` 完成单契约出口收敛，移除 Scene 内部镜像契约定义。
-  - 变更原因：支撑 `TASK-SCENE-004`，巩固契约层为唯一共享语义源。
-  - 风险与回滚方案：按契约层版本化策略增量演进字段，保持向后兼容。
-
-- 2026-04-14
-  - 变更人：Exec-Render
-  - 变更内容：`Engine.Render` 完成契约层消费迁移，移除对 `Engine.Scene` 编译期依赖。
-  - 变更原因：支撑 `TASK-REND-006`，闭合解耦链路。
-  - 风险与回滚方案：若兼容问题出现，通过契约适配层处理，不恢复跨模块直连依赖。
-
 - 2026-04-13
   - 变更人：Exec-Scene
   - 变更内容：按 `TASK-CONTRACT-001` 新建 `Engine.Contracts` 模块并落地最小渲染契约基线。
@@ -131,4 +135,3 @@
   - 变更内容：创建 `Engine.Contracts` 初版边界合同。
   - 变更原因：为 M4 解耦改造建立正式边界基线。
   - 风险与回滚方案：若契约粒度不合适，可拆分子层并保持兼容窗口。
-

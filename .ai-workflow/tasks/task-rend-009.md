@@ -1,7 +1,9 @@
-# 任务: TASK-REND-009 M6 Render MVP Uniform 渲染改造
+# 任务: TASK-REND-009 M6 Render MVP Uniform 渲染改造（合并 M6 Mesh 数据统一入口收敛）
 
 ## TaskId
 `TASK-REND-009`
+
+> 本卡吸收原 `TASK-REND-010` 的 mesh 数据统一入口收敛目标，Render 只保留这一张主执行卡。
 
 ## 目标（Goal）
 将 `Engine.Render` 从 CPU 直接写最终裁剪空间顶点，升级为基于 shader uniform 执行 MVP 变换的最小真实渲染管线。
@@ -44,6 +46,7 @@ Engine.Render
   - Engine.Render
 - AllowedFiles:
   - Render MVP 提交与 shader uniform 相关代码
+  - mesh 数据统一入口收敛相关代码
   - 对应测试文件
 - AllowedPaths:
   - `src/Engine.Render/**`
@@ -84,8 +87,8 @@ true
 
 ## 验收标准（Acceptance）
 - Build: `dotnet build -c Debug` 与 `dotnet build -c Release` 通过
-- Test: `dotnet test` 通过；MVP uniform 路径测试通过
-- Smoke: 启动后可见矩阵驱动结果，且可稳定退出
+- Test: `dotnet test` 通过；MVP uniform 与 mesh 入口路径测试通过
+- Smoke: 启动后可见矩阵驱动结果，且统一 mesh 输入入口下 demo mesh 仍可稳定退出
 - Perf: 相比 M5 无明显退化
 
 ## 交付物（Deliverables）
@@ -95,14 +98,43 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## ExecutionStatus
+- Status: `Done`
+- Completion: `100`
+
+## 归档（Archive）
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-REND-009.md`
+- ClosedAt: `2026-04-17 12:45`
+- Summary:
+  - `SceneRenderSubmissionBuilder` 收敛为统一 mesh 入口（`MeshId -> model-space vertices`），并产出逐批次 `ModelViewProjection` 提交。
+  - `NullRenderer` 顶点 shader 引入 `uMvp` uniform，渲染路径切换为“模型空间顶点 + GPU 执行 MVP 变换”。
+  - 新增/更新 Render 测试，覆盖 identity 回归、rotation 生效、多批次提交与 camera 影响路径。
+- FilesChanged:
+  - `src/Engine.Render/SceneRenderSubmission.cs`
+  - `src/Engine.Render/RenderPlaceholders.cs`
+  - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+  - `.ai-workflow/tasks/task-rend-009.md`
+  - `.ai-workflow/boundaries/engine-render.md`
+  - `.ai-workflow/boundaries/engine-contracts.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-REND-009.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build AnsEngine.sln -c Debug -m:1`）
+  - Build(Release): pass（`dotnet build AnsEngine.sln -c Release -m:1`）
+  - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.94s`）
+- ModuleAttributionCheck: pass

@@ -94,14 +94,42 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
+
+## ExecutionStatus
+- Status: `Done`
+- Completion: `100`
+
+## 归档（Archive）
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-SCENE-006.md`
+- ClosedAt: `2026-04-17 12:45`
+- Summary:
+  - `SceneGraphService` 在 `SceneRenderFrame` 输出中补充 `SceneCamera(View/Projection)`，并提供轻量相机轨道变化。
+  - 保持对象 transform 与材质动态输出，同时让连续帧 `Camera.View` 发生可验证变化。
+  - 补充 `Engine.Scene.Tests` 相机语义与有效性断言，覆盖契约接口调用路径。
+- FilesChanged:
+  - `src/Engine.Scene/SceneGraphService.cs`
+  - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+  - `.ai-workflow/tasks/task-scene-006.md`
+  - `.ai-workflow/boundaries/engine-scene.md`
+  - `.ai-workflow/boundaries/engine-contracts.md`
+  - `.ai-workflow/board.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/archive/2026-04/TASK-SCENE-006.md`
+- ValidationEvidence:
+  - Build(Debug): pass（`dotnet build AnsEngine.sln -c Debug -m:1`）
+  - Build(Release): pass（`dotnet build AnsEngine.sln -c Release -m:1`）
+  - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj -m:1`）
+  - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+  - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false` + `ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.94s`）
+- ModuleAttributionCheck: pass

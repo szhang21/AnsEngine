@@ -1,7 +1,9 @@
-# 任务: TASK-REND-010 M6 Mesh 数据统一入口收敛
+# 任务: TASK-REND-010 M6 Mesh 数据统一入口收敛（已并入 TASK-REND-009）
 
 ## TaskId
 `TASK-REND-010`
+
+> 本卡已并入 `TASK-REND-009`，仅保留历史收敛记录，不再单独执行。
 
 ## 目标（Goal）
 保留最小 triangle demo mesh，但收敛为统一 mesh 数据入口参与提交，避免散落在渲染流程中的硬编码顶点路径。
@@ -93,7 +95,7 @@ true
 - Change summary (what changed and why)
 
 ## 状态（Status）
-Todo
+Cancelled
 
 ## 完成度（Completion）
 `0`
@@ -104,3 +106,21 @@ Todo
 - ReopenReason:
 - OriginTaskId:
 - HumanSignoff: `pending`
+
+## Archive
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-REND-010.md`
+- ClosedAt: `2026-04-17 00:47`
+- Summary:
+  - 已并入 `TASK-REND-009`
+  - Render 仅保留单一主执行卡，mesh 数据统一入口收敛收进主卡范围
+- FilesChanged:
+  - `.ai-workflow/tasks/task-rend-010.md`
+  - `.ai-workflow/tasks/task-rend-009.md`
+  - `.ai-workflow/plan-archive/2026-04/PLAN-M6-2026-04-17.md`
+  - `.ai-workflow/board.md`
+- ValidationEvidence:
+  - Build: N/A（卡片合并，无独立实现）
+  - Test: N/A（卡片合并，无独立实现）
+  - Smoke: N/A（卡片合并，无独立实现）
+  - Perf: N/A（卡片合并，无独立实现）
+- SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-010.md`

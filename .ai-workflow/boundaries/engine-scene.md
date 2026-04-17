@@ -80,6 +80,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-17
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 在 `SceneRenderFrame` 输出中新增真实 `SceneCamera(View/Projection)` 语义，并引入轻量相机轨道变化（连续帧 `View` 变化、`Projection` 稳定）。
+  - 变更原因：支撑 `TASK-SCENE-006`，让 Scene 侧不仅输出对象 transform，也提供可被 Render 真实消费的相机参数。
+  - 风险与回滚方案：若后续需要固定镜头回归，可将相机轨道动态收敛为固定 View；保留 Camera 字段不回退契约结构。
+
 - 2026-04-15
   - 变更人：Exec-Scene
   - 变更内容：`SceneGraphService` 输出项补充 `SceneTransform`（Position/Scale/Rotation）并在连续帧提供轻量动态 transform；首帧保持 identity 兼容。

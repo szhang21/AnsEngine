@@ -17,12 +17,7 @@
 
 ## Todo
 
-- `TASK-CONTRACT-003` M6 相机与 MVP 最小契约扩展
-- `TASK-SCENE-006` M6 Scene 对象与相机语义输出
-- `TASK-REND-009` M6 Render MVP Uniform 渲染改造
-- `TASK-REND-010` M6 Mesh 数据统一入口收敛
-- `TASK-APP-007` M6 App 装配与生命周期校准
-- `TASK-QA-007` M6 MVP 渲染链路门禁与回归复验
+- （空）
 
 ## InProgress
 
@@ -38,6 +33,11 @@
 
 ## Done
 
+- `TASK-CONTRACT-003` M6 相机与 MVP 最小契约扩展（人工验收通过，已归档）
+- `TASK-SCENE-006` M6 Scene 对象与相机语义输出（人工验收通过，已归档）
+- `TASK-REND-009` M6 Render MVP Uniform 渲染改造（合并 M6 Mesh 数据统一入口收敛）（人工验收通过，已归档）
+- `TASK-APP-007` M6 App 装配与生命周期校准（人工验收通过，已归档）
+- `TASK-QA-007` M6 MVP 渲染链路门禁与回归复验（人工验收通过，已归档）
 - `TASK-BOOT-001` 初始化 `AnsEngine` 多项目骨架（Build/Test 门禁通过，已归档）
 - `TASK-PLAT-001` 真实窗口生命周期落地（Build/Test/Smoke 通过，已归档）
 - `TASK-APP-001` 最小主循环与退出编排（Build/Test/Smoke/Perf 通过，已归档）
