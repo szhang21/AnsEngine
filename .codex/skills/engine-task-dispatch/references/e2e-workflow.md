@@ -14,9 +14,9 @@
 2. `Dispatch Agent` 先校验 Plan 归档两件套，再基于计划拆卡并落盘
 3. `Human` 仅按任务编号派发
 4. `Execution Agent` 读取任务卡执行并回填状态
-5. `QA Agent` 执行 QA 验证卡并处理 Human 质疑（复现与证据核对）
+5. `QA Agent` 执行 QA 验证卡并处理 Human 质疑（复现与证据核对），不执行关单
 6. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
-7. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`
+7. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`，QA 不得代签
 
 ## 2) 节点职责
 
@@ -42,7 +42,7 @@
 
 - `QA Agent`
   - 负责：执行 `TASK-QA-*`、输出 `QAReport`、处理 Human 质疑（复现步骤、Expected/Actual、证据补齐）
-  - 禁止：实现功能卡、修改业务源码、代替 Dispatch 拆卡、代替 Steward 做元数据治理
+  - 禁止：实现功能卡、修改业务源码、代替 Dispatch 拆卡、代替 Steward 做元数据治理、执行关单或看板 Done 更新
   - 输入：`TASK-QA-*` 或 Human 质疑报告（建议含 `TaskId/Repro/Expected/Actual/Evidence`）
 
 - `Workflow Steward Agent`
@@ -50,7 +50,7 @@
   - 显式命令后：`Apply` 仅做元数据修复（字段、状态、索引、看板）
   - 禁止：修改业务源码、改写验收标准、改写任务目标语义
   - 禁止：执行任何 `TaskId` 实现类请求（如 `执行TASK-*`）；此类请求必须回退到 `Execution Agent`
-  - 关单权限：仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足时可代执行
+  - 关单权限：仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足时可代执行；QA 不得代为关单
 
 - `Human`
   - 负责：确认计划、审核拆卡、按波次派工、最终接受结果

@@ -46,7 +46,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - Steward 修改需显式命令：仅当 Human 明确输入 `执行修复 <IssueId...>` 或 `关单 <TaskId>` 时，Workflow Steward Agent 才允许执行元数据修改。
 - Steward 修改边界：仅允许任务卡/里程碑卡/索引/看板元数据修复；禁止修改业务源码、验收标准、任务目标语义。
 - Steward 禁止执行实现任务：收到 `执行TASK-*`、`实现*`、`跑门禁*`、`修功能*` 等执行类指令时，必须拒绝并回退 `请按 Execution Agent 职责重试`，不得读取任务卡后进入实现流程。
-- Steward 关单门禁：收到 `关单 <TaskId>` 时，仅当 `Status=Review`、`HumanSignoff=pass`、归档三件套完整，才允许执行 `Review -> Done` 与看板 Done 更新。
+- Steward 关单门禁：收到 `关单 <TaskId>` 时，仅当 `Status=Review`、`HumanSignoff=pass`、归档三件套完整，才允许执行 `Review -> Done` 与看板 Done 更新；任何 QA 直接关单或替人关单都视为越权。
 - Steward Apply 后强制复审：每次 `执行修复 <IssueId...>` 后必须立即产出一次 `AuditReport`（复审结果）；复审失败不得宣称“修复完成”。
 - Steward 跨文档一致性强制：涉及任务状态修复时，必须在同一轮内同步校验并修复“任务卡 + 归档快照 + 归档索引 + 看板”四件套一致性，不得只改其中一处。
 - Dispatch 可见性强制：任务卡一旦成功写入 `.ai-workflow/tasks/`，默认仅输出 `Manager View`（任务编号与简述）；不得回显任务卡全文，除非 Human 明确输入“展开任务卡全文”。
@@ -54,9 +54,9 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 编码写入硬规则（PowerShell）：读文件必须显式指定 `-Encoding UTF8`（如 `Get-Content -Raw -Encoding UTF8`），写文件必须显式指定 `-Encoding UTF8`（如 `Set-Content -Encoding UTF8`），禁止使用不带编码的 `Out-File`/`Set-Content` 生成任务卡与归档。
 - 编码自检强制：Dispatch/Execution/Steward 在落盘任务卡、归档快照、索引后必须自检是否出现典型 mojibake 片段（例如 `浠诲姟`、`锛`、`鏂囨`、`瀵归綈`）；若命中，必须立即修复并用权威模板重写对应文件，禁止将“乱码文件”标记为落盘成功。
 - Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
-- QA Agent 职责边界：仅可执行 `TASK-QA-*` 与 Human 质疑复核（复现/证据比对/QA 报告），不得实现功能任务（如 `TASK-REND-*`、`TASK-APP-*`、`TASK-PLAT-*`）。
-- QA Agent 越权回退：收到实现类任务或代码重构请求时，必须拒绝并回退 `请按 Execution Agent 职责重试`。
-- Human 最终关单强制：`Review -> Done` 仅允许 Human 在复验通过后执行（含看板 Done 更新与 `HumanSignoff=pass`）。
+- QA Agent 职责边界：仅可执行 `TASK-QA-*` 与 Human 质疑复核（复现/证据比对/QA 报告），不得实现功能任务（如 `TASK-REND-*`、`TASK-APP-*`、`TASK-PLAT-*`），不得执行关单、状态流转、归档写入或看板更新。
+- QA Agent 越权回退：收到实现类任务、关单请求、状态流转请求或代码重构请求时，必须拒绝并回退 `请按 Execution Agent 职责重试`；收到关单/元数据治理请求时，必须回退 `请按 Workflow Steward Agent 职责重试`。
+- Human 最终关单强制：`Review -> Done` 仅允许 Human 在复验通过后通过 `Workflow Steward Agent` 触发执行（含看板 Done 更新与 `HumanSignoff=pass`），QA 不能代执行关单。
 - 路径解析强制：执行阶段遇到相对路径时，必须按“三步解析”自动查找后才能报错：
   1) 先按仓库根目录解析；
   2) 再按相关 skill 目录解析（`.codex/skills/<skill>/...`）；
