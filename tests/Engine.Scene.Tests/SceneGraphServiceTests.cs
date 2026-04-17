@@ -28,6 +28,7 @@ public sealed class SceneGraphServiceTests
 
         Assert.Equal(0, frame.FrameNumber);
         Assert.Empty(frame.Items);
+        AssertValidCamera(frame.Camera);
     }
 
     [Fact]
@@ -46,6 +47,7 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(Vector3.Zero, item.Transform.Position);
         Assert.Equal(Vector3.One, item.Transform.Scale);
         Assert.Equal(Quaternion.Identity, item.Transform.Rotation);
+        AssertValidCamera(frame.Camera);
     }
 
     [Fact]
@@ -75,8 +77,11 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(Vector3.One, firstItem.Transform.Scale);
         Assert.Equal(Vector3.One, secondItem.Transform.Scale);
         Assert.NotEqual(firstItem.Transform, secondItem.Transform);
+        Assert.NotEqual(firstFrame.Camera.View, secondFrame.Camera.View);
+        Assert.Equal(firstFrame.Camera.Projection, secondFrame.Camera.Projection);
 
         AssertValidTransform(secondItem.Transform.Position, secondItem.Transform.Rotation);
+        AssertValidCamera(secondFrame.Camera);
     }
 
     [Fact]
@@ -96,6 +101,7 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(Vector3.Zero, item.Transform.Position);
         Assert.Equal(Vector3.One, item.Transform.Scale);
         Assert.Equal(Quaternion.Identity, item.Transform.Rotation);
+        AssertValidCamera(frame.Camera);
     }
 
     private static void AssertValidTransform(Vector3 position, Quaternion rotation)
@@ -107,5 +113,15 @@ public sealed class SceneGraphServiceTests
         Assert.False(float.IsNaN(rotation.Y));
         Assert.False(float.IsNaN(rotation.Z));
         Assert.False(float.IsNaN(rotation.W));
+    }
+
+    private static void AssertValidCamera(Engine.Contracts.SceneCamera camera)
+    {
+        Assert.False(float.IsNaN(camera.View.M11));
+        Assert.False(float.IsNaN(camera.View.M22));
+        Assert.False(float.IsNaN(camera.Projection.M11));
+        Assert.False(float.IsNaN(camera.Projection.M22));
+        Assert.NotEqual(Matrix4x4.Identity, camera.View);
+        Assert.NotEqual(Matrix4x4.Identity, camera.Projection);
     }
 }

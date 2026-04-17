@@ -11,6 +11,13 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     private const string AnimatedMaterialId = "material://pulse";
     private const float PositionStepPerFrame = 0.00005f;
     private const float RotationStepPerFrameRadians = 0.005f;
+    private const float CameraOrbitStepPerFrameRadians = 0.01f;
+    private const float CameraOrbitRadius = 0.15f;
+    private const float CameraDistance = 2.2f;
+    private const float CameraFieldOfViewRadians = 1.0471976f;
+    private const float CameraNearPlane = 0.1f;
+    private const float CameraFarPlane = 10.0f;
+    private const float CameraAspectRatio = 16.0f / 9.0f;
 
     private readonly EngineRuntimeInfo runtimeInfo;
     private readonly List<SceneRenderItem> renderItems = [];
@@ -49,7 +56,8 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         }
 
         var itemsSnapshot = renderItems.ToArray();
-        var frame = new SceneRenderFrame(frameNumber, itemsSnapshot);
+        var camera = BuildFrameCamera(frameNumber);
+        var frame = new SceneRenderFrame(frameNumber, itemsSnapshot, camera);
         frameNumber += 1;
         return frame;
     }
@@ -60,5 +68,21 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         var scale = Vector3.One;
         var rotation = Quaternion.CreateFromYawPitchRoll(frameNumber * RotationStepPerFrameRadians, 0.0f, 0.0f);
         return new SceneTransform(position, scale, rotation);
+    }
+
+    private static SceneCamera BuildFrameCamera(int frameNumber)
+    {
+        var orbitAngle = frameNumber * CameraOrbitStepPerFrameRadians;
+        var cameraPosition = new Vector3(
+            MathF.Sin(orbitAngle) * CameraOrbitRadius,
+            0.0f,
+            CameraDistance);
+        var view = Matrix4x4.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
+            CameraFieldOfViewRadians,
+            CameraAspectRatio,
+            CameraNearPlane,
+            CameraFarPlane);
+        return new SceneCamera(view, projection);
     }
 }

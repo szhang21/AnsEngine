@@ -29,11 +29,12 @@ public sealed class NullRenderer : IRenderer
                                              #version 330 core
                                              layout (location = 0) in vec3 aPosition;
                                              layout (location = 1) in vec3 aColor;
+                                             uniform mat4 uMvp;
                                              out vec3 vColor;
                                              void main()
                                              {
                                                  vColor = aColor;
-                                                 gl_Position = vec4(aPosition, 1.0);
+                                                 gl_Position = uMvp * vec4(aPosition, 1.0);
                                              }
                                              """;
     private const string FragmentShaderSource = """
@@ -56,6 +57,7 @@ public sealed class NullRenderer : IRenderer
     private int fragmentShaderHandle;
     private int vertexArrayHandle;
     private int vertexBufferHandle;
+    private int mvpUniformLocation = -1;
 
     public NullRenderer(
         IWindowService windowService,
@@ -88,25 +90,36 @@ public sealed class NullRenderer : IRenderer
 
         var sceneFrame = sceneProvider.BuildRenderFrame();
         var submission = SceneRenderSubmissionBuilder.Build(sceneFrame);
-        var vertices = submission.Vertices.Count == 0 ? EmptyVertices : Flatten(submission.Vertices);
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        if (vertices.Length == 0)
+        if (submission.Batches.Count == 0)
         {
             GL.Flush();
             return;
         }
 
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
-        GL.BufferData(
-            BufferTarget.ArrayBuffer,
-            vertices.Length * sizeof(float),
-            vertices,
-            BufferUsageHint.DynamicDraw);
-
         GL.UseProgram(shaderProgramHandle);
         GL.BindVertexArray(vertexArrayHandle);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, vertices.Length / VertexStride);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
+
+        foreach (var batch in submission.Batches)
+        {
+            var vertices = batch.Vertices.Count == 0 ? EmptyVertices : Flatten(batch.Vertices);
+            if (vertices.Length == 0)
+            {
+                continue;
+            }
+
+            GL.BufferData(
+                BufferTarget.ArrayBuffer,
+                vertices.Length * sizeof(float),
+                vertices,
+                BufferUsageHint.DynamicDraw);
+            SetModelViewProjection(batch.ModelViewProjection);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, vertices.Length / VertexStride);
+        }
+
+        GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
         GL.Flush();
     }
@@ -131,6 +144,11 @@ public sealed class NullRenderer : IRenderer
         {
             var info = GL.GetProgramInfoLog(shaderProgramHandle);
             throw new InvalidOperationException($"Render program link failed: {info}");
+        }
+        mvpUniformLocation = GL.GetUniformLocation(shaderProgramHandle, "uMvp");
+        if (mvpUniformLocation < 0)
+        {
+            throw new InvalidOperationException("Render program is missing required uniform uMvp.");
         }
 
         vertexArrayHandle = GL.GenVertexArray();
@@ -179,6 +197,18 @@ public sealed class NullRenderer : IRenderer
         return flattened;
     }
 
+    private void SetModelViewProjection(System.Numerics.Matrix4x4 matrix)
+    {
+        var flattened = new[]
+        {
+            matrix.M11, matrix.M12, matrix.M13, matrix.M14,
+            matrix.M21, matrix.M22, matrix.M23, matrix.M24,
+            matrix.M31, matrix.M32, matrix.M33, matrix.M34,
+            matrix.M41, matrix.M42, matrix.M43, matrix.M44
+        };
+        GL.UniformMatrix4(mvpUniformLocation, 1, true, flattened);
+    }
+
     private void ReleaseTrianglePipeline()
     {
         if (vertexBufferHandle != 0)
@@ -210,5 +240,7 @@ public sealed class NullRenderer : IRenderer
             GL.DeleteShader(fragmentShaderHandle);
             fragmentShaderHandle = 0;
         }
+
+        mvpUniformLocation = -1;
     }
 }

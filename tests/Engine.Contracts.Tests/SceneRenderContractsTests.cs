@@ -54,6 +54,37 @@ public sealed class SceneRenderContractsTests
         Assert.Equal(expectedTransform, item.Transform);
     }
 
+    [Fact]
+    public void SceneRenderFrame_WithoutCamera_UsesIdentityCamera()
+    {
+        var frame = new SceneRenderFrame(
+            3,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://triangle", "material://default")
+            });
+
+        Assert.Equal(Matrix4x4.Identity, frame.Camera.View);
+        Assert.Equal(Matrix4x4.Identity, frame.Camera.Projection);
+    }
+
+    [Fact]
+    public void SceneRenderFrame_WithCamera_PreservesViewProjection()
+    {
+        var view = Matrix4x4.CreateLookAt(new Vector3(0, 0, 2), Vector3.Zero, Vector3.UnitY);
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 3f, 16f / 9f, 0.1f, 100f);
+        var expectedCamera = new SceneCamera(view, projection);
+        var frame = new SceneRenderFrame(
+            4,
+            new[]
+            {
+                new SceneRenderItem(2, "mesh://triangle", "material://default")
+            },
+            expectedCamera);
+
+        Assert.Equal(expectedCamera, frame.Camera);
+    }
+
     private sealed class TestProvider : ISceneRenderContractProvider
     {
         public SceneRenderFrame BuildRenderFrame()
