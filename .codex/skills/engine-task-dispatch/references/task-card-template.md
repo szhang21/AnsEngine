@@ -98,6 +98,7 @@ true | false
 - Self-check notes
 - Risk list (high|medium|low)
 - Change summary (what changed and why)
+- 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
 Todo | InProgress | Verify | Review | Done

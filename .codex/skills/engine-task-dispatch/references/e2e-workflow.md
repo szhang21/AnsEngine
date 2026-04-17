@@ -38,7 +38,8 @@
   - 读取：`.ai-workflow/tasks/<task-id>.md`
   - 负责：实现、验证、状态推进、关单资料
   - 禁止：重拆需求、越界改动、跨角色决策
-  - 默认编码约定：C# 私有/受保护字段使用 `camelCase`，禁止前导下划线；构造器参数与局部变量也使用 `camelCase`
+  - 默认编码约定：遵循 `engine-coding-standards`，C# 私有/受保护字段使用 `mCamelCase`，静态字段使用 `sCamelCase`，`const` 使用 `kCamelCase`；构造器参数与局部变量使用 `camelCase`
+  - 文件组织约定：默认一个类一个文件、一个接口一个文件；只有小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期才允许例外
 
 - `QA Agent`
   - 负责：执行 `TASK-QA-*`、输出 `QAReport`、处理 Human 质疑（复现步骤、Expected/Actual、证据补齐）
