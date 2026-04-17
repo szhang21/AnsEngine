@@ -21,11 +21,11 @@ public sealed class NullShaderProgram : IShaderProgram
 
 public sealed class NullRenderer : IRenderer
 {
-    private const float ClearRed = 0.08f;
-    private const float ClearGreen = 0.16f;
-    private const float ClearBlue = 0.24f;
-    private const float ClearAlpha = 1.0f;
-    private const string VertexShaderSource = """
+    private const float kClearRed = 0.08f;
+    private const float kClearGreen = 0.16f;
+    private const float kClearBlue = 0.24f;
+    private const float kClearAlpha = 1.0f;
+    private const string kVertexShaderSource = """
                                              #version 330 core
                                              layout (location = 0) in vec3 aPosition;
                                              layout (location = 1) in vec3 aColor;
@@ -37,7 +37,7 @@ public sealed class NullRenderer : IRenderer
                                                  gl_Position = uMvp * vec4(aPosition, 1.0);
                                              }
                                              """;
-    private const string FragmentShaderSource = """
+    private const string kFragmentShaderSource = """
                                                #version 330 core
                                                in vec3 vColor;
                                                out vec4 fragColor;
@@ -46,37 +46,37 @@ public sealed class NullRenderer : IRenderer
                                                    fragColor = vec4(vColor, 1.0);
                                                }
                                                """;
-    private const int VertexStride = 6;
-    private static readonly float[] EmptyVertices = [];
+    private const int kVertexStride = 6;
+    private static readonly float[] sEmptyVertices = [];
 
-    private readonly IWindowService windowService;
-    private readonly EngineRuntimeInfo runtimeInfo;
-    private readonly ISceneRenderContractProvider sceneProvider;
-    private int shaderProgramHandle;
-    private int vertexShaderHandle;
-    private int fragmentShaderHandle;
-    private int vertexArrayHandle;
-    private int vertexBufferHandle;
-    private int mvpUniformLocation = -1;
+    private readonly IWindowService mWindowService;
+    private readonly EngineRuntimeInfo mRuntimeInfo;
+    private readonly ISceneRenderContractProvider mSceneProvider;
+    private int mShaderProgramHandle;
+    private int mVertexShaderHandle;
+    private int mFragmentShaderHandle;
+    private int mVertexArrayHandle;
+    private int mVertexBufferHandle;
+    private int mMvpUniformLocation = -1;
 
     public NullRenderer(
         IWindowService windowService,
         EngineRuntimeInfo runtimeInfo,
         ISceneRenderContractProvider sceneProvider)
     {
-        this.windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
-        this.runtimeInfo = runtimeInfo ?? throw new ArgumentNullException(nameof(runtimeInfo));
-        this.sceneProvider = sceneProvider ?? throw new ArgumentNullException(nameof(sceneProvider));
+        mWindowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
+        mRuntimeInfo = runtimeInfo ?? throw new ArgumentNullException(nameof(runtimeInfo));
+        mSceneProvider = sceneProvider ?? throw new ArgumentNullException(nameof(sceneProvider));
     }
 
     public bool IsInitialized { get; private set; }
 
     public void Initialize()
     {
-        _ = windowService.Configuration;
-        _ = runtimeInfo.Version;
-        GL.Viewport(0, 0, windowService.Configuration.Width, windowService.Configuration.Height);
-        GL.ClearColor(ClearRed, ClearGreen, ClearBlue, ClearAlpha);
+        _ = mWindowService.Configuration;
+        _ = mRuntimeInfo.Version;
+        GL.Viewport(0, 0, mWindowService.Configuration.Width, mWindowService.Configuration.Height);
+        GL.ClearColor(kClearRed, kClearGreen, kClearBlue, kClearAlpha);
         BuildTrianglePipeline();
         IsInitialized = true;
     }
@@ -88,7 +88,7 @@ public sealed class NullRenderer : IRenderer
             throw new InvalidOperationException("Renderer is not initialized.");
         }
 
-        var sceneFrame = sceneProvider.BuildRenderFrame();
+        var sceneFrame = mSceneProvider.BuildRenderFrame();
         var submission = SceneRenderSubmissionBuilder.Build(sceneFrame);
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -98,13 +98,13 @@ public sealed class NullRenderer : IRenderer
             return;
         }
 
-        GL.UseProgram(shaderProgramHandle);
-        GL.BindVertexArray(vertexArrayHandle);
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
+        GL.UseProgram(mShaderProgramHandle);
+        GL.BindVertexArray(mVertexArrayHandle);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, mVertexBufferHandle);
 
         foreach (var batch in submission.Batches)
         {
-            var vertices = batch.Vertices.Count == 0 ? EmptyVertices : Flatten(batch.Vertices);
+            var vertices = batch.Vertices.Count == 0 ? sEmptyVertices : Flatten(batch.Vertices);
             if (vertices.Length == 0)
             {
                 continue;
@@ -116,7 +116,7 @@ public sealed class NullRenderer : IRenderer
                 vertices,
                 BufferUsageHint.DynamicDraw);
             SetModelViewProjection(batch.ModelViewProjection);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, vertices.Length / VertexStride);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, vertices.Length / kVertexStride);
         }
 
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
@@ -132,34 +132,34 @@ public sealed class NullRenderer : IRenderer
 
     private void BuildTrianglePipeline()
     {
-        vertexShaderHandle = CompileShader(ShaderType.VertexShader, VertexShaderSource);
-        fragmentShaderHandle = CompileShader(ShaderType.FragmentShader, FragmentShaderSource);
+        mVertexShaderHandle = CompileShader(ShaderType.VertexShader, kVertexShaderSource);
+        mFragmentShaderHandle = CompileShader(ShaderType.FragmentShader, kFragmentShaderSource);
 
-        shaderProgramHandle = GL.CreateProgram();
-        GL.AttachShader(shaderProgramHandle, vertexShaderHandle);
-        GL.AttachShader(shaderProgramHandle, fragmentShaderHandle);
-        GL.LinkProgram(shaderProgramHandle);
-        GL.GetProgram(shaderProgramHandle, GetProgramParameterName.LinkStatus, out var linkStatus);
+        mShaderProgramHandle = GL.CreateProgram();
+        GL.AttachShader(mShaderProgramHandle, mVertexShaderHandle);
+        GL.AttachShader(mShaderProgramHandle, mFragmentShaderHandle);
+        GL.LinkProgram(mShaderProgramHandle);
+        GL.GetProgram(mShaderProgramHandle, GetProgramParameterName.LinkStatus, out var linkStatus);
         if (linkStatus == 0)
         {
-            var info = GL.GetProgramInfoLog(shaderProgramHandle);
+            var info = GL.GetProgramInfoLog(mShaderProgramHandle);
             throw new InvalidOperationException($"Render program link failed: {info}");
         }
-        mvpUniformLocation = GL.GetUniformLocation(shaderProgramHandle, "uMvp");
-        if (mvpUniformLocation < 0)
+        mMvpUniformLocation = GL.GetUniformLocation(mShaderProgramHandle, "uMvp");
+        if (mMvpUniformLocation < 0)
         {
             throw new InvalidOperationException("Render program is missing required uniform uMvp.");
         }
 
-        vertexArrayHandle = GL.GenVertexArray();
-        vertexBufferHandle = GL.GenBuffer();
-        GL.BindVertexArray(vertexArrayHandle);
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
+        mVertexArrayHandle = GL.GenVertexArray();
+        mVertexBufferHandle = GL.GenBuffer();
+        GL.BindVertexArray(mVertexArrayHandle);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, mVertexBufferHandle);
         GL.BufferData(BufferTarget.ArrayBuffer, 0, IntPtr.Zero, BufferUsageHint.DynamicDraw);
         GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, VertexStride * sizeof(float), 0);
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, kVertexStride * sizeof(float), 0);
         GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, VertexStride * sizeof(float), 3 * sizeof(float));
+        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, kVertexStride * sizeof(float), 3 * sizeof(float));
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
     }
@@ -181,7 +181,7 @@ public sealed class NullRenderer : IRenderer
 
     private static float[] Flatten(IReadOnlyList<SceneRenderVertex> vertices)
     {
-        var flattened = new float[vertices.Count * VertexStride];
+        var flattened = new float[vertices.Count * kVertexStride];
         var writeIndex = 0;
         foreach (var vertex in vertices)
         {
@@ -191,7 +191,7 @@ public sealed class NullRenderer : IRenderer
             flattened[writeIndex + 3] = vertex.R;
             flattened[writeIndex + 4] = vertex.G;
             flattened[writeIndex + 5] = vertex.B;
-            writeIndex += VertexStride;
+            writeIndex += kVertexStride;
         }
 
         return flattened;
@@ -206,41 +206,41 @@ public sealed class NullRenderer : IRenderer
             matrix.M31, matrix.M32, matrix.M33, matrix.M34,
             matrix.M41, matrix.M42, matrix.M43, matrix.M44
         };
-        GL.UniformMatrix4(mvpUniformLocation, 1, true, flattened);
+        GL.UniformMatrix4(mMvpUniformLocation, 1, true, flattened);
     }
 
     private void ReleaseTrianglePipeline()
     {
-        if (vertexBufferHandle != 0)
+        if (mVertexBufferHandle != 0)
         {
-            GL.DeleteBuffer(vertexBufferHandle);
-            vertexBufferHandle = 0;
+            GL.DeleteBuffer(mVertexBufferHandle);
+            mVertexBufferHandle = 0;
         }
 
-        if (vertexArrayHandle != 0)
+        if (mVertexArrayHandle != 0)
         {
-            GL.DeleteVertexArray(vertexArrayHandle);
-            vertexArrayHandle = 0;
+            GL.DeleteVertexArray(mVertexArrayHandle);
+            mVertexArrayHandle = 0;
         }
 
-        if (shaderProgramHandle != 0)
+        if (mShaderProgramHandle != 0)
         {
-            GL.DeleteProgram(shaderProgramHandle);
-            shaderProgramHandle = 0;
+            GL.DeleteProgram(mShaderProgramHandle);
+            mShaderProgramHandle = 0;
         }
 
-        if (vertexShaderHandle != 0)
+        if (mVertexShaderHandle != 0)
         {
-            GL.DeleteShader(vertexShaderHandle);
-            vertexShaderHandle = 0;
+            GL.DeleteShader(mVertexShaderHandle);
+            mVertexShaderHandle = 0;
         }
 
-        if (fragmentShaderHandle != 0)
+        if (mFragmentShaderHandle != 0)
         {
-            GL.DeleteShader(fragmentShaderHandle);
-            fragmentShaderHandle = 0;
+            GL.DeleteShader(mFragmentShaderHandle);
+            mFragmentShaderHandle = 0;
         }
 
-        mvpUniformLocation = -1;
+        mMvpUniformLocation = -1;
     }
 }

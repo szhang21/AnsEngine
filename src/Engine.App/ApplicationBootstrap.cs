@@ -52,16 +52,16 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
 
 internal sealed class SceneRuntimeAdapter : ISceneRuntime
 {
-    private readonly SceneGraphService sceneGraphService;
+    private readonly SceneGraphService mSceneGraphService;
 
     public SceneRuntimeAdapter(SceneGraphService sceneGraphService)
     {
-        this.sceneGraphService = sceneGraphService ?? throw new ArgumentNullException(nameof(sceneGraphService));
+        mSceneGraphService = sceneGraphService ?? throw new ArgumentNullException(nameof(sceneGraphService));
     }
 
     public void InitializeScene()
     {
-        sceneGraphService.AddRootNode();
+        mSceneGraphService.AddRootNode();
     }
 }
 
@@ -90,13 +90,13 @@ internal sealed class HeadlessRenderer : IRenderer
 
 public sealed class ApplicationHost : IApplication
 {
-    private readonly IWindowService windowService;
-    private readonly IRenderer renderer;
-    private readonly ISceneRuntime sceneRuntime;
-    private readonly IAssetService assetService;
-    private readonly IInputService inputService;
-    private readonly ITimeService timeService;
-    private readonly double? autoExitSeconds;
+    private readonly IWindowService mWindowService;
+    private readonly IRenderer mRenderer;
+    private readonly ISceneRuntime mSceneRuntime;
+    private readonly IAssetService mAssetService;
+    private readonly IInputService mInputService;
+    private readonly ITimeService mTimeService;
+    private readonly double? mAutoExitSeconds;
 
     public ApplicationHost(
         IWindowService windowService,
@@ -106,35 +106,35 @@ public sealed class ApplicationHost : IApplication
         IInputService inputService,
         ITimeService timeService)
     {
-        this.windowService = windowService;
-        this.renderer = renderer;
-        this.sceneRuntime = sceneRuntime;
-        this.assetService = assetService;
-        this.inputService = inputService;
-        this.timeService = timeService;
-        autoExitSeconds = ResolveAutoExitSeconds();
+        mWindowService = windowService;
+        mRenderer = renderer;
+        mSceneRuntime = sceneRuntime;
+        mAssetService = assetService;
+        mInputService = inputService;
+        mTimeService = timeService;
+        mAutoExitSeconds = ResolveAutoExitSeconds();
     }
 
     public int Run()
     {
         try
         {
-            renderer.Initialize();
+            mRenderer.Initialize();
             var uptime = Stopwatch.StartNew();
-            sceneRuntime.InitializeScene();
-            _ = assetService.Load("bootstrap://placeholder");
+            mSceneRuntime.InitializeScene();
+            _ = mAssetService.Load("bootstrap://placeholder");
 
-            while (windowService.Exists && !windowService.IsCloseRequested)
+            while (mWindowService.Exists && !mWindowService.IsCloseRequested)
             {
-                windowService.ProcessEvents();
-                _ = inputService.GetSnapshot();
-                _ = timeService.Current;
-                renderer.RenderFrame();
-                windowService.Present();
+                mWindowService.ProcessEvents();
+                _ = mInputService.GetSnapshot();
+                _ = mTimeService.Current;
+                mRenderer.RenderFrame();
+                mWindowService.Present();
 
-                if (autoExitSeconds.HasValue && uptime.Elapsed.TotalSeconds >= autoExitSeconds.Value)
+                if (mAutoExitSeconds.HasValue && uptime.Elapsed.TotalSeconds >= mAutoExitSeconds.Value)
                 {
-                    windowService.RequestClose();
+                    mWindowService.RequestClose();
                 }
             }
 
@@ -142,9 +142,9 @@ public sealed class ApplicationHost : IApplication
         }
         catch (Exception ex)
         {
-            if (windowService.Exists && !windowService.IsCloseRequested)
+            if (mWindowService.Exists && !mWindowService.IsCloseRequested)
             {
-                windowService.RequestClose();
+                mWindowService.RequestClose();
             }
 
             Console.Error.WriteLine($"Fatal error: {ex}");
@@ -152,8 +152,8 @@ public sealed class ApplicationHost : IApplication
         }
         finally
         {
-            renderer.Shutdown();
-            windowService.Dispose();
+            mRenderer.Shutdown();
+            mWindowService.Dispose();
         }
     }
 

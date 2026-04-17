@@ -18,19 +18,19 @@ public sealed class AssetHandle : IAssetHandle
 
 public sealed class NullAssetService : IAssetService
 {
-    private readonly EngineRuntimeInfo runtimeInfo;
-    private readonly IWindowService windowService;
+    private readonly EngineRuntimeInfo mRuntimeInfo;
+    private readonly IWindowService mWindowService;
 
     public NullAssetService(EngineRuntimeInfo runtimeInfo, IWindowService windowService)
     {
-        this.runtimeInfo = runtimeInfo;
-        this.windowService = windowService;
+        mRuntimeInfo = runtimeInfo;
+        mWindowService = windowService;
     }
 
     public IAssetHandle Load(string assetId)
     {
-        _ = runtimeInfo.Version;
-        _ = windowService.Configuration.Title;
+        _ = mRuntimeInfo.Version;
+        _ = mWindowService.Configuration.Title;
         var isValid = !string.IsNullOrWhiteSpace(assetId);
         return new AssetHandle(assetId, isValid);
     }

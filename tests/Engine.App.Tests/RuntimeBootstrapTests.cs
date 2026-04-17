@@ -25,7 +25,7 @@ public sealed class RuntimeBootstrapTests
         Assert.NotNull(method);
 
         var renderer = Assert.IsType<NullRenderer>(method!.Invoke(null, new object[] { true, windowService, runtimeInfo, provider }));
-        var providerField = typeof(NullRenderer).GetField("sceneProvider", BindingFlags.NonPublic | BindingFlags.Instance);
+        var providerField = typeof(NullRenderer).GetField("mSceneProvider", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(providerField);
         var wiredProvider = Assert.IsAssignableFrom<ContractsProvider>(providerField!.GetValue(renderer));
 

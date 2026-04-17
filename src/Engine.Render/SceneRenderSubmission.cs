@@ -24,18 +24,18 @@ public sealed record SceneRenderSubmission(IReadOnlyList<SceneRenderBatch> Batch
 
 public static class SceneRenderSubmissionBuilder
 {
-    private const float TriangleHalfWidth = 0.22f;
-    private const float TriangleHalfHeight = 0.20f;
-    private const float BaseY = -0.15f;
-    private const string TriangleMeshId = "mesh://triangle";
-    private static readonly IReadOnlyDictionary<string, SceneRenderMeshVertex[]> Meshes =
+    private const float kTriangleHalfWidth = 0.22f;
+    private const float kTriangleHalfHeight = 0.20f;
+    private const float kBaseY = -0.15f;
+    private const string kTriangleMeshId = "mesh://triangle";
+    private static readonly IReadOnlyDictionary<string, SceneRenderMeshVertex[]> sMeshes =
         new Dictionary<string, SceneRenderMeshVertex[]>
         {
-            [TriangleMeshId] =
+            [kTriangleMeshId] =
             [
-                new SceneRenderMeshVertex(0f, TriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(-TriangleHalfWidth, -TriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(TriangleHalfWidth, -TriangleHalfHeight, 0f)
+                new SceneRenderMeshVertex(0f, kTriangleHalfHeight, 0f),
+                new SceneRenderMeshVertex(-kTriangleHalfWidth, -kTriangleHalfHeight, 0f),
+                new SceneRenderMeshVertex(kTriangleHalfWidth, -kTriangleHalfHeight, 0f)
             ]
         };
 
@@ -63,7 +63,7 @@ public static class SceneRenderSubmissionBuilder
             }
 
             var centerX = -0.65f + (index * 0.6f);
-            var layoutMatrix = Matrix4x4.CreateTranslation(centerX, BaseY, 0f);
+            var layoutMatrix = Matrix4x4.CreateTranslation(centerX, kBaseY, 0f);
             var modelMatrix = layoutMatrix * BuildTransformMatrix(item.Transform);
             var modelViewProjection = modelMatrix * frame.Camera.View * frame.Camera.Projection;
             batches.Add(new SceneRenderBatch(vertices, modelViewProjection));
@@ -74,9 +74,9 @@ public static class SceneRenderSubmissionBuilder
 
     private static SceneRenderMeshVertex[] ResolveMesh(string meshId)
     {
-        return Meshes.TryGetValue(meshId, out var meshVertices)
+        return sMeshes.TryGetValue(meshId, out var meshVertices)
             ? meshVertices
-            : Meshes[TriangleMeshId];
+            : sMeshes[kTriangleMeshId];
     }
 
     private static Matrix4x4 BuildTransformMatrix(SceneTransform transform)
