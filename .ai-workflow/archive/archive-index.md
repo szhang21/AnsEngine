@@ -948,6 +948,37 @@
     - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-007.md`
 
+- TaskId: `TASK-QA-009`
+  Title: M7 门禁复验与关单收敛（含多对象与回退验证）
+  Priority: `P1`
+  PrimaryModule: `QA`
+  BoundaryContractPath:
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-20 17:36`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 完成 M7 全链路 Build/Test/Smoke/Perf 门禁复验，结果均通过
+    - 完成 mesh/material 解析、多对象与回退路径专项回归，结果均通过
+    - 依赖与边界复验通过：Render 仅依赖 Contracts，Scene 仅输出资源标识并由 Render 统一解析
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-009.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-009.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`，环境级 `CS1668` 警告）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + fallback/multi-object 专项测试通过）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.61s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.58s`）
+    - DependencyGate: pass（RenderSceneRef=absent，RenderContractsRef=present）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-009.md`
+
 - TaskId: `TASK-SCENE-006`
   Title: M6 Scene 对象与相机语义输出
   Priority: `P0`
@@ -1036,5 +1067,129 @@
     - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.63s`）
     - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.58s`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-007.md`
+
+- TaskId: `TASK-CONTRACT-004`
+  Title: M7 资源输入契约收敛
+  Priority: `P0`
+  PrimaryModule: `Engine.Contracts`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-contracts.md`
+  Owner: `Exec-Contracts`
+  ClosedAt: `2026-04-18 11:05`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增结构化资源引用契约 `SceneMeshRef` 与 `SceneMaterialRef`
+    - `SceneRenderItem` 支持结构化资源构造并保留 `meshId/materialId` 兼容路径
+    - 合同测试覆盖结构化资源兼容与非法标识拦截
+  FilesChanged:
+    - `src/Engine.Contracts/SceneResourceContracts.cs`
+    - `src/Engine.Contracts/SceneRenderContracts.cs`
+    - `tests/Engine.Contracts.Tests/SceneRenderContractsTests.cs`
+    - `.ai-workflow/tasks/task-contract-004.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-CONTRACT-004.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Contracts.Tests/Engine.Contracts.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.79s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.58s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-004.md`
+
+- TaskId: `TASK-REND-011`
+  Title: M7 Mesh 数据入口落地
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-18 00:58`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneRenderSubmissionBuilder` 主路径统一走 `ResolveMesh(meshId)`，收敛 mesh 数据解析入口
+    - 未知 mesh 标识回退到默认三角形，避免渲染链路中断
+    - Render 测试补充 mesh 命中与回退断言
+  FilesChanged:
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/tasks/task-rend-011.md`
+    - `.ai-workflow/tasks/task-rend-012.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-011.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-012.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.70s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-011.md`
+
+- TaskId: `TASK-REND-012`
+  Title: M7 Material 参数入口落地
+  Priority: `P0`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-18 00:58`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneRenderSubmissionBuilder` 新增 `ResolveMaterial(materialId)` 最小材质参数入口
+    - 以显式映射替换 hash 派生颜色语义，支持可观察的材质差异
+    - 对未知材质启用默认参数回退，保证渲染稳定性
+  FilesChanged:
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `.ai-workflow/tasks/task-rend-011.md`
+    - `.ai-workflow/tasks/task-rend-012.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/boundaries/engine-render.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-011.md`
+    - `.ai-workflow/archive/2026-04/TASK-REND-012.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1` + `dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj -m:1`）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`15.66s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.70s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-012.md`
+
+- TaskId: `TASK-SCENE-007`
+  Title: M7 Scene 资源引用输出对齐
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-19 21:15`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Scene 资源输出新增候选值解析与回退，`meshId/materialId` 对齐 Render M7 已支持入口
+    - 材质周期覆盖 `default/pulse/highlight`，缺失材质在 Scene 侧回退为 `default`
+    - 多对象路径下缺失 mesh 不外泄，输出统一回退到 `mesh://triangle`
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/tasks/task-scene-007.md`
+    - `.ai-workflow/archive/2026-04/TASK-SCENE-007.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug -m:1` / `dotnet build AnsEngine.sln -c Release -m:1`）
+    - Test: pass（`dotnet test AnsEngine.sln -m:1`，`Engine.Scene.Tests` 7/7）
+    - Smoke: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=15`，`ExitCode=0`，`16.07s`）
+    - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.84s`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-007.md`
 
 

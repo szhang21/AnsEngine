@@ -12,10 +12,16 @@
 
 ## 当前记录
 
-- PlanId: `PLAN-M7-2026-04-18`
+- PlanId: `PLAN-M8-2026-04-19`
   Status: `Active`
-  LastUpdated: `2026-04-18 00:04`
-  MilestoneSummary: `M7 进行中（最小真实资源输入）`
+  LastUpdated: `2026-04-19 21:50`
+  MilestoneSummary: `M8 进行中（真实 Mesh 资产接入）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M8-2026-04-19.md`
+
+- PlanId: `PLAN-M7-2026-04-18`
+  Status: `Closed`
+  LastUpdated: `2026-04-20 09:02`
+  MilestoneSummary: `M7 完成（最小真实资源输入）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M7-2026-04-18.md`
 
 - PlanId: `PLAN-M6-2026-04-17`

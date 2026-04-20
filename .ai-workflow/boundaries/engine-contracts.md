@@ -3,10 +3,10 @@
 ## 1) 模块信息
 
 - 模块名：`Engine.Contracts`
-- 版本：`v1.3`
+- 版本：`v1.4`
 - 负责人：`待指定`
 - 生效日期：`2026-04-12`
-- 关联任务卡：`TASK-CONTRACT-001`, `TASK-CONTRACT-002`, `TASK-CONTRACT-003`, `TASK-SCENE-005`, `TASK-REND-008`
+- 关联任务卡：`TASK-CONTRACT-001`, `TASK-CONTRACT-002`, `TASK-CONTRACT-003`, `TASK-CONTRACT-004`, `TASK-SCENE-005`, `TASK-REND-008`
 
 ## 2) 目标与范围
 
@@ -93,6 +93,23 @@
   - [ ] 公开接口与合同一致
 
 ## 10) 变更记录（Boundary Change Log）
+- 2026-04-18
+  - 变更人：Exec-Scene
+  - 变更内容：`Engine.Scene` 已落地对 `SceneMeshRef/SceneMaterialRef` 的结构化输出消费，`meshId/materialId` 在 Scene 侧引入支持集合与默认回退，保证向下游 Render 输出稳定契约值。
+  - 变更原因：同步 `TASK-SCENE-007` 消费进展，确保 Contracts 文档与 Scene 实际输出行为一致。
+  - 风险与回滚方案：若后续资源类型扩展，沿用向后兼容策略仅新增可选资源标识，不破坏现有默认回退路径。
+
+- 2026-04-18
+  - 变更人：Exec-Render
+  - 变更内容：Render 消费侧已落地 `materialId` 参数化入口（显式 material 解析 + 默认回退），并通过 `meshId/materialId` 兼容字段无缝消费 `TASK-CONTRACT-004` 结构化资源契约。
+  - 变更原因：同步 `TASK-REND-011` / `TASK-REND-012` 实施结果，保证 Contracts 边界文档与下游真实消费状态一致。
+  - 风险与回滚方案：本次不变更 Contracts 类型结构；若后续扩展材质参数，继续采用向后兼容字段演进策略。
+
+- 2026-04-18
+  - 变更人：Exec-Contracts
+  - 变更内容：新增 `SceneMeshRef` 与 `SceneMaterialRef` 资源引用契约；`SceneRenderItem` 增加结构化资源构造入口，并保留 `meshId/materialId` 兼容字段与旧构造路径。
+  - 变更原因：支撑 `TASK-CONTRACT-004`，将 M7 资源输入从占位字符串升级为可被后续渲染链路真实消费的契约输入。
+  - 风险与回滚方案：若下游未完成结构化资源消费，可继续通过兼容字段路径运行；后续逐步收敛到结构化构造，不回退契约扩展。
 
 - 2026-04-17
   - 变更人：Exec-Scene / Exec-Render

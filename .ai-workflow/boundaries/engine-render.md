@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-18
+  - 变更人：Exec-Render
+  - 变更内容：`SceneRenderSubmissionBuilder` 增加最小 material 参数解析入口（`materialId -> SceneRenderMaterialParameters`），并将 mesh/material 均收敛到显式解析函数主路径；移除 hash 派生颜色语义。
+  - 变更原因：支撑 `TASK-REND-011` 与 `TASK-REND-012`，让 `meshId/materialId` 成为可验证的真实渲染输入，而非隐式占位语义。
+  - 风险与回滚方案：当前 material 仍为最小参数映射（RGB）；若后续引入纹理/更多参数，可扩展解析结果结构体；保留默认回退可避免未知资源导致渲染中断。
+
 - 2026-04-17
   - 变更人：Exec-Render
   - 变更内容：渲染主路径从“CPU 直接写最终裁剪空间顶点”切换为“模型空间顶点 + shader `uMvp` uniform”，并在提交构建器中收敛 `MeshId -> 统一 mesh 入口`。

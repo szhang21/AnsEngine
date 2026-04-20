@@ -80,6 +80,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-18
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 资源输出新增候选值解析与回退规则（`meshId/materialId`），并统一通过 `SceneMeshRef/SceneMaterialRef` 结构化构造输出；多对象路径下缺失 mesh/material 均在 Scene 侧回退。
+  - 变更原因：支撑 `TASK-SCENE-007`，确保 Scene 输出的资源引用与 Render M7 资源入口保持一致且可预测。
+  - 风险与回滚方案：若 Render 后续扩展资源入口集合，需同步 Scene 支持集合；短期可将新增资源先回退到默认值，避免链路中断。
+
 - 2026-04-17
   - 变更人：Exec-Scene
   - 变更内容：`SceneGraphService` 在 `SceneRenderFrame` 输出中新增真实 `SceneCamera(View/Projection)` 语义，并引入轻量相机轨道变化（连续帧 `View` 变化、`Projection` 稳定）。
