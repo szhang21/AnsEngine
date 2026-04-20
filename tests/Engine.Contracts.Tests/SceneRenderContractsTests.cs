@@ -19,6 +19,7 @@ public sealed class SceneRenderContractsTests
         Assert.Equal(7, frame.FrameNumber);
         Assert.Single(frame.Items);
         Assert.Equal("mesh://triangle", frame.Items[0].MeshId);
+        Assert.Equal("mesh://triangle", frame.Items[0].Mesh.MeshId);
     }
 
     [Fact]
@@ -52,6 +53,32 @@ public sealed class SceneRenderContractsTests
         var item = new SceneRenderItem(7, "mesh://triangle", "material://default", expectedTransform);
 
         Assert.Equal(expectedTransform, item.Transform);
+    }
+
+    [Fact]
+    public void SceneRenderItem_WithResourceRefs_PreservesStructuredResources()
+    {
+        var mesh = new SceneMeshRef("mesh://quad");
+        var material = new SceneMaterialRef("material://lit");
+        var item = new SceneRenderItem(9, mesh, material);
+
+        Assert.Equal(mesh, item.Mesh);
+        Assert.Equal(material, item.Material);
+        Assert.Equal("mesh://quad", item.MeshId);
+        Assert.Equal("material://lit", item.MaterialId);
+        Assert.Equal(SceneTransform.Identity, item.Transform);
+    }
+
+    [Fact]
+    public void SceneMeshRef_EmptyId_ThrowsArgumentException()
+    {
+        _ = Assert.Throws<ArgumentException>(() => new SceneMeshRef(" "));
+    }
+
+    [Fact]
+    public void SceneMaterialRef_EmptyId_ThrowsArgumentException()
+    {
+        _ = Assert.Throws<ArgumentException>(() => new SceneMaterialRef(string.Empty));
     }
 
     [Fact]

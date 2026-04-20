@@ -20,10 +20,20 @@ public readonly record struct SceneRenderItem
     }
 
     public SceneRenderItem(int nodeId, string meshId, string materialId, SceneTransform transform)
+        : this(nodeId, new SceneMeshRef(meshId), new SceneMaterialRef(materialId), transform)
+    {
+    }
+
+    public SceneRenderItem(int nodeId, SceneMeshRef mesh, SceneMaterialRef material)
+        : this(nodeId, mesh, material, SceneTransform.Identity)
+    {
+    }
+
+    public SceneRenderItem(int nodeId, SceneMeshRef mesh, SceneMaterialRef material, SceneTransform transform)
     {
         NodeId = nodeId;
-        MeshId = meshId;
-        MaterialId = materialId;
+        MeshId = mesh.MeshId;
+        MaterialId = material.MaterialId;
         Transform = transform;
     }
 
@@ -32,6 +42,10 @@ public readonly record struct SceneRenderItem
     public string MeshId { get; init; }
 
     public string MaterialId { get; init; }
+
+    public SceneMeshRef Mesh => new(MeshId);
+
+    public SceneMaterialRef Material => new(MaterialId);
 
     public SceneTransform Transform { get; init; }
 }

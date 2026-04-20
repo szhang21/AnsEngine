@@ -126,6 +126,69 @@ public sealed class SceneRenderSubmissionBuilderTests
     }
 
     [Fact]
+    public void Build_KnownMaterialId_UsesResolvedMaterialColor()
+    {
+        var frame = new SceneRenderFrame(
+            6,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://triangle", "material://pulse")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame);
+        var batch = Assert.Single(submission.Batches);
+        var vertex = batch.Vertices[0];
+
+        AssertClose(0.98f, vertex.R);
+        AssertClose(0.54f, vertex.G);
+        AssertClose(0.32f, vertex.B);
+    }
+
+    [Fact]
+    public void Build_UnknownMeshId_FallsBackToTriangleMesh()
+    {
+        var frame = new SceneRenderFrame(
+            7,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://missing", "material://default")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame);
+        var batch = Assert.Single(submission.Batches);
+        var top = TransformToClip(batch.Vertices[0], batch.ModelViewProjection);
+        var left = TransformToClip(batch.Vertices[1], batch.ModelViewProjection);
+        var right = TransformToClip(batch.Vertices[2], batch.ModelViewProjection);
+
+        Assert.Equal(3, batch.Vertices.Count);
+        AssertClose(-0.65f, top.X);
+        AssertClose(0.05f, top.Y);
+        AssertClose(-0.87f, left.X);
+        AssertClose(-0.35f, left.Y);
+        AssertClose(-0.43f, right.X);
+        AssertClose(-0.35f, right.Y);
+    }
+
+    [Fact]
+    public void Build_UnknownMaterialId_FallsBackToDefaultMaterialColor()
+    {
+        var frame = new SceneRenderFrame(
+            8,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://triangle", "material://missing")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame);
+        var batch = Assert.Single(submission.Batches);
+        var vertex = batch.Vertices[0];
+
+        AssertClose(0.72f, vertex.R);
+        AssertClose(0.78f, vertex.G);
+        AssertClose(0.86f, vertex.B);
+    }
+
+    [Fact]
     public void Build_CameraViewProjection_AffectsClipCoordinates()
     {
         var camera = new SceneCamera(

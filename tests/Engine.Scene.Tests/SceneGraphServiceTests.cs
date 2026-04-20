@@ -85,6 +85,38 @@ public sealed class SceneGraphServiceTests
     }
 
     [Fact]
+    public void BuildRenderFrame_MaterialCycle_UsesRenderAlignedMaterialIdsAndFallback()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+
+        var frame0 = sceneGraph.BuildRenderFrame();
+        var frame1 = sceneGraph.BuildRenderFrame();
+        var frame2 = sceneGraph.BuildRenderFrame();
+        var frame3 = sceneGraph.BuildRenderFrame();
+
+        Assert.Equal("material://default", Assert.Single(frame0.Items).MaterialId);
+        Assert.Equal("material://pulse", Assert.Single(frame1.Items).MaterialId);
+        Assert.Equal("material://highlight", Assert.Single(frame2.Items).MaterialId);
+        Assert.Equal("material://default", Assert.Single(frame3.Items).MaterialId);
+    }
+
+    [Fact]
+    public void BuildRenderFrame_MultipleNodes_FallbackMeshDoesNotLeakMissingId()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+        sceneGraph.AddRootNode();
+
+        var frame = sceneGraph.BuildRenderFrame();
+
+        Assert.Equal(2, frame.Items.Count);
+        Assert.All(frame.Items, item => Assert.Equal("mesh://triangle", item.MeshId));
+    }
+
+    [Fact]
     public void BuildRenderFrame_FromContractsInterface_ReturnsContractsFrameWithIdentityTransform()
     {
         var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
