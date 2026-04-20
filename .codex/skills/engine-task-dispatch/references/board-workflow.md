@@ -12,8 +12,8 @@
 
 - `Plan Agent` 负责计划制定与阶段更新（不入看板执行列）。
 - `Dispatch Agent` 负责把任务放入 `Todo`（含并行与依赖字段）。
-- `Execution Agent` 负责 `InProgress -> Verify -> Review -> Done`。
-- `Human` 负责审批计划与任务卡，决定哪些 `Todo` 进入当前执行波次。
+- `Execution Agent` 负责 `InProgress -> Verify -> Review`，不得自行进入 `Done`。
+- `Human` 是唯一的终态签收主体，负责审批计划与任务卡、决定哪些 `Todo` 进入当前执行波次，并在复验通过后显式触发 `Review -> Done`；Workflow Steward 仅在 Human 明确 `关单 <TaskId>` 后代执行机械同步。
 
 ## 允许的状态流转
 
@@ -66,3 +66,4 @@
 - 风险摘要已更新
 - 归档已写入（含模块归属校验结论）
 - 若任务新增文件：必须已更新边界文档并写入变更日志
+- 仅允许 Human 复验通过后显式触发，Execution 不得自动推进到 `Done`

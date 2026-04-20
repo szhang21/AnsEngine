@@ -102,6 +102,7 @@ true | false
 
 ## 状态（Status）
 Todo | InProgress | Verify | Review | Done
+> 说明：Execution 仅负责推进到 `Review` 并准备归档三件套；`Review -> Done` 只能由 Human 复验通过后显式触发，Workflow Steward 仅在 Human 明确 `关单 <TaskId>` 后代执行机械同步，不拥有独立签收权。
 
 ## 完成度（Completion）
 `0-100`（整数百分比）

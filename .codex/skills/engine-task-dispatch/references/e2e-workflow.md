@@ -16,7 +16,7 @@
 4. `Execution Agent` 读取任务卡执行并回填状态
 5. `QA Agent` 执行 QA 验证卡并处理 Human 质疑（复现与证据核对），不执行关单
 6. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
-7. 通过门禁后由 Human（或 Human 显式授权 Steward）进入 `Done`，QA 不得代签
+7. 通过门禁后由 Human 显式进入 `Done`；Workflow Steward 仅可在 Human 明确输入 `关单 <TaskId>` 后代执行机械同步，且 Human 始终是唯一签收主体；Execution 不得代签，QA 不得代签
 
 ## 2) 节点职责
 
@@ -40,6 +40,7 @@
   - 禁止：重拆需求、越界改动、跨角色决策
   - 默认编码约定：遵循 `engine-coding-standards`，C# 私有/受保护字段使用 `mCamelCase`，静态字段使用 `sCamelCase`，`const` 使用 `kCamelCase`；构造器参数与局部变量使用 `camelCase`
   - 文件组织约定：默认一个类一个文件、一个接口一个文件；只有小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期才允许例外
+  - 关单边界：Execution 只能把卡推进到 `Review` 并准备归档三件套，不得自行把任务置为 `Done` 或更新看板到 `Done`
 
 - `QA Agent`
   - 负责：执行 `TASK-QA-*`、输出 `QAReport`、处理 Human 质疑（复现步骤、Expected/Actual、证据补齐）
@@ -51,7 +52,7 @@
   - 显式命令后：`Apply` 仅做元数据修复（字段、状态、索引、看板）
   - 禁止：修改业务源码、改写验收标准、改写任务目标语义
   - 禁止：执行任何 `TaskId` 实现类请求（如 `执行TASK-*`）；此类请求必须回退到 `Execution Agent`
-  - 关单权限：仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足时可代执行；QA 不得代为关单
+  - 关单边界：仅在 Human 明确输入 `关单 <TaskId>` 且门禁满足时执行机械同步；Human 始终是唯一签收主体，QA 不得代为关单
 
 - `Human`
   - 负责：确认计划、审核拆卡、按波次派工、最终接受结果
@@ -102,7 +103,7 @@ Execution 阶段（技术关单准备）：
 Human/Steward 阶段（最终关单）：
 
 4. Human 复验通过并设置 `HumanSignoff=pass`
-5. Human 执行 `Review -> Done`（或 Human 显式命令 Steward 代执行）
+5. Human 显式执行 `Review -> Done`（Steward 仅在 Human 明确 `关单 <TaskId>` 时代执行机械同步）
 6. 同步更新看板到 `Done`
 
 任一失败则不得 `Done`，回退处理。
@@ -167,4 +168,4 @@ Plan 节点完成归档时，必须原子完成以下两件：
 2. 若发现元数据问题，先看 `FixPlan`，Human 选定 IssueId 后再下 `执行修复 <IssueId...>`。
 3. 每次 Apply 修复后，Steward 必须立即再跑一次 `AuditReport`（复审），未通过不得报“修复完成”。
 4. Execution 完成后，可再次审计归档一致性（只读）。
-5. 仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足，Steward 才能代执行关单。
+ 5. 仅当 Human 明确输入 `关单 <TaskId>` 且门禁满足，Steward 才能执行机械同步；Human 始终是唯一签收主体。

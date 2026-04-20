@@ -99,6 +99,7 @@
 - `Review -> Done` 前必须检查：`ModuleAttributionCheck=pass`。
 - `Review -> Done` 前必须检查：仅当触发边界同步条件时，`BoundaryDocsUpdated=true` 且变更日志已写入。
 - `Review -> Done` 前必须检查：`Completion=100`。
+- `Review -> Done` 仅允许 Human 复验通过后触发，Execution 不得自动推进到 `Done`。
 
 ## 6) 阻塞处理
 
@@ -119,10 +120,11 @@
 - 归档条目建议附带：实际并行执行批次与依赖偏差说明（如有）。
 - 若任务取消，归档中必须写取消原因与替代任务 id。
 - Execution 关单时必须原子完成：
-  - 任务卡 `Status/Completion/Archive` 更新
-  - 归档快照写入 `.ai-workflow/archive/<yyyy-mm>/<TASK-ID>.md`
-  - 归档索引追加写入 `archive-index.md`
-  - 看板任务移动到 `Done`
+    - 任务卡 `Status/Completion/Archive` 更新
+    - 归档快照写入 `.ai-workflow/archive/<yyyy-mm>/<TASK-ID>.md`
+    - 归档索引追加写入 `archive-index.md`
+    - 看板任务移动到 `Done`
+- 但 `Review -> Done` 的最终触发权不属于 Execution；Execution 仅负责准备关单材料，不得自签 `Done`。
 - 任一步未完成时，不得宣称任务已完成。
 
 ## 8) 派发决策输出格式（Dispatch Agent）

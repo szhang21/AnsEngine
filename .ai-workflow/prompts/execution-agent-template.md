@@ -42,7 +42,7 @@
    - 更新任务卡：`Status=Review`、`Completion=95`、补齐 `Archive` 字段，并设置 `HumanSignoff=pending`
    - 写归档快照：`.ai-workflow/archive/<yyyy-mm>/<TASK-ID>.md`
    - 追加归档索引：`.ai-workflow/archive/archive-index.md`
-8. Execution 不得自行将任务置为 `Done`，也不得更新看板到 `Done`；最终 `Review -> Done` 由 Human 复验通过后执行。
+8. Execution 不得自行将任务置为 `Done`，也不得更新看板到 `Done`；最终 `Review -> Done` 只能由 Human 复验通过后显式执行；Workflow Steward Agent 仅可在 Human 明确输入 `关单 <TaskId>` 后代执行机械同步，不拥有独立签收权。
 9. 若上述三件套任一步无法完成，必须返回“未关单”状态，不得宣称任务已完成。
 10. 当任务为 QA 验证卡（`TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA`）且卡面包含质量验收时：
    - 必须输出 `CodeQuality` 结论（`NoNewHighRisk`、`MustFixCount`、`MustFixDisposition`）。
@@ -54,6 +54,7 @@
 - 不得创建额外任务卡。
 - 不得修改任务卡中的范围定义。
 - 不得执行与当前 TaskId 无关的重构。
+- 不得将任务卡从 `Review` 自动推进到 `Done`，也不得自动更新看板到 `Done`。
 
 输入任务卡如下：
 
@@ -68,6 +69,7 @@
 路径分类硬规则（必须遵守）：
 - `references/*`（例如 `review-checklist.md`）是 skill 规则来源，默认从 `.codex/skills/**/references/` 读取，只读，不写入。
 - 执行归档产物只写 `.ai-workflow/**`（任务卡状态、看板、归档快照、归档索引）。
+- `Review -> Done` 不属于 Execution 自动执行权限；终态签收主体仅为 Human，Workflow Steward 只在 Human 明确 `关单 <TaskId>` 后执行机械同步。
 - 不得因为仓库根目录缺少 `references/review-checklist.md` 而阻塞关单；必须先按“三步解析”在 skill 目录查找。
 
 失败回退协议（必须遵守）：
