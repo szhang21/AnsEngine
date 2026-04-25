@@ -9,8 +9,10 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 输出前先读取以下参考文件：
 - `references/task-card-template.md`
+- `references/quick-card-template.md`
 - `references/board-workflow.md`
 - `references/dispatch-rules.md`
+- `references/quick-card-rules.md`
 - `references/archive-policy.md`
 - `references/boundary-contract-template.md`
 - `references/project-baseline.md`
@@ -21,27 +23,29 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 根据用户意图输出以下之一：
 
 1. `TaskCard`（新任务卡）
-2. `DispatchDecision`（派发/改派/延后决策）
-3. `BoardTransition`（状态流转及门禁证据）
-4. `DailyPlan`（日计划与 WIP 平衡）
-5. `BlockerReport`（阻塞原因与解阻动作）
-6. `AuditReport`（Steward 只读审计报告）
-7. `FixPlan`（Steward 可执行修复清单）
-8. `ApplyResult`（Steward 已执行修复结果）
-9. `QAReport`（QA 验证与质疑处理结论）
+2. `QuickCard`（轻量卡）
+3. `DispatchDecision`（派发/改派/延后决策）
+4. `BoardTransition`（状态流转及门禁证据）
+5. `DailyPlan`（日计划与 WIP 平衡）
+6. `BlockerReport`（阻塞原因与解阻动作）
+7. `AuditReport`（Steward 只读审计报告）
+8. `FixPlan`（Steward 可执行修复清单）
+9. `ApplyResult`（Steward 已执行修复结果）
+10. `QAReport`（QA 验证与质疑处理结论）
 
 如信息不足，必须显式写出假设。
 
 ## 强约束
 
 - 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent` / `QA Agent` / `Workflow Steward Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
-- 字段完整性强制：任务卡若缺少 `计划引用`、`里程碑引用`、`ParallelPlan`（含 `ParallelGroup`、`CanRunParallel`、`DependsOn`）任一字段，必须拒绝流转或执行（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
+- 字段完整性强制：正式任务卡若缺少 `计划引用`、`里程碑引用`、`ParallelPlan`（含 `ParallelGroup`、`CanRunParallel`、`DependsOn`）任一字段，必须拒绝流转或执行（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
+- 轻量卡分流强制：当 Human 明确说明“简单迭代/小改/小 bug/局部修复”时，Dispatch Agent 必须先执行 `QuickCard` 适用性判定，再决定走 `QuickCard` 或正式 `TaskCard`，不得默认一律走正式卡。
 - 越权响应强制回退：若收到不属于当前角色职责的请求，只允许返回 `请按 <AgentName> 职责重试`，不得部分执行。
 - 新增文件强制边界同步：仅当 `NewFilesExpected=true` 或执行中实际新增源码/测试文件时，才强制更新 `.ai-workflow/boundaries/` 下至少一个边界文档并写入变更记录；否则不作为阻塞条件。
 - Plan 输出强制前推：Plan Agent 不得仅回复“目标不明确/请补充需求”；必须先基于当前仓库与看板状态给出候选计划和默认推荐。
 - Plan 归档强制：Plan Agent 必须输出可落盘的计划归档块（含里程碑快照），归档路径默认 `.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`。
 - Plan 归档触发：新计划生效、里程碑或优先级发生重大调整、计划关闭时，必须更新计划归档。
-- Dispatch 前置门禁：Dispatch Agent 在拆卡前必须先校验 Plan 归档两件套已落盘（计划快照 + `plan-archive-index.md`）；未通过不得创建任务卡。
+- Dispatch 前置门禁：Dispatch Agent 在创建正式任务卡前必须先校验 Plan 归档两件套已落盘（计划快照 + `plan-archive-index.md`）；未通过不得创建任务卡。轻量卡分流阶段不受此条阻塞。
 - Steward 审计默认只读：Workflow Steward Agent 默认仅允许审计与建议，不得直接修改任何文件。
 - Steward 修改需显式命令：仅当 Human 明确输入 `执行修复 <IssueId...>` 或 `关单 <TaskId>` 时，Workflow Steward Agent 才允许执行元数据修改。
 - Steward 修改边界：仅允许任务卡/里程碑卡/索引/看板元数据修复；禁止修改业务源码、验收标准、任务目标语义。
@@ -65,20 +69,24 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 仅当三步都失败时，才允许返回“路径未找到”。
 - 路径分类硬规则：`references/*`（含 `review-checklist.md`）属于 skill 规则源，默认从 `.codex/skills/**/references/` 读取，且按只读处理；任务执行产物（任务卡状态、看板、归档快照、归档索引）仅允许写入 `.ai-workflow/**`。
 - 任务卡字段必须与 `task-card-template.md` 一致。
+- 轻量卡字段必须与 `quick-card-template.md` 一致。
 - 状态流转仅允许：`Todo -> InProgress -> Verify -> Review -> Done`。
+- 轻量卡状态流转仅允许：`Todo -> InProgress -> Review -> Done | Escalated | Rejected`，且 `Escalated` 后不得再直接关闭，必须转正式任务卡。
 - 任一门禁失败，任务必须回退到 `InProgress` 并记录原因。
 - 超过 WIP 限制时拒绝派发。
-- 缺少验收标准的任务一律拒绝。
-- 缺少 `Priority (P0|P1|P2|P3)` 的任务一律拒绝。
-- 缺少 `PrimaryModule` 的任务一律拒绝。
-- 缺少 `BoundaryContractPath` 的任务一律拒绝。
-- 缺少 `AllowedPaths` 的任务一律拒绝。
-- 缺少 `BaselineRef` 的任务一律拒绝。
-- 超过 1-3 小时不可验证完成的任务必须拆分。
+- 缺少验收标准的正式任务卡一律拒绝；轻量卡至少需要最小验证口径。
+- 缺少 `Priority (P0|P1|P2|P3)` 的请求一律拒绝。
+- 缺少 `PrimaryModule` 的请求一律拒绝。
+- 缺少 `BoundaryContractPath` 的正式任务卡一律拒绝。
+- 缺少 `AllowedPaths` 的正式任务卡一律拒绝。
+- 缺少 `BaselineRef` 的正式任务卡一律拒绝。
+- 正式任务卡若超过 1-3 小时不可验证完成必须拆分；轻量卡若预计超过半天必须升卡。
 - 未按 `archive-policy.md` 完成归档，不允许 `Review -> Done`。
 - 每张任务卡必须且只能归属一个主模块。
+- 每张轻量卡必须且只能归属一个主模块。
 - 新建文件必须归属到主模块的允许路径内。
 - 与 `project-baseline.md` 冲突的实施任务，必须先走“基线变更任务卡”。
+- `QuickCard` 不得承载边界变更、基线变更、公开 API 设计、跨模块重构、正式 QA 验证卡。
 - 依赖边界硬约束：任务卡 `DependencyContract.AllowedDependsOn` 必须是对应 `BoundaryContractPath` 允许依赖的子集；若超出边界合同，必须先提出“边界变更请求”并等待 Human 明确批准，未批准不得创建/执行该任务卡。
 
 ## 派发算法
@@ -86,11 +94,12 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 严格按以下顺序执行：
 
 1. 校验任务定义完整性。
-2. 校验主模块归属、边界合同、路径白名单与基线引用。
-3. 检查当前看板 WIP 与瓶颈。
-4. 按模块归属与负载选择负责人。
-5. 输出带依据的派发决策。
-6. 输出下一检查点与期望证据。
+2. 先判定是否满足 `QuickCard` 条件；不满足再进入正式任务卡拆分。
+3. 校验主模块归属、边界合同、路径白名单与基线引用。
+4. 检查当前看板 WIP 与瓶颈。
+5. 按模块归属与负载选择负责人。
+6. 输出带依据的派发决策。
+7. 输出下一检查点与期望证据。
 
 不得跳步。
 
@@ -136,17 +145,29 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 每次派发响应必须包含：
 
-- `Decision`：assign/defer/split/reject
+- `Decision`
 - `Owner`：执行人
-- `WhyNow`：当前优先处理理由
-- `GatePlan`：门禁证据检查点
 - `Priority`：P0/P1/P2/P3
 - `PrimaryModule`：唯一主模块归属
+- `WhyNow`：当前优先处理理由
+- `Risk`：high/medium/low + 一句话理由
+- `NextAction`：下一步精确动作
+
+若输出正式任务卡，必须额外包含：
+
+- `GatePlan`：门禁证据检查点
 - `BoundaryContractPath`：对应边界合同路径
 - `BaselineRef`：工程基线引用路径
-- `Risk`：high/medium/low + 一句话理由
 - `ArchiveAction`：归档路径 + 写入/更新动作
-- `NextAction`：下一步精确动作
+
+若输出 `QuickCard`，必须额外包含：
+
+- `Decision`：`quickcard`
+- `Type`：`QuickTask | QuickBug | BugInvestigation`
+- `QuickCardId`
+- `WhyQuick`
+- `EscalationGuard`
+- `QuickCardPath`
 
 尽量使用精炼要点，避免纯叙述长文。
 

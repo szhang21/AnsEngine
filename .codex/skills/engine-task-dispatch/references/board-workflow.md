@@ -26,6 +26,24 @@
 
 除上述路径外，禁止其他流转。
 
+## 轻量卡流转
+
+- `QuickCard` 默认使用轻量列语义：
+  - `Todo`
+  - `InProgress`
+  - `Review`
+  - `Done`
+  - `Escalated`
+  - `Rejected`
+- 允许的轻量流转：
+  - `Todo -> InProgress`
+  - `InProgress -> Review`
+  - `Review -> Done`
+  - `InProgress -> Escalated`
+  - `Review -> Escalated`
+  - `Todo -> Rejected`
+- `Escalated` 表示已转正式任务卡，原轻量卡只保留入口记录，不再继续闭环。
+
 ## WIP 限制
 
 - Global `InProgress <= 3`
@@ -34,6 +52,9 @@
 - Same `ParallelGroup` 同时激活数量由 Human 决定（建议不超过 2）
 
 超过限制时，必须延后派发或拆分任务。
+
+- `QuickCard` 默认不占用“跨模块任务 active 数量”，因为其定义上不得跨模块。
+- 建议 `QuickCard InProgress <= 2`，避免轻量单淹没正式实施卡。
 
 ## 并行与依赖门禁
 

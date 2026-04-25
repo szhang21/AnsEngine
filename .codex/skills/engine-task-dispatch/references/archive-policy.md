@@ -43,3 +43,16 @@
 - 若最终结果偏离原目标，需增加 `ScopeDeviation` 说明。
 - 若任务取消，必须归档取消原因与替代任务 id。
 - 若存在跨模块改动，必须写明 `CrossModule=true` 的审批依据与影响范围。
+
+## 轻量卡保留规则
+
+- `QuickCard` 默认不写入正式 `archive-index.md`。
+- 已完成 `QuickCard` 应在原卡中补齐：
+  - `CompletedAt`
+  - `ChangeSummary`
+  - `ValidationSummary`
+- 若 `QuickCard` 升级为正式任务卡：
+  - 原轻量卡保留入口记录
+  - 必须写明 `EscalatedToTaskId`
+  - 必须写明 `EscalationReason`
+- 仅当 Human 明确要求把某类轻量卡纳入长期统计时，才允许另建轻量归档索引；默认不与正式归档混写。

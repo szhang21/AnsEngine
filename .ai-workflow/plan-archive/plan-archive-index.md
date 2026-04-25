@@ -13,10 +13,16 @@
 ## 当前记录
 
 - PlanId: `PLAN-M8-2026-04-19`
-  Status: `Active`
-  LastUpdated: `2026-04-19 21:50`
-  MilestoneSummary: `M8 进行中（真实 Mesh 资产接入）`
+  Status: `Superseded`
+  LastUpdated: `2026-04-22 01:04`
+  MilestoneSummary: `M8 已被 PLAN-M9-2026-04-22 替代（真实 Mesh 资产入口升级为磁盘资产主链路）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M8-2026-04-19.md`
+
+- PlanId: `PLAN-M9-2026-04-22`
+  Status: `Closed`
+  LastUpdated: `2026-04-25 00:00`
+  MilestoneSummary: `M9 完成（磁盘 Mesh 资产主链路、Contracts 桥接层、Asset/Render/Scene/App 全链路落地）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M9-2026-04-22.md`
 
 - PlanId: `PLAN-M7-2026-04-18`
   Status: `Closed`

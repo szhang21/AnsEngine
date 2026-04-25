@@ -27,17 +27,37 @@
 
 ## 1) 受理规则
 
-- 没有 `计划引用`（兼容：`PlanRef`）的派发请求，拒绝。
-- 没有 `里程碑引用`（兼容：`MilestoneRef`）的派发请求，拒绝。
+### 1.0) 轻量卡前置分流
+
+- 当 Human 明确请求“简单迭代 / 小修 / 局部优化 / 小 bug / 回归修复”时，`Dispatch Agent` 必须先判定是否走 `QuickCard`。
+- 仅当请求超出 `QuickCard` 适用范围时，才进入正式任务卡受理。
+- 不得为了流程统一而把所有简单单子强制提升为正式任务卡。
+
+- 没有 `计划引用`（兼容：`PlanRef`）的正式任务卡派发请求，拒绝。
+- 没有 `里程碑引用`（兼容：`MilestoneRef`）的正式任务卡派发请求，拒绝。
 - 没有清晰结果的请求，拒绝。
-- 没有验收标准的请求，拒绝。
+- 没有验收标准的正式任务卡请求，拒绝。
 - 没有明确优先级（`P0|P1|P2|P3`）的请求，拒绝。
 - 没有主模块归属（`PrimaryModule`）的请求，拒绝。
-- 没有边界合同路径（`BoundaryContractPath`）的请求，拒绝。
-- 没有路径白名单（`AllowedPaths`）的请求，拒绝。
-- 没有基线引用（`BaselineRef`）的请求，拒绝。
-- 没有并行信息（`ParallelGroup`、`CanRunParallel`、`DependsOn`）的请求，拒绝。
-- 预计超过 1-3 小时才能验证完成的任务，强制拆分。
+- 没有边界合同路径（`BoundaryContractPath`）的正式任务卡请求，拒绝。
+- 没有路径白名单（`AllowedPaths`）的正式任务卡请求，拒绝。
+- 没有基线引用（`BaselineRef`）的正式任务卡请求，拒绝。
+- 没有并行信息（`ParallelGroup`、`CanRunParallel`、`DependsOn`）的正式任务卡请求，拒绝。
+- 正式任务卡若预计超过 1-3 小时才能验证完成，强制拆分。
+
+### 1.1) QuickCard 受理条件
+
+- 满足 `references/quick-card-rules.md` 的全部适用条件时，可受理为 `QuickCard`。
+- `QuickTask`：简单迭代、局部改善、命名或测试补齐。
+- `QuickBug`：已知模块、可复现、`Expected/Actual` 明确。
+- `BugInvestigation`：现象明确但根因不清。
+- 若命中以下任一条件，禁止受理为 `QuickCard`：
+  - 跨模块
+  - 需要修改公开契约
+  - 需要边界文档更新
+  - 预计超过半天
+  - 风险达到 `medium/high`
+  - 需要专项 QA 或归档三件套
 
 ## 2) 拆分与并行规则（Dispatch Agent）
 
@@ -63,8 +83,10 @@
 ## 3) 执行规则（Execution Agent）
 
 - 只能执行已存在任务卡，不得擅自拆新任务。
+- 允许执行已存在 `QuickCard`，但若执行中触发升卡条件，必须停止继续扩张并回退给 Dispatch Agent。
 - 不得扩大 `Scope/AllowedPaths`。
 - 发现任务卡缺字段或冲突时，回退给 Dispatch Agent 修卡。
+- 发现轻量卡命中升卡条件时，必须回填 `EscalationReason` 并请求 Dispatch Agent 转正式任务卡。
 - 若执行中出现新增需求，必须新建“派发请求”，由 Dispatch Agent 出新卡。
 - 若任务目标与当前计划冲突，先回退给 Plan Agent 更新计划，再进入派发。
 - 若发现任务优先级与计划不一致，只记录并回退，不得自行重排。
@@ -100,6 +122,21 @@
 - `Review -> Done` 前必须检查：仅当触发边界同步条件时，`BoundaryDocsUpdated=true` 且变更日志已写入。
 - `Review -> Done` 前必须检查：`Completion=100`。
 - `Review -> Done` 仅允许 Human 复验通过后触发，Execution 不得自动推进到 `Done`。
+
+### 5.1) QuickCard 最小门禁
+
+- `Todo -> InProgress` 前必须检查：
+  - `PrimaryModule` 已填写
+  - `ScopeLimit` 已填写
+  - `Completion=0`
+- `InProgress -> Review` 前必须检查：
+  - 变更仍处于单模块、单结果范围
+  - 未命中升卡条件
+- `Review -> Done` 前必须检查：
+  - 至少一条 Build/最小编译证据
+  - 至少一条测试证据或“无自动化测试，仅人工复现”说明
+  - 一条简短自检说明
+  - `Completion=100`
 
 ## 6) 阻塞处理
 
@@ -170,20 +207,42 @@ NextAction: <exact next step>
 - Human 提到“重新给出任务卡/再发一次任务卡”时，默认仍按 `Manager View` 处理，不视为“展开全文”指令。
 - 只要任务卡已落盘，Dispatch 不得重复贴全文；Human 需自行到任务目录查看或显式下达“展开任务卡全文”。
 
+### 8.1a) QuickCard 输出模式
+
+- 当分流结果为 `QuickCard` 时，默认向 Human 输出精简视图：
+  - `Decision`
+  - `Type`
+  - `QuickCardId`
+  - `PrimaryModule`
+  - `Priority`
+  - `WhyQuick`
+  - `EscalationGuard`
+  - `QuickCardPath`
+- 完整轻量卡正文写入 `.ai-workflow/quickcards/<quick-card-id>.md`，默认不回显全文。
+
 ## 8.2) 编号派发模式（Human -> Execution）
 
 - Human 可只派发 `TaskId` 给 Execution Agent。
-- Execution Agent 必须先读取 `.ai-workflow/tasks/<task-id>.md`，并回显关键字段后再执行。
+- Human 可只派发 `QuickCardId` 给 Execution Agent。
+- Execution Agent 必须先读取对应的 `.ai-workflow/tasks/<task-id>.md` 或 `.ai-workflow/quickcards/<quick-card-id>.md`，并回显关键字段后再执行。
 
 ## 9) 输出前字段自检门禁（Dispatch Agent）
 
-- Dispatch 在输出最终任务卡前，必须逐卡执行字段自检。
-- 任一卡缺少以下字段时，整批输出视为无效，必须先补齐再输出：
+- Dispatch 在输出最终卡片前，必须逐卡执行字段自检。
+- 若输出正式任务卡，缺少以下字段时整批输出视为无效，必须先补齐再输出：
   - `计划引用`（或 `PlanRef`）
   - `里程碑引用`（或 `MilestoneRef`）
   - `Acceptance`（Build/Test/Smoke/Perf 四项）
   - `AllowedPaths`
   - `DependsOn`（无依赖也需显式空列表）
   - `BoundarySyncPlan`
+  - `Status`
+  - `Completion`
+- 若输出 `QuickCard`，至少必须具备：
+  - `QuickCardId`
+  - `Type`
+  - `Priority`
+  - `PrimaryModule`
+  - `ScopeLimit`
   - `Status`
   - `Completion`

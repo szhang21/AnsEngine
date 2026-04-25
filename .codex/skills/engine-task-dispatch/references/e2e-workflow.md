@@ -11,9 +11,9 @@
 ## 1) 总体顺序
 
 1. `Plan Agent` 产出计划并归档
-2. `Dispatch Agent` 先校验 Plan 归档两件套，再基于计划拆卡并落盘
-3. `Human` 仅按任务编号派发
-4. `Execution Agent` 读取任务卡执行并回填状态
+2. `Dispatch Agent` 先判断是否命中 `QuickCard` 适用范围；若不命中，再校验 Plan 归档两件套并拆正式任务卡
+3. `Human` 按 `QuickCardId` 或 `TaskId` 派发
+4. `Execution Agent` 读取轻量卡或任务卡执行并回填状态
 5. `QA Agent` 执行 QA 验证卡并处理 Human 质疑（复现与证据核对），不执行关单
 6. `Workflow Steward Agent` 默认审计，按 Human 显式命令执行元数据修复/关单
 7. 通过门禁后由 Human 显式进入 `Done`；Workflow Steward 仅可在 Human 明确输入 `关单 <TaskId>` 后代执行机械同步，且 Human 始终是唯一签收主体；Execution 不得代签，QA 不得代签
@@ -26,18 +26,20 @@
   - 落盘：`.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`
 
 - `Dispatch Agent`
-  - 负责：先做 Plan 前置门禁校验，再拆分任务、并行/依赖、任务级排序（仅同里程碑内）
+  - 负责：先做 `QuickCard` 分流；若进入正式流，再做 Plan 前置门禁校验、任务拆分、并行/依赖、任务级排序（仅同里程碑内）
   - 落盘：
+    - 轻量卡：`.ai-workflow/quickcards/<quick-card-id>.md`
     - 任务卡：`.ai-workflow/tasks/<task-id>.md`
     - 看板同步：`board.md` 的 `Todo`
   - 对 Human 默认输出：`Manager View`（简述+编号+波次+路径）
   - 禁止默认回显任务卡全文（除非 Human 明确要求“展开任务卡全文”）
 
 - `Execution Agent`
-  - 输入：`TaskId` 或任务卡全文（推荐仅 `TaskId`）
-  - 读取：`.ai-workflow/tasks/<task-id>.md`
+  - 输入：`QuickCardId`、`TaskId` 或全文（推荐仅给编号）
+  - 读取：`.ai-workflow/quickcards/<quick-card-id>.md` 或 `.ai-workflow/tasks/<task-id>.md`
   - 负责：实现、验证、状态推进、关单资料
   - 禁止：重拆需求、越界改动、跨角色决策
+  - 轻量卡补充：若执行中触发升卡条件，必须停止继续扩张并回退给 Dispatch Agent
   - 默认编码约定：遵循 `engine-coding-standards`，C# 私有/受保护字段使用 `mCamelCase`，静态字段使用 `sCamelCase`，`const` 使用 `kCamelCase`；构造器参数与局部变量使用 `camelCase`
   - 文件组织约定：默认一个类一个文件、一个接口一个文件；只有小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期才允许例外
   - 关单边界：Execution 只能把卡推进到 `Review` 并准备归档三件套，不得自行把任务置为 `Done` 或更新看板到 `Done`
@@ -62,8 +64,12 @@
 ## 3) 落盘与可见性规则
 
 - 先落盘，再回显。
+- `QuickCard` 与正式 `TaskCard` 均适用。
 - 任务卡已落盘后，默认只看 `Manager View`。
+- 轻量卡已落盘后，默认只看 `Quick View`。
 - 全文查看走文件路径：`.ai-workflow/tasks/<task-id>.md`。
+
+轻量卡全文查看路径：`.ai-workflow/quickcards/<quick-card-id>.md`。
 
 ## 4) 任务卡最小关键字段
 
@@ -110,11 +116,11 @@ Human/Steward 阶段（最终关单）：
 
 ## 8) 建议的日常用法（最短路径）
 
-1. 你与 `Plan Agent` 确认计划
-2. 你把计划交给 `Dispatch Agent`
-3. 你只看 `TaskIds + WavePlan`
-4. 你按波次发 `TaskId` 给 `Execution Agent`
-5. 完成后核对：Execution 三件套 + Human 最终 Done（含看板）
+1. 简单需求或小 bug：先让 `Dispatch Agent` 判定是否走 `QuickCard`
+2. 若是轻量卡，你只看 `QuickCardId + EscalationGuard`
+3. 若不是轻量卡，再回到 `Plan Agent -> Dispatch Agent -> TaskId` 主流程
+4. 你按编号发给 `Execution Agent`
+5. 轻量卡完成后核对最小验证证据；正式任务卡完成后核对三件套 + Human 最终 Done（含看板）
 
 ## 9) Plan 归档两件套（新增）
 
