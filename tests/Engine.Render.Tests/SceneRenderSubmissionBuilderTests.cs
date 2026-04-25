@@ -170,6 +170,94 @@ public sealed class SceneRenderSubmissionBuilderTests
     }
 
     [Fact]
+    public void Build_WithMeshAssetProvider_UsesResolvedMeshGeometry()
+    {
+        var provider = new CountingMeshAssetProvider(
+            MeshAssetLoadResult.Success(
+                new SceneMeshRef("mesh://quad"),
+                new MeshAssetData(
+                    new[]
+                    {
+                        new MeshAssetVertex(new Vector3(-0.4f, 0.3f, 0f), Vector3.UnitZ, Vector2.Zero),
+                        new MeshAssetVertex(new Vector3(-0.2f, 0.1f, 0f), Vector3.UnitZ, Vector2.Zero),
+                        new MeshAssetVertex(new Vector3(0.2f, 0.1f, 0f), Vector3.UnitZ, Vector2.Zero)
+                    },
+                    new[] { 0, 1, 2 })));
+        var frame = new SceneRenderFrame(
+            9,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://quad", "material://default")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame, provider);
+        var batch = Assert.Single(submission.Batches);
+
+        Assert.Equal(1, provider.CallCount);
+        Assert.Equal("mesh://quad", batch.MeshCacheKey);
+        Assert.Equal(3, batch.MeshVertices.Count);
+        AssertClose(-0.4f, batch.MeshVertices[0].X);
+        AssertClose(0.3f, batch.MeshVertices[0].Y);
+    }
+
+    [Fact]
+    public void Build_MeshProviderFailure_UsesFallbackGeometry()
+    {
+        var provider = new CountingMeshAssetProvider(
+            MeshAssetLoadResult.FailureResult(
+                new SceneMeshRef("mesh://missing"),
+                new MeshAssetLoadFailure(MeshAssetLoadFailureKind.NotFound, "Missing mesh.")));
+        var frame = new SceneRenderFrame(
+            10,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://missing", "material://default")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame, provider);
+        var batch = Assert.Single(submission.Batches);
+        var top = TransformToClip(batch.Vertices[0], batch.ModelViewProjection);
+
+        Assert.Equal(1, provider.CallCount);
+        Assert.Equal("fallback://triangle", batch.MeshCacheKey);
+        Assert.Equal(3, batch.MeshVertices.Count);
+        AssertClose(-0.65f, top.X);
+        AssertClose(0.05f, top.Y);
+    }
+
+    [Fact]
+    public void Build_SharedMeshProviderResult_IsCachedAcrossBatches()
+    {
+        var provider = new CountingMeshAssetProvider(
+            MeshAssetLoadResult.Success(
+                new SceneMeshRef("mesh://shared"),
+                new MeshAssetData(
+                    new[]
+                    {
+                        new MeshAssetVertex(new Vector3(0f, 0.2f, 0f), Vector3.UnitZ, Vector2.Zero),
+                        new MeshAssetVertex(new Vector3(-0.2f, -0.2f, 0f), Vector3.UnitZ, Vector2.Zero),
+                        new MeshAssetVertex(new Vector3(0.2f, -0.2f, 0f), Vector3.UnitZ, Vector2.Zero)
+                    },
+                    new[] { 0, 1, 2 })));
+        var frame = new SceneRenderFrame(
+            11,
+            new[]
+            {
+                new SceneRenderItem(1, "mesh://shared", "material://default"),
+                new SceneRenderItem(2, "mesh://shared", "material://highlight")
+            });
+
+        var submission = SceneRenderSubmissionBuilder.Build(frame, provider);
+
+        Assert.Equal(1, provider.CallCount);
+        Assert.Equal(2, submission.Batches.Count);
+        Assert.Equal("mesh://shared", submission.Batches[0].MeshCacheKey);
+        Assert.Equal(submission.Batches[0].MeshCacheKey, submission.Batches[1].MeshCacheKey);
+        AssertClose(0.72f, submission.Batches[0].Vertices[0].R);
+        AssertClose(0.42f, submission.Batches[1].Vertices[0].R);
+    }
+
+    [Fact]
     public void Build_UnknownMaterialId_FallsBackToDefaultMaterialColor()
     {
         var frame = new SceneRenderFrame(
@@ -222,5 +310,23 @@ public sealed class SceneRenderSubmissionBuilderTests
         var transformed = Vector4.Transform(vector, modelViewProjection);
         var w = MathF.Abs(transformed.W) > 0.00001f ? transformed.W : 1f;
         return new Vector3(transformed.X / w, transformed.Y / w, transformed.Z / w);
+    }
+
+    private sealed class CountingMeshAssetProvider : IMeshAssetProvider
+    {
+        private readonly MeshAssetLoadResult result;
+
+        public CountingMeshAssetProvider(MeshAssetLoadResult result)
+        {
+            this.result = result;
+        }
+
+        public int CallCount { get; private set; }
+
+        public MeshAssetLoadResult GetMesh(SceneMeshRef mesh)
+        {
+            CallCount += 1;
+            return result;
+        }
     }
 }

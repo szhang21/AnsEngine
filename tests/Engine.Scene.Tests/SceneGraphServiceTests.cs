@@ -42,7 +42,7 @@ public sealed class SceneGraphServiceTests
 
         var item = Assert.Single(frame.Items);
         Assert.Equal(1, item.NodeId);
-        Assert.Equal("mesh://triangle", item.MeshId);
+        Assert.Equal("mesh://cube", item.MeshId);
         Assert.Equal("material://default", item.MaterialId);
         Assert.Equal(Vector3.Zero, item.Transform.Position);
         Assert.Equal(Vector3.One, item.Transform.Scale);
@@ -103,17 +103,37 @@ public sealed class SceneGraphServiceTests
     }
 
     [Fact]
-    public void BuildRenderFrame_MultipleNodes_FallbackMeshDoesNotLeakMissingId()
+    public void BuildRenderFrame_MultipleNodes_PreservesSharedAndMissingMeshReferences()
     {
         var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
         var sceneGraph = new SceneGraphService(runtimeInfo);
         sceneGraph.AddRootNode();
         sceneGraph.AddRootNode();
+        sceneGraph.AddRootNode();
 
         var frame = sceneGraph.BuildRenderFrame();
 
+        Assert.Equal(3, frame.Items.Count);
+        Assert.Equal("mesh://cube", frame.Items[0].MeshId);
+        Assert.Equal("mesh://missing", frame.Items[1].MeshId);
+        Assert.Equal("mesh://cube", frame.Items[2].MeshId);
+        Assert.Equal(frame.Items[0].MeshId, frame.Items[2].MeshId);
+    }
+
+    [Fact]
+    public void BuildRenderFrame_FromContractsInterface_ExposesMissingMeshReferenceForDownstreamFallback()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+        sceneGraph.AddRootNode();
+        ContractsProvider contractsProvider = sceneGraph;
+
+        var frame = contractsProvider.BuildRenderFrame();
+
         Assert.Equal(2, frame.Items.Count);
-        Assert.All(frame.Items, item => Assert.Equal("mesh://triangle", item.MeshId));
+        Assert.Equal("mesh://cube", frame.Items[0].MeshId);
+        Assert.Equal("mesh://missing", frame.Items[1].MeshId);
     }
 
     [Fact]
@@ -128,7 +148,7 @@ public sealed class SceneGraphServiceTests
 
         var item = Assert.Single(frame.Items);
         Assert.Equal(1, item.NodeId);
-        Assert.Equal("mesh://triangle", item.MeshId);
+        Assert.Equal("mesh://cube", item.MeshId);
         Assert.Equal("material://default", item.MaterialId);
         Assert.Equal(Vector3.Zero, item.Transform.Position);
         Assert.Equal(Vector3.One, item.Transform.Scale);

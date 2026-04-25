@@ -23,13 +23,18 @@ public sealed class RuntimeBootstrapTests
         var windowService = new TestWindowService();
         var method = typeof(RuntimeBootstrap).GetMethod("CreateRenderer", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
+        IMeshAssetProvider meshAssetProvider = new StubMeshAssetProvider();
 
-        var renderer = Assert.IsType<NullRenderer>(method!.Invoke(null, new object[] { true, windowService, runtimeInfo, provider }));
+        var renderer = Assert.IsType<NullRenderer>(method!.Invoke(null, new object[] { true, windowService, runtimeInfo, provider, meshAssetProvider }));
         var providerField = typeof(NullRenderer).GetField("mSceneProvider", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(providerField);
         var wiredProvider = Assert.IsAssignableFrom<ContractsProvider>(providerField!.GetValue(renderer));
+        var meshProviderField = typeof(NullRenderer).GetField("mMeshAssetProvider", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(meshProviderField);
+        var wiredMeshProvider = Assert.IsAssignableFrom<IMeshAssetProvider>(meshProviderField!.GetValue(renderer));
 
         Assert.Same(provider, wiredProvider);
+        Assert.Same(meshAssetProvider, wiredMeshProvider);
 
         sceneGraph.AddRootNode();
         var firstFrame = wiredProvider.BuildRenderFrame();
@@ -57,6 +62,7 @@ public sealed class RuntimeBootstrapTests
             renderer,
             sceneRuntime,
             new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
             new NullInputService(),
             new FixedTimeService(new TimeSnapshot(0.016, 0, 60)));
 
@@ -80,6 +86,7 @@ public sealed class RuntimeBootstrapTests
             renderer,
             sceneRuntime,
             new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
             new NullInputService(),
             new FixedTimeService(new TimeSnapshot(0.016, 0, 60)));
 
@@ -205,6 +212,23 @@ public sealed class RuntimeBootstrapTests
         public void InitializeScene()
         {
             InitializeCalled = true;
+        }
+    }
+
+    private sealed class StubMeshAssetProvider : IMeshAssetProvider
+    {
+        private readonly MeshAssetData mAsset = new(
+            new[]
+            {
+                new MeshAssetVertex(Vector3.Zero, Vector3.UnitZ, Vector2.Zero),
+                new MeshAssetVertex(Vector3.UnitX, Vector3.UnitZ, Vector2.UnitX),
+                new MeshAssetVertex(Vector3.UnitY, Vector3.UnitZ, Vector2.UnitY)
+            },
+            new[] { 0, 1, 2 });
+
+        public MeshAssetLoadResult GetMesh(SceneMeshRef mesh)
+        {
+            return MeshAssetLoadResult.Success(mesh, mAsset);
         }
     }
 }

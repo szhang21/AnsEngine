@@ -21,9 +21,61 @@ public readonly record struct SceneRenderMaterialParameters(
     float Green,
     float Blue);
 
-public sealed record SceneRenderBatch(
-    IReadOnlyList<SceneRenderVertex> Vertices,
-    Matrix4x4 ModelViewProjection);
+public sealed record SceneRenderBatch
+{
+    public SceneRenderBatch(
+        string meshCacheKey,
+        IReadOnlyList<SceneRenderMeshVertex> meshVertices,
+        SceneRenderMaterialParameters material,
+        Matrix4x4 modelViewProjection)
+    {
+        if (string.IsNullOrWhiteSpace(meshCacheKey))
+        {
+            throw new ArgumentException("Mesh cache key must not be null or whitespace.", nameof(meshCacheKey));
+        }
+
+        MeshVertices = meshVertices ?? throw new ArgumentNullException(nameof(meshVertices));
+        MeshCacheKey = meshCacheKey;
+        Material = material;
+        ModelViewProjection = modelViewProjection;
+        Vertices = BuildVertices(meshVertices, material);
+    }
+
+    public string MeshCacheKey { get; }
+
+    public IReadOnlyList<SceneRenderMeshVertex> MeshVertices { get; }
+
+    public SceneRenderMaterialParameters Material { get; }
+
+    public IReadOnlyList<SceneRenderVertex> Vertices { get; }
+
+    public Matrix4x4 ModelViewProjection { get; }
+
+    private static IReadOnlyList<SceneRenderVertex> BuildVertices(
+        IReadOnlyList<SceneRenderMeshVertex> meshVertices,
+        SceneRenderMaterialParameters material)
+    {
+        if (meshVertices.Count == 0)
+        {
+            return Array.Empty<SceneRenderVertex>();
+        }
+
+        var vertices = new SceneRenderVertex[meshVertices.Count];
+        for (var index = 0; index < meshVertices.Count; index += 1)
+        {
+            var meshVertex = meshVertices[index];
+            vertices[index] = new SceneRenderVertex(
+                meshVertex.X,
+                meshVertex.Y,
+                meshVertex.Z,
+                material.Red,
+                material.Green,
+                material.Blue);
+        }
+
+        return vertices;
+    }
+}
 
 public sealed record SceneRenderSubmission(IReadOnlyList<SceneRenderBatch> Batches);
 
@@ -32,20 +84,11 @@ public static class SceneRenderSubmissionBuilder
     private const float kTriangleHalfWidth = 0.22f;
     private const float kTriangleHalfHeight = 0.20f;
     private const float kBaseY = -0.15f;
-    private const string kTriangleMeshId = "mesh://triangle";
+    private const string kTriangleFallbackMeshId = "fallback://triangle";
     private const string kDefaultMaterialId = "material://default";
     private static readonly SceneRenderMaterialParameters sDefaultMaterial =
         new(0.72f, 0.78f, 0.86f);
-    private static readonly IReadOnlyDictionary<string, SceneRenderMeshVertex[]> sMeshes =
-        new Dictionary<string, SceneRenderMeshVertex[]>(StringComparer.Ordinal)
-        {
-            [kTriangleMeshId] =
-            [
-                new SceneRenderMeshVertex(0f, kTriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(-kTriangleHalfWidth, -kTriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(kTriangleHalfWidth, -kTriangleHalfHeight, 0f)
-            ]
-        };
+    private static readonly SceneRenderMeshGeometryCache sMeshGeometryCache = new(CreateFallbackGeometry());
     private static readonly IReadOnlyDictionary<string, SceneRenderMaterialParameters> sMaterials =
         new Dictionary<string, SceneRenderMaterialParameters>(StringComparer.Ordinal)
         {
@@ -54,8 +97,10 @@ public static class SceneRenderSubmissionBuilder
             ["material://highlight"] = new SceneRenderMaterialParameters(0.42f, 0.85f, 0.58f)
         };
 
-    public static SceneRenderSubmission Build(SceneRenderFrame frame)
+    public static SceneRenderSubmission Build(SceneRenderFrame frame, IMeshAssetProvider? meshAssetProvider = null)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.Items.Count == 0)
         {
             return new SceneRenderSubmission(Array.Empty<SceneRenderBatch>());
@@ -66,29 +111,16 @@ public static class SceneRenderSubmissionBuilder
         {
             var item = frame.Items[index];
             var material = ResolveMaterial(item.MaterialId);
-            var meshVertices = ResolveMesh(item.MeshId);
-            var vertices = new List<SceneRenderVertex>(meshVertices.Length);
-            for (var vertexIndex = 0; vertexIndex < meshVertices.Length; vertexIndex += 1)
-            {
-                var meshVertex = meshVertices[vertexIndex];
-                vertices.Add(new SceneRenderVertex(meshVertex.X, meshVertex.Y, meshVertex.Z, material.Red, material.Green, material.Blue));
-            }
+            var meshGeometry = sMeshGeometryCache.Resolve(item.Mesh, meshAssetProvider);
 
             var centerX = -0.65f + (index * 0.6f);
             var layoutMatrix = Matrix4x4.CreateTranslation(centerX, kBaseY, 0f);
             var modelMatrix = layoutMatrix * BuildTransformMatrix(item.Transform);
             var modelViewProjection = modelMatrix * frame.Camera.View * frame.Camera.Projection;
-            batches.Add(new SceneRenderBatch(vertices, modelViewProjection));
+            batches.Add(new SceneRenderBatch(meshGeometry.MeshCacheKey, meshGeometry.Vertices, material, modelViewProjection));
         }
 
         return new SceneRenderSubmission(batches);
-    }
-
-    private static SceneRenderMeshVertex[] ResolveMesh(string meshId)
-    {
-        return sMeshes.TryGetValue(meshId, out var meshVertices)
-            ? meshVertices
-            : sMeshes[kTriangleMeshId];
     }
 
     private static SceneRenderMaterialParameters ResolveMaterial(string materialId)
@@ -109,5 +141,17 @@ public static class SceneRenderSubmissionBuilder
         var rotation = Matrix4x4.CreateFromQuaternion(transform.Rotation);
         var translation = Matrix4x4.CreateTranslation(transform.Position);
         return scale * rotation * translation;
+    }
+
+    private static SceneRenderMeshGeometry CreateFallbackGeometry()
+    {
+        return new SceneRenderMeshGeometry(
+            kTriangleFallbackMeshId,
+            new[]
+            {
+                new SceneRenderMeshVertex(0f, kTriangleHalfHeight, 0f),
+                new SceneRenderMeshVertex(-kTriangleHalfWidth, -kTriangleHalfHeight, 0f),
+                new SceneRenderMeshVertex(kTriangleHalfWidth, -kTriangleHalfHeight, 0f)
+            });
     }
 }

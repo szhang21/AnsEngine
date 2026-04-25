@@ -6,7 +6,7 @@ namespace Engine.Scene;
 
 public sealed class SceneGraphService : ISceneRenderContractProvider
 {
-    private const string kDefaultMeshId = "mesh://triangle";
+    private const string kDefaultMeshId = "mesh://cube";
     private const string kMissingMeshId = "mesh://missing";
     private const string kDefaultMaterialId = "material://default";
     private const string kPulseMaterialId = "material://pulse";
@@ -22,15 +22,11 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     private const float kCameraFarPlane = 10.0f;
     private const float kCameraAspectRatio = 16.0f / 9.0f;
     private static readonly string[] sMaterialCycle =
-    [
+    {
         kDefaultMaterialId,
         kPulseMaterialId,
         kHighlightMaterialId,
         kMissingMaterialId
-    ];
-    private static readonly HashSet<string> sSupportedMeshIds = new(StringComparer.Ordinal)
-    {
-        kDefaultMeshId
     };
     private static readonly HashSet<string> sSupportedMaterialIds = new(StringComparer.Ordinal)
     {
@@ -40,7 +36,7 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     };
 
     private readonly EngineRuntimeInfo mRuntimeInfo;
-    private readonly List<SceneRenderItem> mRenderItems = [];
+    private readonly List<SceneRenderItem> mRenderItems = new();
     private int mNextNodeId = 1;
     private int mFrameNumber;
 
@@ -85,9 +81,8 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         string materialCandidate,
         SceneTransform transform)
     {
-        var meshId = ResolveMeshId(meshCandidate);
         var materialId = ResolveMaterialId(materialCandidate);
-        return new SceneRenderItem(nodeId, new SceneMeshRef(meshId), new SceneMaterialRef(materialId), transform);
+        return new SceneRenderItem(nodeId, new SceneMeshRef(meshCandidate), new SceneMaterialRef(materialId), transform);
     }
 
     private static string BuildMeshCandidate(int nodeId)
@@ -101,11 +96,6 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         return sMaterialCycle[cycleIndex];
     }
 
-    private static string ResolveMeshId(string meshCandidate)
-    {
-        return sSupportedMeshIds.Contains(meshCandidate) ? meshCandidate : kDefaultMeshId;
-    }
-
     private static string ResolveMaterialId(string materialCandidate)
     {
         return sSupportedMaterialIds.Contains(materialCandidate) ? materialCandidate : kDefaultMaterialId;
@@ -115,7 +105,10 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     {
         var position = new Vector3(frameNumber * kPositionStepPerFrame, itemIndex * 0.2f, 0.0f);
         var scale = Vector3.One;
-        var rotation = Quaternion.CreateFromYawPitchRoll(frameNumber * kRotationStepPerFrameRadians, 0.0f, 0.0f);
+        var rotation = Quaternion.CreateFromYawPitchRoll(
+            frameNumber * kRotationStepPerFrameRadians,
+            frameNumber * (kRotationStepPerFrameRadians * 0.6f),
+            0.0f);
         return new SceneTransform(position, scale, rotation);
     }
 

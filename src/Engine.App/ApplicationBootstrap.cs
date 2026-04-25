@@ -11,6 +11,8 @@ namespace Engine.App;
 
 public sealed class RuntimeBootstrap : IRuntimeBootstrap
 {
+    private const string kSampleMeshCatalogFileName = "mesh-catalog.txt";
+
     public IApplication Build()
     {
         var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
@@ -21,20 +23,34 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var sceneGraph = new SceneGraphService(runtimeInfo);
         ISceneRuntime sceneRuntime = new SceneRuntimeAdapter(sceneGraph);
         ContractsProvider renderInputProvider = sceneGraph;
-        var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider);
-        var assetService = new NullAssetService(runtimeInfo, windowService);
-        return new ApplicationHost(windowService, renderer, sceneRuntime, assetService, inputService, timeService);
+        var meshAssetProvider = CreateMeshAssetProvider();
+        var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider, meshAssetProvider);
+        var assetService = new NullAssetService(runtimeInfo, windowService, meshAssetProvider);
+        return new ApplicationHost(windowService, renderer, sceneRuntime, assetService, meshAssetProvider, inputService, timeService);
     }
 
     private static IRenderer CreateRenderer(
         bool useNativeWindow,
         IWindowService windowService,
         EngineRuntimeInfo runtimeInfo,
-        ContractsProvider renderInputProvider)
+        ContractsProvider renderInputProvider,
+        IMeshAssetProvider meshAssetProvider)
     {
         return useNativeWindow
-            ? new NullRenderer(windowService, runtimeInfo, renderInputProvider)
+            ? new NullRenderer(windowService, runtimeInfo, renderInputProvider, meshAssetProvider)
             : new HeadlessRenderer();
+    }
+
+    private static IMeshAssetProvider CreateMeshAssetProvider()
+    {
+        var sampleAssetRoot = ResolveSampleAssetRoot();
+        var catalogPath = Path.Combine(sampleAssetRoot, kSampleMeshCatalogFileName);
+        return new DiskMeshAssetProvider(catalogPath);
+    }
+
+    private static string ResolveSampleAssetRoot()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "SampleAssets");
     }
 
     private static bool ResolveUseNativeWindow()
@@ -90,10 +106,12 @@ internal sealed class HeadlessRenderer : IRenderer
 
 public sealed class ApplicationHost : IApplication
 {
+    private static readonly SceneMeshRef sBootstrapMesh = new("mesh://cube");
     private readonly IWindowService mWindowService;
     private readonly IRenderer mRenderer;
     private readonly ISceneRuntime mSceneRuntime;
     private readonly IAssetService mAssetService;
+    private readonly IMeshAssetProvider mMeshAssetProvider;
     private readonly IInputService mInputService;
     private readonly ITimeService mTimeService;
     private readonly double? mAutoExitSeconds;
@@ -103,6 +121,7 @@ public sealed class ApplicationHost : IApplication
         IRenderer renderer,
         ISceneRuntime sceneRuntime,
         IAssetService assetService,
+        IMeshAssetProvider meshAssetProvider,
         IInputService inputService,
         ITimeService timeService)
     {
@@ -110,6 +129,7 @@ public sealed class ApplicationHost : IApplication
         mRenderer = renderer;
         mSceneRuntime = sceneRuntime;
         mAssetService = assetService;
+        mMeshAssetProvider = meshAssetProvider ?? throw new ArgumentNullException(nameof(meshAssetProvider));
         mInputService = inputService;
         mTimeService = timeService;
         mAutoExitSeconds = ResolveAutoExitSeconds();
@@ -123,6 +143,7 @@ public sealed class ApplicationHost : IApplication
             var uptime = Stopwatch.StartNew();
             mSceneRuntime.InitializeScene();
             _ = mAssetService.Load("bootstrap://placeholder");
+            _ = mMeshAssetProvider.GetMesh(sBootstrapMesh);
 
             while (mWindowService.Exists && !mWindowService.IsCloseRequested)
             {
