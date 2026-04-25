@@ -48,6 +48,173 @@
 
 ### 当前记录
 
+- TaskId: `TASK-QA-010`
+  Title: `M9 真实 mesh 资产链路门禁复验`
+  Priority: `P2`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-25 18:34`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 复核 M9 真实磁盘 mesh 主链路的 Build/Test/Smoke/Perf 与边界职责
+    - 汇总 Asset、Render、Scene、App 相关测试与样例运行证据
+    - Human 于 `2026-04-25` 完成 M9 全量人工验收并批准关单
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-010.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-010.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-25` 确认 M9 全链路验收通过）
+    - Test: pass（Asset/Render/Scene/App 对应测试已覆盖导入、cache、fallback 与装配路径）
+    - Smoke: pass（真实磁盘 mesh 链路运行并稳定退出）
+    - Perf: pass（Asset provider 缓存与 Render GPU cache 语义已覆盖）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-010.md`
+
+- TaskId: `TASK-APP-008`
+  Title: `M9 Mesh provider 装配与样例运行路径接线`
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-25 18:33`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `DiskMeshAssetProvider` 与 sample mesh 资源目录装配
+    - 主循环前预热 bootstrap mesh 解析，保证 headless/真实窗口路径都进入真实磁盘 mesh 主链路
+    - 保持 App 只做装配，不承载 OBJ 或 GPU 逻辑
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/SampleAssets/cube.obj`
+    - `src/Engine.App/SampleAssets/mesh-catalog.txt`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-25` 确认 M9 App 装配路径验收通过）
+    - Test: pass（`tests/Engine.App.Tests` 覆盖 provider 注入与异常收口）
+    - Smoke: pass（真实 mesh 主链路可在 headless/真实窗口路径启动并稳定退出）
+    - Perf: pass（装配与预热仅发生在启动阶段）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-008.md`
+
+- TaskId: `TASK-SCENE-008`
+  Title: `M9 Scene 真实 mesh 引用收敛`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-25 18:32`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneGraphService` 默认输出真实 `mesh://cube` 引用
+    - 多对象路径保留 `mesh://missing` 以供下游 fallback 验证
+    - 保持 Scene 仅输出稳定 `meshId`，不泄漏路径或导入器语义
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-25` 确认 Scene M9 验收通过）
+    - Test: pass（`tests/Engine.Scene.Tests` 覆盖真实/共享/缺失 mesh 引用语义）
+    - Smoke: pass（新引用语义未破坏下游运行路径）
+    - Perf: pass（未引入逐帧路径解析或 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-008.md`
+
+- TaskId: `TASK-REND-013`
+  Title: `M9 Render mesh provider 接入与 GPU cache 主路径`
+  Priority: `P1`
+  PrimaryModule: `Engine.Render`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-render.md`
+  Owner: `Exec-Render`
+  ClosedAt: `2026-04-25 18:31`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Render 接入 `IMeshAssetProvider` 并通过 mesh geometry cache 消费真实 mesh CPU 资产
+    - 新增 GPU resource cache，保证共享 mesh 不重复创建 GPU 资源
+    - 内置三角形降级为 provider 失败 fallback
+  FilesChanged:
+    - `src/Engine.Render/RenderPlaceholders.cs`
+    - `src/Engine.Render/SceneRenderSubmission.cs`
+    - `src/Engine.Render/SceneRenderMeshGeometry.cs`
+    - `src/Engine.Render/SceneRenderMeshGeometryCache.cs`
+    - `src/Engine.Render/SceneRenderGpuMeshResource.cs`
+    - `src/Engine.Render/SceneRenderGpuMeshResourceCache.cs`
+    - `tests/Engine.Render.Tests/NullRendererTests.cs`
+    - `tests/Engine.Render.Tests/SceneRenderSubmissionBuilderTests.cs`
+    - `tests/Engine.Render.Tests/SceneRenderGpuMeshResourceCacheTests.cs`
+    - `.ai-workflow/boundaries/engine-render.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-25` 确认 Render M9 验收通过）
+    - Test: pass（`tests/Engine.Render.Tests` 覆盖 provider 接入、fallback 与共享 mesh GPU cache）
+    - Smoke: pass（真实磁盘 mesh 可被应用渲染链路稳定消费并退出）
+    - Perf: pass（同 mesh 不重复创建 GPU 资源）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-REND-013.md`
+
+- TaskId: `TASK-ASSET-001`
+  Title: `M9 OBJ 磁盘导入与 mesh CPU 资产缓存主路径`
+  Priority: `P0`
+  PrimaryModule: `Engine.Asset`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-asset.md`
+  Owner: `Exec-Asset`
+  ClosedAt: `2026-04-23 23:35`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `DiskMeshAssetProvider`，在 Asset 内完成 `meshId -> catalog -> OBJ -> MeshAssetData -> cache` 主路径
+    - 新增 `MeshCatalog` 与 `ObjMeshFileLoader`，显式返回缺失、损坏与格式不支持等失败语义
+    - 保持 `NullAssetService` 兼容，并补齐缓存命中与 headless 真实磁盘 mesh 专项测试
+  FilesChanged:
+    - `src/Engine.Asset/AssetHandle.cs`
+    - `src/Engine.Asset/DiskMeshAssetProvider.cs`
+    - `src/Engine.Asset/Engine.Asset.csproj`
+    - `src/Engine.Asset/MeshCatalog.cs`
+    - `src/Engine.Asset/NullAssetService.cs`
+    - `src/Engine.Asset/ObjMeshFileLoader.cs`
+    - `src/Engine.Asset/AssetPlaceholders.cs`
+    - `tests/Engine.Asset.Tests/AssetServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-asset.md`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug --nologo` 与 `dotnet build AnsEngine.sln -c Release --nologo`）
+    - Test: pass（`dotnet test AnsEngine.sln --nologo -v minimal`）
+    - Smoke: pass（headless 专项测试通过，真实磁盘 mesh 已加载）
+    - Perf: pass（重复请求命中 provider 缓存，不重复解析已缓存成功结果）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-ASSET-001.md`
+
+- TaskId: `TASK-CONTRACT-005`
+  Title: `M9 Mesh CPU 资产契约与失败语义定稿`
+  Priority: `P0`
+  PrimaryModule: `Engine.Contracts`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-contracts.md`
+  Owner: `Exec-Contracts`
+  ClosedAt: `2026-04-23 01:14`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `MeshAssetVertex` 与 `MeshAssetData`，定义规范化 mesh CPU 数据模型
+    - 新增 `IMeshAssetProvider`、`MeshAssetLoadResult` 与失败语义类型，收敛跨模块查询桥接面
+    - 补齐契约测试与边界文档，为 M9 后续 Asset/Render/App 任务提供稳定输入面
+  FilesChanged:
+    - `src/Engine.Contracts/IMeshAssetProvider.cs`
+    - `src/Engine.Contracts/MeshAssetData.cs`
+    - `src/Engine.Contracts/MeshAssetLoadFailure.cs`
+    - `src/Engine.Contracts/MeshAssetLoadFailureKind.cs`
+    - `src/Engine.Contracts/MeshAssetLoadResult.cs`
+    - `src/Engine.Contracts/MeshAssetVertex.cs`
+    - `tests/Engine.Contracts.Tests/MeshAssetContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-contracts.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln -c Debug --nologo` 与 `dotnet build AnsEngine.sln -c Release --nologo`）
+    - Test: pass（`dotnet test AnsEngine.sln --nologo -v minimal`）
+    - Smoke: pass（headless 启动/退出成功，ExitCode=0）
+    - Perf: pass（契约层仅新增只读数据模型与显式结果类型，无逐帧 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-CONTRACT-005.md`
+
 - TaskId: `TASK-BOOT-001`
   Title: 初始化 `AnsEngine` 多项目骨架
   Priority: `P1`

@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-24
+  - 变更人：Exec-Render
+  - 变更内容：`NullRenderer` 新增 `IMeshAssetProvider` 注入；`SceneRenderSubmissionBuilder` 通过 `SceneRenderMeshGeometryCache` 消费真实 mesh CPU 资产，并新增 `SceneRenderGpuMeshResourceCache` 以 `meshCacheKey` 复用 GPU 资源；内置三角形降级为 provider 失败时的 fallback 路径。
+  - 变更原因：支撑 `TASK-REND-013`，让 Render 在不依赖 Asset 实现细节的前提下接入真实 mesh provider，并建立共享 mesh 的 GPU cache 主路径。
+  - 风险与回滚方案：若后续 provider 返回更复杂拓扑或多子网格，优先扩展 mesh geometry/gpu resource 抽象；不回退为 Render 内部硬编码顶点表主路径。
+
 - 2026-04-18
   - 变更人：Exec-Render
   - 变更内容：`SceneRenderSubmissionBuilder` 增加最小 material 参数解析入口（`materialId -> SceneRenderMaterialParameters`），并将 mesh/material 均收敛到显式解析函数主路径；移除 hash 派生颜色语义。

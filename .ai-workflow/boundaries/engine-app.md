@@ -81,6 +81,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-24
+  - 变更人：Exec-App
+  - 变更内容：组合根新增 sample mesh 资源目录与 `DiskMeshAssetProvider` 装配；native 渲染路径显式注入 mesh provider，运行时在进入主循环前预热一次 bootstrap mesh 解析，保证 headless/真实窗口路径都走到真实磁盘 mesh 主链路。
+  - 变更原因：支撑 `TASK-APP-008`，让 App 负责 provider/service 装配与样例运行路径接线，但不承载 OBJ 解析或 GPU 资源逻辑。
+  - 风险与回滚方案：若后续样例资源入口改为外部配置文件或命令行参数，保持组合根负责路径解析与依赖注入，不回退到子模块内部自定位。
+
 - 2026-04-17
   - 变更人：Exec-App
   - 变更内容：补充 M6 装配与生命周期校准测试：验证 App native 路径注入的 Scene provider 可产出相机语义（View 连续帧变化），并验证渲染异常路径仍完成 `RequestClose -> Shutdown -> Dispose` 收口。

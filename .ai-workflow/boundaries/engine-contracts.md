@@ -18,6 +18,7 @@
 
 - 定义跨模块共享契约类型（如 `SceneRenderItem`、`SceneRenderFrame`、`SceneTransform`、`SceneCamera`）。
 - 定义渲染输入提供器接口（`ISceneRenderContractProvider`）。
+- 定义 mesh CPU 资产桥接契约（如 `MeshAssetData`、`MeshAssetVertex`、`IMeshAssetProvider`、`MeshAssetLoadResult`）。
 - 维持向后兼容策略（新增字段优先可选，避免破坏性改动）。
 - 提供最小语义注释，确保调用方理解输入输出约束。
 
@@ -74,6 +75,26 @@
   - 用途：承载最小视图/投影语义（View/Projection）。
   - 兼容约束：提供 `Identity`，保证下游未显式提供相机时的默认兼容路径。
 
+- `MeshAssetVertex`
+  - 用途：承载规范化 mesh CPU 顶点语义（Position/Normal/TexCoord）。
+  - 输入/输出：作为 `MeshAssetData` 的只读顶点元素供 Asset/Render 共享。
+  - 错误语义：字段值由生产侧保证合法，契约层不持有导入器或图形 API 细节。
+
+- `MeshAssetData`
+  - 用途：承载规范化 mesh CPU 资产数据（Vertices/Indices）。
+  - 输入/输出：由 `IMeshAssetProvider` 成功结果返回，供 Render 建立 GPU 资源。
+  - 兼容约束：第一版固定覆盖位置、法线、UV、索引；不暴露子网格、OBJ 专有字段或 OpenGL 类型。
+
+- `IMeshAssetProvider`
+  - 用途：根据 `SceneMeshRef` 查询 mesh CPU 资产。
+  - 输入/输出：输入 `SceneMeshRef`，返回 `MeshAssetLoadResult`。
+  - 错误语义：缺失、损坏、格式不支持等可恢复失败必须通过显式结果返回，不依赖异常作为主路径分支。
+
+- `MeshAssetLoadResult`
+  - 用途：表达 mesh 查询成功或失败的显式结果。
+  - 输入/输出：成功时持有 `MeshAssetData`，失败时持有 `MeshAssetLoadFailure`。
+  - 生命周期约束：结果对象只承载查询快照，不持有文件句柄、缓存所有权或 GPU 资源。
+
 ## 8) 数据与状态边界
 
 - 模块内部可变状态：无（尽量无状态）。
@@ -93,6 +114,18 @@
   - [ ] 公开接口与合同一致
 
 ## 10) 变更记录（Boundary Change Log）
+- 2026-04-23
+  - 变更人：Exec-Asset
+  - 变更内容：`Engine.Asset` 已开始实现并消费 `IMeshAssetProvider` / `MeshAssetLoadResult` 契约，真实磁盘 mesh CPU 资产主路径固定为 `meshId -> catalog -> OBJ -> MeshAssetData`。
+  - 变更原因：同步 `TASK-ASSET-001` 进展，确保 Contracts 文档已反映首个真实 provider 实现与失败语义消费方。
+  - 风险与回滚方案：若后续扩展 glTF 或异步加载，继续保持 `MeshAssetData` 与 `MeshAssetLoadResult` 公开语义稳定，扩展点留在 Asset 实现层。
+
+- 2026-04-23
+  - 变更人：Exec-Contracts
+  - 变更内容：新增 `MeshAssetVertex`、`MeshAssetData`、`IMeshAssetProvider`、`MeshAssetLoadResult` 与 `MeshAssetLoadFailure` 系列契约，正式定义 M9 mesh CPU 资产桥接面与显式失败语义。
+  - 变更原因：支撑 `TASK-CONTRACT-005`，为 Asset/Render/App 后续真实 mesh 资产主链路提供唯一跨模块契约，不把 OBJ/OpenGL 细节泄漏到公开接口。
+  - 风险与回滚方案：若后续需要扩展切线、包围盒或异步加载信息，继续沿用向后兼容新增字段/类型的方式演进；当前不回退到字符串或异常驱动的模糊语义。
+
 - 2026-04-18
   - 变更人：Exec-Scene
   - 变更内容：`Engine.Scene` 已落地对 `SceneMeshRef/SceneMaterialRef` 的结构化输出消费，`meshId/materialId` 在 Scene 侧引入支持集合与默认回退，保证向下游 Render 输出稳定契约值。

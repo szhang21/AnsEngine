@@ -19,6 +19,7 @@
 - 负责资源加载管线（读取、解析、构建资源对象）。
 - 负责资源缓存与去重策略。
 - 负责资源句柄分配、查找与释放。
+- 负责 `meshId -> catalog -> disk source -> normalized CPU mesh asset` 主路径。
 - 负责资源加载错误与版本冲突日志。
 
 ## 4) 非职责（Non-Responsibilities）
@@ -33,6 +34,7 @@
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Platform`（仅文件系统抽象）
+  - `Engine.Contracts`
 - 可使用基础库/第三方：
   - `AssimpNet`（模型导入）
   - `ImageSharp` / `StbImageSharp`（图像读取）
@@ -60,12 +62,19 @@
   - 错误语义：失效句柄必须可检测
   - 生命周期约束：遵循引用有效期与释放策略
 
+- `IMeshAssetProvider`（由 `Engine.Contracts` 定义，`Engine.Asset` 提供实现）
+  - 用途：根据稳定 `meshId` 查询规范化 mesh CPU 资产。
+  - 输入/输出：输入 `SceneMeshRef`，输出 `MeshAssetLoadResult`。
+  - 错误语义：缺失资源、损坏 OBJ、格式不支持等可恢复失败必须通过显式结果返回。
+  - 生命周期约束：Asset 侧负责目录解析、磁盘读取与 CPU 缓存；不持有 GPU 资源。
+
 ## 8) 数据与状态边界
 
 - 模块内部可变状态：资源缓存表、句柄映射、重载标记。
+- 模块内部可变状态：mesh catalog 解析结果、`meshId -> MeshAssetLoadResult` 查询缓存。
 - 外部可观察状态：加载状态、命中率统计、失败日志。
 - 线程模型与并发约束：加载可异步，缓存写入需加锁或串行化。
-- 资源生命周期：`Load -> Cache -> Use -> Release`，禁止悬空句柄。
+- 资源生命周期：`CatalogResolve -> DiskRead -> Parse -> CPU Cache -> Use`，禁止在 Asset 内创建或持有 OpenGL 资源。
 
 ## 9) 质量门禁与验收
 
@@ -79,6 +88,12 @@
   - [ ] 公开接口与合同一致
 
 ## 10) 变更记录（Boundary Change Log）
+
+- 2026-04-23
+  - 变更人：Exec-Asset
+  - 变更内容：新增 `Engine.Asset -> Engine.Contracts` 依赖方向落地；在 Asset 内实现 `DiskMeshAssetProvider`、mesh catalog 解析、OBJ 导入与 `meshId -> MeshAssetLoadResult` 缓存主路径。
+  - 变更原因：支撑 `TASK-ASSET-001`，让真实磁盘 mesh CPU 资产通过 `Engine.Contracts` 的 provider/result 契约稳定暴露给 Render/App。
+  - 风险与回滚方案：当前仅支持同步 OBJ 导入与最小 catalog 映射；若后续扩展异步加载或更多格式，继续在 Asset 内新增实现，不回退到 Render 直读磁盘。
 
 - 2026-04-04
   - 变更人：初始化

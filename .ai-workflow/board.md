@@ -33,6 +33,12 @@
 
 ## Done
 
+- `TASK-QA-010` M9 真实 mesh 资产链路门禁复验（人工验收通过，已归档）
+- `TASK-APP-008` M9 Mesh provider 装配与样例运行路径接线（人工验收通过，已归档）
+- `TASK-SCENE-008` M9 Scene 真实 mesh 引用收敛（人工验收通过，已归档）
+- `TASK-REND-013` M9 Render mesh provider 接入与 GPU cache 主路径（人工验收通过，已归档）
+- `TASK-ASSET-001` M9 OBJ 磁盘导入与 mesh CPU 资产缓存主路径（人工验收通过，已归档）
+- `TASK-CONTRACT-005` M9 Mesh CPU 资产契约与失败语义定稿（人工验收通过，已归档）
 - `TASK-QA-009` M7 门禁复验与关单收敛（含多对象与回退验证）（人工验收通过，已归档）
 - `TASK-REND-011` M7 Mesh 数据入口落地（人工验收通过，已归档）
 - `TASK-REND-012` M7 Material 参数入口落地（人工验收通过，已归档）

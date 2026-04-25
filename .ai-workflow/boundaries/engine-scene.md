@@ -80,6 +80,12 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-24
+  - 变更人：Exec-Scene
+  - 变更内容：`SceneGraphService` 默认输出真实 `mesh://cube` 引用，并在多对象路径保留 `mesh://missing` 供下游 fallback 验证；补充共享 mesh 与缺失 mesh 引用测试，明确 Scene 仅持稳定 `meshId`，不持有磁盘路径或导入器细节。
+  - 变更原因：支撑 `TASK-SCENE-008`，让 Scene 为 M9 真实磁盘 mesh 主链路输出可复用、可回退的资源引用语义。
+  - 风险与回滚方案：若后续样例 mesh 集合扩展，继续在 Scene 侧维护语义化 `meshId` 集合；不回退为裸文件路径或导入器语义泄漏。
+
 - 2026-04-18
   - 变更人：Exec-Scene
   - 变更内容：`SceneGraphService` 资源输出新增候选值解析与回退规则（`meshId/materialId`），并统一通过 `SceneMeshRef/SceneMaterialRef` 结构化构造输出；多对象路径下缺失 mesh/material 均在 Scene 侧回退。
