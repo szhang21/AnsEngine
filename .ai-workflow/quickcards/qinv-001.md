@@ -13,7 +13,7 @@
 `Human`
 
 ## Owner
-`pending`
+`Exec-Render`
 
 ## Priority
 `P1`
@@ -73,13 +73,30 @@
 ## Evidence
 - 用户描述：当前对象应为立方体，但渲染结果异常
 - 初始怀疑点：摄像机参数 / 视图投影消费路径
+- 调查结果：`SceneDescription -> Scene -> Render` 路径中的 mesh 与相机消费未发现立方体数据损坏；首个主要原因位于 `Engine.Render` 当前可视化策略本身
+- 关键证据：
+  - `SceneRenderSubmissionBuilder` 已通过 provider 路径消费真实 mesh，并在 `Engine.Render.Tests` 中稳定展开 mesh 顶点与索引
+  - 当前异常更接近“纯线框 + 常量色 + 缺少明暗/遮挡线索”导致的视觉误判，而不是立方体被错误解析成平面
+  - Render 最小增强后已完成局部 `build/test` 与 headless smoke
+
+## Result
+`CloseAsByDesign`
 
 ## Status
-`Todo`
+`Done`
 
 ## Completion
-`0`
+`100`
 
 ## Escalation
 - EscalatedToTaskId:
 - EscalationReason:
+
+## Resolution
+- 完成时间：`2026-04-26 16:02`
+- 结论：当前“看起来不像正常立方体”的首个主要原因不在 mesh 数据或 Scene/Camera 契约损坏，而在 `Engine.Render` 采用的调试可视化方式本身。
+- 处理：由 `QTK-001` 在同模块内继续做最小可视化增强，不需要升正式任务卡。
+- 验证摘要：
+  - Build: `pass`（`/Users/ans/.dotnet/dotnet build src/Engine.Render/Engine.Render.csproj -c Debug --nologo -v minimal`）
+  - Test: `pass`（`/Users/ans/.dotnet/dotnet test tests/Engine.Render.Tests/Engine.Render.Tests.csproj --nologo -v minimal`；15 条通过）
+  - Smoke: `pass`（headless app 启动路径已成功运行并退出）
