@@ -33,6 +33,7 @@
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Contracts`（渲染输入契约层）
+  - `Engine.SceneData`（规范化场景描述输入）
 - 可使用基础库/第三方：
   - `System.Numerics`（如项目采用）
   - 项目内部数学工具（若在 `Engine.Core`）
@@ -80,6 +81,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-26
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `Engine.Scene -> Engine.SceneData` 允许依赖，并在 `SceneGraphService` 中接入 `SceneDescription` 到运行时渲染帧的初始化入口。
+  - 变更原因：支撑 `TASK-SCENE-009`，让 Scene 从 M10 起消费规范化场景描述，而不是继续依赖硬编码对象与相机。
+  - 风险与回滚方案：若后续 `SceneDescription` 扩展层级或更多场景语义，继续由 Scene 在运行时内部映射，不回退为 Scene 直接解析 JSON 或文件路径。
 - 2026-04-24
   - 变更人：Exec-Scene
   - 变更内容：`SceneGraphService` 默认输出真实 `mesh://cube` 引用，并在多对象路径保留 `mesh://missing` 供下游 fallback 验证；补充共享 mesh 与缺失 mesh 引用测试，明确 Scene 仅持稳定 `meshId`，不持有磁盘路径或导入器细节。

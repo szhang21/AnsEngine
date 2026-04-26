@@ -34,6 +34,7 @@
   - `Engine.Core`
   - `Engine.Platform`
   - `Engine.Scene`
+  - `Engine.SceneData`
   - `Engine.Asset`
   - `Engine.Render`
 - 可使用基础库/第三方：
@@ -81,6 +82,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-26
+  - 变更人：Execution-Agent
+  - 变更内容：组合根新增 `Engine.SceneData` loader 装配、默认样例场景路径与 `ANS_ENGINE_SCENE_PATH` 覆盖入口；`ApplicationHost` 启动时先加载 `SceneDescription`，再初始化 Scene 运行时。
+  - 变更原因：支撑 `TASK-APP-009`，让默认场景文件进入真实启动路径，并保持 App 只负责路径选择、loader 注入和错误收口。
+  - 风险与回滚方案：若后续配置入口从环境变量扩展到配置文件或 CLI，继续由 App 负责来源解析与注入，不回退为 Scene/SceneData 自定位文件路径。
 - 2026-04-24
   - 变更人：Exec-App
   - 变更内容：组合根新增 sample mesh 资源目录与 `DiskMeshAssetProvider` 装配；native 渲染路径显式注入 mesh provider，运行时在进入主循环前预热一次 bootstrap mesh 解析，保证 headless/真实窗口路径都走到真实磁盘 mesh 主链路。

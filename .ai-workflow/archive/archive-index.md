@@ -48,6 +48,141 @@
 
 ### 当前记录
 
+- TaskId: `TASK-QA-011`
+  Title: `M10 数据驱动场景链路门禁复验`
+  Priority: `P2`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-26 16:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 复核 M10 数据驱动场景链路的 Build/Test/Smoke/Perf 与边界职责
+    - 汇总 `TASK-SDATA-002`、`TASK-SCENE-009`、`TASK-APP-009` 的测试与样例运行证据
+    - Human 于 `2026-04-26` 完成 M10 全量人工验收并批准关单
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-011.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-011.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-26` 确认 M10 全链路验收通过）
+    - Test: pass（SceneData/Scene/App 对应测试已覆盖描述加载、运行时映射与装配路径）
+    - Smoke: pass（样例场景 JSON 已完成加载、初始化并稳定退出）
+    - Perf: pass（初始化阶段一次性加载与映射，无逐帧解析或重载）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-011.md`
+
+- TaskId: `TASK-APP-009`
+  Title: `M10 场景文件选择与 SceneData loader 装配`
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-04-26 15:45`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `Engine.App` 新增 `SceneData` loader 装配，并在启动路径中显式消费 `SceneDescriptionLoadResult`
+    - 新增默认样例场景文件与 `ANS_ENGINE_SCENE_PATH` 覆盖入口，修改场景文件即可影响运行结果
+    - 启动时先加载场景描述、再初始化 Scene；加载失败显式收口，不再隐式回退到硬编码场景
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `src/Engine.App/SampleScenes/default.scene.json`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+  ValidationEvidence:
+    - Build: pass（`/Users/ans/.dotnet/dotnet build src/Engine.App/Engine.App.csproj -c Debug` 与 `-c Release --no-restore`）
+    - Test: pass（`/Users/ans/.dotnet/dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --nologo -v minimal --no-restore`；6 条通过）
+    - Smoke: pass（headless 启动路径已成功加载默认场景并稳定退出）
+    - Perf: pass（场景文件仅在启动阶段加载，无重复 loader 创建或场景重载）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-APP-009.md`
+
+- TaskId: `TASK-SCENE-009`
+  Title: `M10 SceneDescription 到运行时场景初始化入口`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-04-26 15:28`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `Engine.Scene` 新增对 `Engine.SceneData` 的依赖，并在 `SceneGraphService` 中新增 `LoadSceneDescription(SceneDescription)` 初始化入口
+    - `SceneDescription` 中的对象、材质、`LocalTransform` 与相机现在可稳定映射为 `SceneRenderFrame` 输出
+    - 补齐描述驱动初始化、多对象稳定输出和默认相机回退测试，保持 Scene 不做 JSON 解析或文件 IO
+  FilesChanged:
+    - `src/Engine.Scene/Engine.Scene.csproj`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+  ValidationEvidence:
+    - Build: pass（`/Users/ans/.dotnet/dotnet build src/Engine.Scene/Engine.Scene.csproj -c Debug/Release --nologo -v minimal`）
+    - Test: pass（`/Users/ans/.dotnet/dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --nologo -v minimal`；11 条通过）
+    - Smoke: pass（样例式 `SceneDescription` 已被成功映射为 `SceneRenderFrame`）
+    - Perf: pass（初始化时一次性映射；稳定帧循环不重复解析场景描述）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-009.md`
+
+- TaskId: `TASK-SDATA-002`
+  Title: `M10 场景 JSON 描述模型、加载与规范化`
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-04-26 15:12`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `JsonSceneDescriptionLoader`，在 `Engine.SceneData` 内完成 `JSON -> FileModel -> 校验/默认值/规范化 -> SceneDescriptionLoadResult` 主路径
+    - 保持 `FileModel` 与 `Descriptions` 双层结构，并以显式失败结果表达缺失文件、非法 JSON、重复对象 `id` 与默认值规范化语义
+    - 补齐样例场景 JSON 与回归测试，覆盖合法加载、非法 JSON、缺失 `mesh`、重复对象 `id`、默认材质、默认 transform 与默认相机回填
+  FilesChanged:
+    - `src/Engine.SceneData/Loading/JsonSceneDescriptionLoader.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `tests/Engine.SceneData.Tests/SampleScenes/sample.scene.json`
+    - `tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/tasks/task-sdata-002.md`
+    - `.ai-workflow/archive/2026-04/TASK-SDATA-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`/Users/ans/.dotnet/dotnet build src/Engine.SceneData/Engine.SceneData.csproj -c Debug/Release --nologo -v minimal`）
+    - Test: pass（`/Users/ans/.dotnet/dotnet test tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj --nologo -v minimal`；12 条通过）
+    - Smoke: pass（样例场景 JSON 已被成功加载为 `SceneDescription`）
+    - Perf: pass（加载阶段一次性解析，无逐帧 JSON 反序列化）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SDATA-002.md`
+
+- TaskId: `TASK-SDATA-001`
+  Title: `M10 SceneData 模块与边界落地`
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-04-26 00:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新建独立 `Engine.SceneData` 模块并接入 solution，固定 `SceneData -> Contracts` 依赖方向
+    - 落地最小公开入口与描述模型占位，为后续 JSON 主路径提供稳定落点
+    - 补齐最小模块依赖测试与边界文档，确认不反向耦合运行时层
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.SceneData/**`
+    - `tests/**`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/boundaries/README.md`
+  ValidationEvidence:
+    - Build: pass（Human 于 `2026-04-26` 确认 M10.1 模块落地验收通过）
+    - Test: pass（Human 于 `2026-04-26` 确认最小模块依赖与边界测试通过）
+    - Smoke: pass（组合根可引用 `SceneData` loader 抽象且未破坏现有运行路径）
+    - Perf: pass（模块引入后未增加逐帧初始化或运行期开销）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SDATA-001.md`
+
 - TaskId: `TASK-QA-010`
   Title: `M9 真实 mesh 资产链路门禁复验`
   Priority: `P2`

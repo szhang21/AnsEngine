@@ -33,6 +33,11 @@
 
 ## Done
 
+- `TASK-QA-011` M10 数据驱动场景链路门禁复验（人工验收通过，已归档）
+- `TASK-APP-009` M10 场景文件选择与 SceneData loader 装配（人工验收通过，已归档）
+- `TASK-SCENE-009` M10 SceneDescription 到运行时场景初始化入口（人工验收通过，已归档）
+- `TASK-SDATA-002` M10 场景 JSON 描述模型、加载与规范化（人工验收通过，已归档）
+- `TASK-SDATA-001` M10 SceneData 模块与边界落地（人工验收通过，已归档）
 - `TASK-QA-010` M9 真实 mesh 资产链路门禁复验（人工验收通过，已归档）
 - `TASK-APP-008` M9 Mesh provider 装配与样例运行路径接线（人工验收通过，已归档）
 - `TASK-SCENE-008` M9 Scene 真实 mesh 引用收敛（人工验收通过，已归档）

@@ -41,6 +41,7 @@
 - `Engine.Platform` -> `src/Engine.Platform/**`
 - `Engine.App` -> `src/Engine.App/**`
 - `Engine.Contracts` -> `src/Engine.Contracts/**`（或 `src/Engine.Render.Contracts/**`，二选一）
+- `Engine.SceneData` -> `src/Engine.SceneData/**`
 
 ## 5) 变更管理
 
