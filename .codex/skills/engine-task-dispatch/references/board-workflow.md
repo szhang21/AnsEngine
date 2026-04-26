@@ -15,6 +15,14 @@
 - `Execution Agent` 负责 `InProgress -> Verify -> Review`，不得自行进入 `Done`。
 - `Human` 是唯一的终态签收主体，负责审批计划与任务卡、决定哪些 `Todo` 进入当前执行波次，并在复验通过后显式触发 `Review -> Done`；Workflow Steward 仅在 Human 明确 `关单 <TaskId>` 后代执行机械同步。
 
+执行落盘要求：
+
+- `Execution Agent` 读取任务卡并确认开工后，必须先把任务卡更新为 `Status=InProgress`，且 `Completion` 进入 `10-30` 区间。
+- 当定义范围内实现完成、准备进入门禁验证时，必须把任务卡更新为 `Status=Verify`，并回填当前验证证据位置。
+- 当 Build/Test/Smoke/Perf 通过、准备进入人工/边界评审时，必须把任务卡更新为 `Status=Review`。
+- 若验证失败或评审发现 must-fix，必须把任务卡回退到 `Status=InProgress`，并写明失败原因。
+- 若本轮未落盘状态变化，不得对 Human 宣称本卡已推进到下一阶段。
+
 ## 允许的状态流转
 
 - `Todo -> InProgress`
@@ -72,6 +80,7 @@
 - 已完成定义范围内实现
 - 已附自检记录
 - 未越界 `AllowedPaths`
+- 已把任务卡落盘更新为 `Status=Verify`
 
 ### Verify -> Review
 
@@ -79,6 +88,7 @@
 - Test 证据
 - Smoke 证据
 - Perf 说明
+- 已把任务卡落盘更新为 `Status=Review`
 
 ### Review -> Done
 

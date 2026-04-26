@@ -9,6 +9,9 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 输出前先读取以下参考文件：
 - `references/task-card-template.md`
+- `references/task-card-sufficiency-checklist.md`
+- `references/task-card-complexity-scaling.md`
+- `references/task-card-examples.md`
 - `references/quick-card-template.md`
 - `references/board-workflow.md`
 - `references/dispatch-rules.md`
@@ -39,6 +42,11 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 - 角色模板强制：每次响应开头必须先声明当前角色（`Plan Agent` / `Dispatch Agent` / `Execution Agent` / `QA Agent` / `Workflow Steward Agent`），并匹配对应固定提示词模板；不匹配则停止输出并要求重试。
 - 字段完整性强制：正式任务卡若缺少 `计划引用`、`里程碑引用`、`ParallelPlan`（含 `ParallelGroup`、`CanRunParallel`、`DependsOn`）任一字段，必须拒绝流转或执行（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
+- 执行充分性强制：正式任务卡必须能够脱离里程碑全文独立执行；若缺少关键背景、关键决策、实现约束、失败语义、非目标或参考点，必须判定为 `TaskCardInsufficient`，不得进入执行流。
+- 结构示例落卡强制：若计划/里程碑已给出示例数据结构、字段草图、DTO/record/class 形状或字段命名约定，Dispatch Agent 必须把这些内容以“约束 + 精确引用”的形式写入任务卡，至少落在 `DecisionCarryOver` 与 `ExamplesOrReferences`。
+- 充分性清单强制：Dispatch Agent 在落正式任务卡前必须执行 `task-card-sufficiency-checklist.md`；未通过不得向 Human 派发。
+- 复杂度联动强制：Dispatch Agent 在落正式任务卡前必须执行 `task-card-complexity-scaling.md`，先判定复杂度等级，再确认任务卡信息量与复杂度匹配。
+- 示例非封顶强制：`task-card-examples.md` 仅可作为参考下限；Dispatch Agent 只能比示例更详细，不能以“已满足示例写法”为由停止补充关键信息。
 - 轻量卡分流强制：当 Human 明确说明“简单迭代/小改/小 bug/局部修复”时，Dispatch Agent 必须先执行 `QuickCard` 适用性判定，再决定走 `QuickCard` 或正式 `TaskCard`，不得默认一律走正式卡。
 - 越权响应强制回退：若收到不属于当前角色职责的请求，只允许返回 `请按 <AgentName> 职责重试`，不得部分执行。
 - 新增文件强制边界同步：仅当 `NewFilesExpected=true` 或执行中实际新增源码/测试文件时，才强制更新 `.ai-workflow/boundaries/` 下至少一个边界文档并写入变更记录；否则不作为阻塞条件。
@@ -58,6 +66,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 编码写入硬规则（PowerShell）：读文件必须显式指定 `-Encoding UTF8`（如 `Get-Content -Raw -Encoding UTF8`），写文件必须显式指定 `-Encoding UTF8`（如 `Set-Content -Encoding UTF8`），禁止使用不带编码的 `Out-File`/`Set-Content` 生成任务卡与归档。
 - 编码自检强制：Dispatch/Execution/Steward 在落盘任务卡、归档快照、索引后必须自检是否出现典型 mojibake 片段（例如 `浠诲姟`、`锛`、`鏂囨`、`瀵归綈`）；若命中，必须立即修复并用权威模板重写对应文件，禁止将“乱码文件”标记为落盘成功。
 - Execution 关单强制：Execution 仅可完成“归档三件套准备”（任务卡 Archive、归档快照、归档索引），不得自行将任务置为 `Done`。
+- Execution 状态落盘强制：Execution 每次推进阶段时，必须先更新任务卡 `Status/Completion` 再汇报结果；未落盘不得宣称任务已进入 `InProgress`、`Verify` 或 `Review`。
 - 终态关单强制：`Review -> Done` 仅允许 Human 在复验通过后显式触发；Workflow Steward Agent 仅可在 Human 明确输入 `关单 <TaskId>` 后代执行机械同步，不拥有独立签收权；Execution 不得自签 `Done`，QA 也不得代签。
 - QA Agent 职责边界：仅可执行 `TASK-QA-*` 与 Human 质疑复核（复现/证据比对/QA 报告），不得实现功能任务（如 `TASK-REND-*`、`TASK-APP-*`、`TASK-PLAT-*`），不得执行关单、状态流转、归档写入或看板更新。
 - QA Agent 越权回退：收到实现类任务、关单请求、状态流转请求或代码重构请求时，必须拒绝并回退 `请按 Execution Agent 职责重试`；收到关单/元数据治理请求时，必须回退 `请按 Workflow Steward Agent 职责重试`。
@@ -70,6 +79,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 路径分类硬规则：`references/*`（含 `review-checklist.md`）属于 skill 规则源，默认从 `.codex/skills/**/references/` 读取，且按只读处理；任务执行产物（任务卡状态、看板、归档快照、归档索引）仅允许写入 `.ai-workflow/**`。
 - 任务卡字段必须与 `task-card-template.md` 一致。
 - 轻量卡字段必须与 `quick-card-template.md` 一致。
+- 正式任务卡若 `ExecutionReady!=true`，视为脏卡，不得派发。
 - 状态流转仅允许：`Todo -> InProgress -> Verify -> Review -> Done`。
 - 轻量卡状态流转仅允许：`Todo -> InProgress -> Review -> Done | Escalated | Rejected`，且 `Escalated` 后不得再直接关闭，必须转正式任务卡。
 - 任一门禁失败，任务必须回退到 `InProgress` 并记录原因。
@@ -84,6 +94,8 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 - 未按 `archive-policy.md` 完成归档，不允许 `Review -> Done`。
 - 每张任务卡必须且只能归属一个主模块。
 - 每张轻量卡必须且只能归属一个主模块。
+- 每张正式任务卡必须包含对本卡足够的局部上下文，不得把关键实现细节留在里程碑文件中由执行者自行补完。
+- 每张正式任务卡的信息量必须与复杂度等级匹配；复杂任务写成简短卡片，视为脏卡。
 - 新建文件必须归属到主模块的允许路径内。
 - 与 `project-baseline.md` 冲突的实施任务，必须先走“基线变更任务卡”。
 - `QuickCard` 不得承载边界变更、基线变更、公开 API 设计、跨模块重构、正式 QA 验证卡。
@@ -95,11 +107,13 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 1. 校验任务定义完整性。
 2. 先判定是否满足 `QuickCard` 条件；不满足再进入正式任务卡拆分。
-3. 校验主模块归属、边界合同、路径白名单与基线引用。
-4. 检查当前看板 WIP 与瓶颈。
-5. 按模块归属与负载选择负责人。
-6. 输出带依据的派发决策。
-7. 输出下一检查点与期望证据。
+3. 对正式任务卡执行“里程碑信息下沉”，补齐执行上下文、决策继承、设计约束、失败语义与参考点。
+4. 对正式任务卡执行复杂度分级，并确认信息量与复杂度匹配。
+5. 校验主模块归属、边界合同、路径白名单与基线引用。
+6. 检查当前看板 WIP 与瓶颈。
+7. 按模块归属与负载选择负责人。
+8. 输出带依据的派发决策。
+9. 输出下一检查点与期望证据。
 
 不得跳步。
 
@@ -182,7 +196,7 @@ description: 使用严格任务卡模板、WIP 限制与门禁流转来派发和
 
 - 任何拒绝、阻塞、修卡请求、未关单、越权回退，都必须使用统一失败回执格式。
 - 统一失败回执字段（全部必填）：
-  - `FailureType`：`MissingField|PathConflict|DependencyBlocked|ScopeViolation|GateFailed|OwnershipMismatch|ArchiveIncomplete|PathNotFound|AcceptanceDispute|PostAcceptanceBug|Other`
+  - `FailureType`：`MissingField|PathConflict|DependencyBlocked|ScopeViolation|GateFailed|OwnershipMismatch|ArchiveIncomplete|PathNotFound|AcceptanceDispute|PostAcceptanceBug|TaskCardInsufficient|Other`
   - `BlockedBy`：触发失败的规则条目（引用规则名或文件+行号）
   - `RequiredFix`：最小修复动作（1-3 条）
   - `Owner`：`PlanAgent|DispatchAgent|ExecutionAgent|Human`

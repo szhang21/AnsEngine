@@ -44,6 +44,49 @@ Engine.Render | Engine.Scene | Engine.Asset | Engine.Platform | Engine.App | 其
   - `<TASK-ID>`
   - `<TASK-ID>`
 
+## 里程碑上下文（MilestoneContext）
+- 仅摘录与本卡直接相关的里程碑背景
+- 不得整段复制里程碑全文
+- 需要回答：
+  - 为什么现在做这张卡
+  - 这张卡在当前里程碑中承担什么作用
+  - 哪些上游背景会直接影响本卡实现
+
+## 决策继承（DecisionCarryOver）
+- 从计划/里程碑继承的关键决策：
+  - `<decision>`
+- 本卡执行时不得推翻的既定取舍：
+  - `<constraint>`
+- 若计划/里程碑已给出示例数据结构、字段草图、DTO/record/class 形状、关系图或字段命名约定：
+  - 必须在此处明确写出“哪些结构约定已被上游定稿，执行时不得自行改写”
+
+## 实施说明（ImplementationNotes）
+- 本卡建议的实现入口
+- 关键实现步骤或拆分顺序
+- 必须覆盖的关键路径
+
+## 设计约束（DesignConstraints）
+- 明确不能怎么做
+- 不允许跨越的边界
+- 不允许擅自扩张的方向
+
+## 失败与降级策略（FallbackBehavior）
+- 若关键路径失败，应该如何降级
+- 哪些失败可以回退继续运行
+- 哪些失败必须显式报错/回退修卡
+
+## 参考点（ExamplesOrReferences）
+- 相关源码入口：
+  - `<path>`
+- 相关测试入口：
+  - `<path>`
+- 相关已有任务/归档/文档：
+  - `<path or id>`
+- 若计划/里程碑中存在示例数据结构或字段示例：
+  - 必须在此处写入对应计划/里程碑引用位置
+  - 必须明确该示例是“参考实现约束”还是“仅示意但字段关系已定”
+  - 必须避免只写“见 M10 计划”这类模糊引用，需尽量定位到段落/小节/标题
+
 ## 范围（Scope）
 - AllowedModules:
 - AllowedFiles:
@@ -57,6 +100,21 @@ true | false
 - 
 - 
 - OutOfScopePaths:
+
+## 未决问题（OpenQuestions）
+- 已明确的不确定点：
+  - `<question or none>`
+- 处理规则：
+  - 若影响范围/边界/验收，必须先回退，不得自行脑补
+
+## 执行充分性（ExecutionReadiness）
+- ExecutionReady: `true | false`
+- WhyReady:
+  - 仅凭任务卡即可实施
+  - 无需回看里程碑全文即可理解关键约束
+  - 失败语义、非目标、边界已落卡
+- MissingInfo:
+  - `<none | missing item>`
 
 ## 依赖约束（DependencyContract）
 - AllowedDependsOn:
@@ -103,12 +161,13 @@ true | false
 ## 状态（Status）
 Todo | InProgress | Verify | Review | Done
 > 说明：Execution 仅负责推进到 `Review` 并准备归档三件套；`Review -> Done` 只能由 Human 复验通过后显式触发，Workflow Steward 仅在 Human 明确 `关单 <TaskId>` 后代执行机械同步，不拥有独立签收权。
+> 执行要求：Execution 开工后必须先把任务卡落盘到 `InProgress`；实现完成待验证时必须落盘到 `Verify`；验证通过待评审时必须落盘到 `Review`；门禁失败或发现 must-fix 时必须回退并落盘原因。
 
 ## 完成度（Completion）
 `0-100`（整数百分比）
 
 ## 缺陷回流字段（Defect Triage）
-- FailureType: `AcceptanceDispute | PostAcceptanceBug | Other`
+- FailureType: `AcceptanceDispute | PostAcceptanceBug | TaskCardInsufficient | Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
@@ -131,7 +190,15 @@ Todo | InProgress | Verify | Review | Done
 - 缺少 `ExecutionAgent` 视为任务卡无效。
 - 缺少 `ParallelPlan` 任一关键字段（`ParallelGroup`、`CanRunParallel`、`DependsOn`）视为任务卡无效。
 - 缺少 `BoundarySyncPlan` 视为任务卡无效。
+- 缺少 `MilestoneContext` 视为任务卡无效。
+- 缺少 `DecisionCarryOver` 视为任务卡无效。
+- 缺少 `ImplementationNotes` 视为任务卡无效。
+- 缺少 `DesignConstraints` 视为任务卡无效。
+- 缺少 `FallbackBehavior` 视为任务卡无效。
+- 缺少 `ExamplesOrReferences` 视为任务卡无效。
 - 缺少 `OutOfScope` 视为任务卡无效。
+- 缺少 `OpenQuestions` 视为任务卡无效。
+- 缺少 `ExecutionReadiness` 视为任务卡无效。
 - 缺少 `Acceptance` 视为任务卡无效。
 - 当任务为 QA 验证卡（`TaskId` 含 `TASK-QA-` 或 `ExecutionAgent=Exec-QA`）时，`Acceptance` 缺少 `CodeQuality` 或 `DesignQuality` 视为无效。
 - 缺少 `Priority` 视为任务卡无效。
@@ -141,6 +208,8 @@ Todo | InProgress | Verify | Review | Done
 - 缺少 `AllowedPaths` 视为任务卡无效。
 - `DependencyContract.AllowedDependsOn` 超出边界合同允许范围且 `BoundaryChangeRequest.Status` 非 `approved`，视为任务卡无效。
 - 缺少 `Completion` 视为任务卡无效。
+- `ExecutionReady` 不是 `true` 的任务卡不得进入执行流。
+- 若计划/里程碑已明确给出示例数据结构，而任务卡未在 `DecisionCarryOver` 或 `ExamplesOrReferences` 中落下对应引用与约束，视为任务卡无效。
 - 缺陷回流场景缺少 `DetectedAt` 视为任务卡无效。
 - 当 `FailureType=AcceptanceDispute` 且走 `ReopenOriginal` 时，缺少 `ReopenReason` 视为无效。
 - 当走 `CreateBugCard|CreateVerifyCard` 时，缺少 `OriginTaskId` 视为无效。
@@ -155,4 +224,5 @@ Todo | InProgress | Verify | Review | Done
 - `Status=Todo` 时 `Completion` 必须为 `0`。
 - `Status=Done` 时 `Completion` 必须为 `100`。
 - `Status=InProgress|Verify|Review` 时 `Completion` 必须为 `10-99`。
+- Execution 若未同步更新 `Status/Completion`，不得宣称“已开始 / 已完成实现 / 已完成验证 / 已进入评审”。
 - QA 验证卡若 `CodeQuality.MustFixCount>0` 且 `MustFixDisposition=none`，不得流转到 `Review`。

@@ -27,6 +27,10 @@
 
 - `Dispatch Agent`
   - 负责：先做 `QuickCard` 分流；若进入正式流，再做 Plan 前置门禁校验、任务拆分、并行/依赖、任务级排序（仅同里程碑内）
+  - 额外责任：把里程碑中的关键背景、关键决策、关键约束和失败语义下沉进任务卡，使任务卡可脱离里程碑独立执行
+  - 额外责任：对每张正式任务卡执行 `task-card-sufficiency-checklist.md`
+  - 额外责任：若参考 `task-card-examples.md`，只能把它作为表达下限，不能作为信息上限
+  - 额外责任：对每张正式任务卡执行复杂度分级，确保信息量随复杂度同步增长
   - 落盘：
     - 轻量卡：`.ai-workflow/quickcards/<quick-card-id>.md`
     - 任务卡：`.ai-workflow/tasks/<task-id>.md`
@@ -39,6 +43,8 @@
   - 读取：`.ai-workflow/quickcards/<quick-card-id>.md` 或 `.ai-workflow/tasks/<task-id>.md`
   - 负责：实现、验证、状态推进、关单资料
   - 禁止：重拆需求、越界改动、跨角色决策
+  - 正式任务卡补充：任务卡是唯一执行依据；若必须回看里程碑全文才能实施，应回退并标记 `TaskCardInsufficient`
+  - 状态推进补充：每推进一个阶段，都必须先更新任务卡 `Status/Completion` 再对 Human 回报结果
   - 轻量卡补充：若执行中触发升卡条件，必须停止继续扩张并回退给 Dispatch Agent
   - 默认编码约定：遵循 `engine-coding-standards`，C# 私有/受保护字段使用 `mCamelCase`，静态字段使用 `sCamelCase`，`const` 使用 `kCamelCase`；构造器参数与局部变量使用 `camelCase`
   - 文件组织约定：默认一个类一个文件、一个接口一个文件；只有小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期才允许例外
@@ -75,10 +81,18 @@
 
 - `计划引用`
 - `里程碑引用`
+- `MilestoneContext`
+- `DecisionCarryOver`
+- `ImplementationNotes`
+- `DesignConstraints`
+- `FallbackBehavior`
+- `ExamplesOrReferences`
 - `Priority`
 - `PrimaryModule`
 - `ParallelPlan`（`ParallelGroup`、`CanRunParallel`、`DependsOn`）
 - `BoundarySyncPlan`
+- `OpenQuestions`
+- `ExecutionReadiness`
 - `Status`
 - `Completion`
 - `Acceptance`（Build/Test/Smoke/Perf）
@@ -97,6 +111,8 @@
 - `Todo` -> `Completion=0`
 - `InProgress|Verify|Review` -> `Completion=10-99`
 - `Done` -> `Completion=100`
+- `Execution Agent` 每次推进阶段时，必须同时落盘 `Status` 与 `Completion`
+- 若只口头说明“开始了 / 验证完了 / 进评审了”但未更新任务卡，视为未推进
 
 ## 7) 关单与归档事务
 
@@ -148,12 +164,14 @@ Plan 节点完成归档时，必须原子完成以下两件：
 ## 11) 三次检测（必检）
 
 1. Dispatch 落卡后立即检测（脏卡阻断）：
-   - 字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则。
+   - 字段完整性、依赖合法性、`Status/Completion` 一致性、路径规则、`ExecutionReady`、充分性清单结果、复杂度匹配结果。
    - 依赖合法性必须以 `BoundaryContractPath` 为准，发现越界依赖时先走“边界变更请求”，未批准不得落卡。
    - 前置条件：Plan 归档两件套已存在（计划快照 + `plan-archive-index.md` 索引命中）。
 2. Execution 关单前检测（关单完整性）：
    - 归档三件套、`AllowedPaths` 命中、`BoundarySyncPlan` 条件、证据字段齐全、`HumanSignoff=pending`。
    - QA 验证卡额外检测：`CodeQuality` 与 `DesignQuality` 结论齐全，且 `MustFixCount=0` 或已转卡。
+   - 若执行中曾出现“必须回看里程碑全文才能继续”，必须先回退修卡，不得硬做。
+   - 若执行中阶段已变化但任务卡状态未同步落盘，必须先补状态再继续。
 3. 每个里程碑完成时 Plan 检测（计划同步）：
    - 里程碑状态与任务状态一致、`PlanArchive` 快照已更新、`plan-archive-index.md` 已同步。
 

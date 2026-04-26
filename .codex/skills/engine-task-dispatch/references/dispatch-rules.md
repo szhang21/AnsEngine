@@ -16,6 +16,11 @@
 1. 模板先行：每次请求都必须使用对应角色固定提示词模板；未使用模板时拒绝执行。
 2. 字段齐全：任务卡必须含 `计划引用`、`里程碑引用`、`ParallelPlan`（`ParallelGroup`、`CanRunParallel`、`DependsOn`），否则拒绝进入执行流（兼容旧字段名：`PlanRef`、`MilestoneRef`）。
 3. 越权即回退：收到跨角色请求时，仅返回 `请按 <AgentName> 职责重试`，不得给出越权产出。
+4. 执行充分性：正式任务卡必须满足 `ExecutionReady=true`，且关键设计约束、失败语义、非目标、参考点已落到任务卡；否则不得进入执行流。
+5. 充分性清单：Dispatch Agent 在输出正式任务卡前，必须逐项执行 `references/task-card-sufficiency-checklist.md`。
+6. 示例仅作参考：`references/task-card-examples.md` 仅用于展示写法，不构成充分性上限；真实任务若更复杂，必须写得比示例更细。
+7. 复杂度联动：Dispatch Agent 在输出正式任务卡前，必须执行 `references/task-card-complexity-scaling.md`。
+8. 结构示例下沉：若计划/里程碑已提供示例数据结构、字段草图或结构关系示意，Dispatch Agent 必须把它落到任务卡的 `DecisionCarryOver` 与 `ExamplesOrReferences`，不得只写“见计划”或完全省略。
 
 ### 边界文档同步硬约束（不可跳过）
 
@@ -72,6 +77,17 @@
   - `DependsOn`：前置任务列表（无则空）
 - Dispatch 输出必须给出“建议执行波次”（Wave），供人工选择并行批次。
 - 每张任务卡必须携带 `计划引用` 与 `里程碑引用`，确保可追溯到计划阶段。
+- Dispatch 必须把里程碑中与本卡直接相关的关键背景、关键决策、关键约束下沉到任务卡，禁止把“细节都在里程碑里”当作默认前提。
+- 若计划/里程碑中已经定义了示例数据结构或字段关系，这些内容默认属于“关键决策”，不是可选背景。
+- 若执行者仍需要回看里程碑全文才能开工，说明拆卡不合格，必须补卡而不是继续派发。
+- Dispatch 在落卡前必须完成一次“任务卡充分性问答”；若关键项存在 `No`，必须先修卡。
+- Dispatch 可参考 `task-card-examples.md` 组织写法，但不得把示例条目数、示例长度或示例结构当成完成标准。
+- Dispatch 必须显式判断本卡复杂度是 `L1/L2/L3`，并确保信息量与该等级匹配。
+- 当计划/里程碑中存在结构示例时，Dispatch 必须至少回答：
+  - 该结构示例是否影响本卡实现
+  - 哪些字段/关系/命名已经被定稿
+  - 任务卡中对应落在 `DecisionCarryOver` 的哪几条
+  - 任务卡中对应落在 `ExamplesOrReferences` 的哪几个引用
 
 ## 2.1) 优先级分层规则（Plan 主导）
 
@@ -84,12 +100,19 @@
 
 - 只能执行已存在任务卡，不得擅自拆新任务。
 - 允许执行已存在 `QuickCard`，但若执行中触发升卡条件，必须停止继续扩张并回退给 Dispatch Agent。
+- 开工前必须先落盘任务卡状态变更：`Todo -> InProgress`。
+- 完成实现待验证时必须落盘：`InProgress -> Verify`。
+- 门禁通过待评审时必须落盘：`Verify -> Review`。
+- 门禁失败或发现 must-fix 时必须落盘回退：`Verify/Review -> InProgress`。
 - 不得扩大 `Scope/AllowedPaths`。
+- 正式任务卡是 `Execution Agent` 的唯一执行依据；计划/里程碑只可作为追溯背景，不得覆盖或扩展任务卡。
 - 发现任务卡缺字段或冲突时，回退给 Dispatch Agent 修卡。
+- 发现“必须回看里程碑全文才能理解关键实现要求”时，必须判定为 `TaskCardInsufficient` 并回退给 Dispatch Agent 补卡。
 - 发现轻量卡命中升卡条件时，必须回填 `EscalationReason` 并请求 Dispatch Agent 转正式任务卡。
 - 若执行中出现新增需求，必须新建“派发请求”，由 Dispatch Agent 出新卡。
 - 若任务目标与当前计划冲突，先回退给 Plan Agent 更新计划，再进入派发。
 - 若发现任务优先级与计划不一致，只记录并回退，不得自行重排。
+- 若本轮没有更新任务卡 `Status/Completion`，Execution 不得宣称“本卡已推进”或“本卡已完成当前阶段”。
 - 相对路径解析必须按固定三步执行：
   - 先按仓库根目录解析
   - 再按相关 skill 目录解析（`.codex/skills/<skill>/...`）
@@ -113,10 +136,15 @@
 - `Todo -> InProgress` 前必须检查：`PrimaryModule`、`BoundaryContractPath`、`AllowedPaths` 已填写。
 - `Todo -> InProgress` 前必须检查：`BaselineRef` 已填写且有效。
 - `Todo -> InProgress` 前必须检查：并行字段已填写且依赖关系可解析。
+- `Todo -> InProgress` 前必须检查：`ExecutionReady=true`。
+- `Todo -> InProgress` 前必须检查：`MilestoneContext`、`DecisionCarryOver`、`ImplementationNotes`、`DesignConstraints`、`FallbackBehavior`、`ExamplesOrReferences`、`OpenQuestions` 已填写。
 - `Todo -> InProgress` 前必须检查：`Completion=0`。
+- `Todo -> InProgress` 后必须检查：任务卡已实际落盘为 `Status=InProgress`。
 - `Verify -> Review` 前必须检查：`src/**`、`tests/**` 文件全部命中 `AllowedPaths`。
 - `Verify -> Review` 前必须检查：边界文档文件不参与 `AllowedPaths` 校验。
 - `Verify -> Review` 前必须检查：仅当触发边界同步条件时，边界文档改动才需要全部命中 `BoundaryDocsToUpdate`。
+- `InProgress -> Verify` 前必须检查：任务卡已实际落盘为 `Status=Verify`。
+- `Verify -> Review` 前必须检查：任务卡已实际落盘为 `Status=Review`。
 - `InProgress/Verify/Review` 阶段必须检查：`Completion` 处于 `10-99`。
 - `Review -> Done` 前必须检查：`ModuleAttributionCheck=pass`。
 - `Review -> Done` 前必须检查：仅当触发边界同步条件时，`BoundaryDocsUpdated=true` 且变更日志已写入。
@@ -146,6 +174,26 @@
 - 影响范围
 - 解阻动作
 - 负责人和截止时间
+
+若阻塞原因属于“任务卡信息不足”，必须额外输出：
+
+- `FailureType=TaskCardInsufficient`
+- 缺失的是哪类信息：
+  - 上下文缺失
+  - 决策缺失
+  - 失败语义缺失
+  - 非范围缺失
+  - 参考点缺失
+- 是否允许继续：`false`
+
+若阻塞原因属于“状态未推进”，必须额外输出：
+
+- `FailureType=GateFailed`
+- `BlockedBy=Execution status transition not persisted`
+- `RequiredFix`：
+  - 先更新任务卡 `Status/Completion`
+  - 再重新提交当前阶段证据
+- `Owner=ExecutionAgent`
 
 阻塞导致优先级变化时，必须输出更新后的 `P-level` 及原因。
 
@@ -229,15 +277,30 @@ NextAction: <exact next step>
 ## 9) 输出前字段自检门禁（Dispatch Agent）
 
 - Dispatch 在输出最终卡片前，必须逐卡执行字段自检。
+- Dispatch 在字段自检后，必须逐卡执行一次充分性清单检查。
+- Dispatch 在充分性清单后，必须逐卡执行一次复杂度与信息量匹配检查。
 - 若输出正式任务卡，缺少以下字段时整批输出视为无效，必须先补齐再输出：
   - `计划引用`（或 `PlanRef`）
   - `里程碑引用`（或 `MilestoneRef`）
+  - `MilestoneContext`
+  - `DecisionCarryOver`
+  - `ImplementationNotes`
+  - `DesignConstraints`
+  - `FallbackBehavior`
+  - `ExamplesOrReferences`
   - `Acceptance`（Build/Test/Smoke/Perf 四项）
   - `AllowedPaths`
   - `DependsOn`（无依赖也需显式空列表）
   - `BoundarySyncPlan`
+  - `OpenQuestions`
+  - `ExecutionReadiness`
   - `Status`
   - `Completion`
+- 若正式任务卡 `ExecutionReady=false`，视为脏卡，不得输出给 Human。
+- 若充分性清单关键项任一失败，视为 `TaskCardInsufficient`，不得输出给 Human。
+- 若任务复杂度明显高于示例而任务卡信息量未同步增加，也视为 `TaskCardInsufficient`。
+- 若复杂度等级为 `L2/L3` 而任务卡信息密度仍停留在低复杂度表达，也视为 `TaskCardInsufficient`。
+- 若计划/里程碑已有示例数据结构而任务卡未显式落引用与约束，也视为 `TaskCardInsufficient`。
 - 若输出 `QuickCard`，至少必须具备：
   - `QuickCardId`
   - `Type`
