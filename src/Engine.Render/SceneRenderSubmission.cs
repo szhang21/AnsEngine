@@ -6,7 +6,10 @@ namespace Engine.Render;
 public readonly record struct SceneRenderMeshVertex(
     float X,
     float Y,
-    float Z);
+    float Z,
+    float NormalX,
+    float NormalY,
+    float NormalZ);
 
 public readonly record struct SceneRenderVertex(
     float X,
@@ -83,7 +86,6 @@ public static class SceneRenderSubmissionBuilder
 {
     private const float kTriangleHalfWidth = 0.22f;
     private const float kTriangleHalfHeight = 0.20f;
-    private const float kBaseY = -0.15f;
     private const string kTriangleFallbackMeshId = "fallback://triangle";
     private const string kDefaultMaterialId = "material://default";
     private static readonly SceneRenderMaterialParameters sDefaultMaterial =
@@ -112,10 +114,7 @@ public static class SceneRenderSubmissionBuilder
             var item = frame.Items[index];
             var material = ResolveMaterial(item.MaterialId);
             var meshGeometry = sMeshGeometryCache.Resolve(item.Mesh, meshAssetProvider);
-
-            var centerX = -0.65f + (index * 0.6f);
-            var layoutMatrix = Matrix4x4.CreateTranslation(centerX, kBaseY, 0f);
-            var modelMatrix = layoutMatrix * BuildTransformMatrix(item.Transform);
+            var modelMatrix = BuildTransformMatrix(item.Transform);
             var modelViewProjection = modelMatrix * frame.Camera.View * frame.Camera.Projection;
             batches.Add(new SceneRenderBatch(meshGeometry.MeshCacheKey, meshGeometry.Vertices, material, modelViewProjection));
         }
@@ -149,9 +148,9 @@ public static class SceneRenderSubmissionBuilder
             kTriangleFallbackMeshId,
             new[]
             {
-                new SceneRenderMeshVertex(0f, kTriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(-kTriangleHalfWidth, -kTriangleHalfHeight, 0f),
-                new SceneRenderMeshVertex(kTriangleHalfWidth, -kTriangleHalfHeight, 0f)
+                new SceneRenderMeshVertex(0f, kTriangleHalfHeight, 0f, 0f, 0f, 1f),
+                new SceneRenderMeshVertex(-kTriangleHalfWidth, -kTriangleHalfHeight, 0f, 0f, 0f, 1f),
+                new SceneRenderMeshVertex(kTriangleHalfWidth, -kTriangleHalfHeight, 0f, 0f, 0f, 1f)
             });
     }
 }

@@ -4,9 +4,9 @@
     "id": "app-default-scene",
     "name": "App Default Scene",
     "camera": {
-      "position": { "x": 0.0, "y": 0.25, "z": 2.2 },
+      "position": { "x": 1.4, "y": 0.9, "z": 3.2 },
       "target": { "x": 0.0, "y": 0.0, "z": 0.0 },
-      "fieldOfViewRadians": 1.0471976
+      "fieldOfViewRadians": 0.7853982
     },
     "objects": [
       {

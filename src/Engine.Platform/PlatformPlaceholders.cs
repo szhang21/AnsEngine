@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 
 namespace Engine.Platform;
@@ -21,13 +22,16 @@ public sealed class NullWindowService : IWindowService
             return;
         }
 
-        var settings = new NativeWindowSettings
-        {
-            Title = configuration.Title,
-            ClientSize = new Vector2i(configuration.Width, configuration.Height),
-            StartVisible = true,
-            StartFocused = true
-        };
+        var settings = NativeWindowSettings.Default;
+        settings.Title = configuration.Title;
+        settings.ClientSize = new Vector2i(configuration.Width, configuration.Height);
+        settings.StartVisible = true;
+        settings.StartFocused = true;
+        settings.API = ContextAPI.OpenGL;
+        settings.Profile = ContextProfile.Core;
+        settings.Flags = ContextFlags.ForwardCompatible;
+        settings.DepthBits = 24;
+        settings.StencilBits = 8;
 
         mNativeWindow = new NativeWindow(settings);
         mNativeWindow.MakeCurrent();

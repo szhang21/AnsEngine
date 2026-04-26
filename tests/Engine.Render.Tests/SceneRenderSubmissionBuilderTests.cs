@@ -57,16 +57,16 @@ public sealed class SceneRenderSubmissionBuilderTests
         var left = TransformToClip(batch.Vertices[1], batch.ModelViewProjection);
         var right = TransformToClip(batch.Vertices[2], batch.ModelViewProjection);
 
-        AssertClose(-0.65f, top.X);
-        AssertClose(0.05f, top.Y);
+        AssertClose(0f, top.X);
+        AssertClose(0.20f, top.Y);
         AssertClose(0f, top.Z);
 
-        AssertClose(-0.87f, left.X);
-        AssertClose(-0.35f, left.Y);
+        AssertClose(-0.22f, left.X);
+        AssertClose(-0.20f, left.Y);
         AssertClose(0f, left.Z);
 
-        AssertClose(-0.43f, right.X);
-        AssertClose(-0.35f, right.Y);
+        AssertClose(0.22f, right.X);
+        AssertClose(-0.20f, right.Y);
         AssertClose(0f, right.Z);
     }
 
@@ -90,16 +90,19 @@ public sealed class SceneRenderSubmissionBuilderTests
         var top = TransformToClip(batch.Vertices[0], batch.ModelViewProjection);
         var left = TransformToClip(batch.Vertices[1], batch.ModelViewProjection);
         var right = TransformToClip(batch.Vertices[2], batch.ModelViewProjection);
+        var expectedTop = Vector3.Transform(new Vector3(0f, 0.20f, 0f), rotation);
+        var expectedLeft = Vector3.Transform(new Vector3(-0.22f, -0.20f, 0f), rotation);
+        var expectedRight = Vector3.Transform(new Vector3(0.22f, -0.20f, 0f), rotation);
 
         Assert.Equal(3, batch.Vertices.Count);
-        AssertClose(-0.05f, top.X);
-        AssertClose(-0.65f, top.Y);
+        AssertClose(expectedTop.X, top.X);
+        AssertClose(expectedTop.Y, top.Y);
 
-        AssertClose(0.35f, left.X);
-        AssertClose(-0.87f, left.Y);
+        AssertClose(expectedLeft.X, left.X);
+        AssertClose(expectedLeft.Y, left.Y);
 
-        AssertClose(0.35f, right.X);
-        AssertClose(-0.43f, right.Y);
+        AssertClose(expectedRight.X, right.X);
+        AssertClose(expectedRight.Y, right.Y);
     }
 
     [Fact]
@@ -109,8 +112,16 @@ public sealed class SceneRenderSubmissionBuilderTests
             2,
             new[]
             {
-                new SceneRenderItem(1, "mesh://triangle", "material://default"),
-                new SceneRenderItem(2, "mesh://triangle", "material://highlight")
+                new SceneRenderItem(
+                    1,
+                    "mesh://triangle",
+                    "material://default",
+                    new SceneTransform(new Vector3(-0.30f, 0.0f, 0.0f), Vector3.One, Quaternion.Identity)),
+                new SceneRenderItem(
+                    2,
+                    "mesh://triangle",
+                    "material://highlight",
+                    new SceneTransform(new Vector3(0.30f, 0.0f, 0.0f), Vector3.One, Quaternion.Identity))
             });
 
         var submission = SceneRenderSubmissionBuilder.Build(frame);
@@ -161,12 +172,12 @@ public sealed class SceneRenderSubmissionBuilderTests
         var right = TransformToClip(batch.Vertices[2], batch.ModelViewProjection);
 
         Assert.Equal(3, batch.Vertices.Count);
-        AssertClose(-0.65f, top.X);
-        AssertClose(0.05f, top.Y);
-        AssertClose(-0.87f, left.X);
-        AssertClose(-0.35f, left.Y);
-        AssertClose(-0.43f, right.X);
-        AssertClose(-0.35f, right.Y);
+        AssertClose(0f, top.X);
+        AssertClose(0.20f, top.Y);
+        AssertClose(-0.22f, left.X);
+        AssertClose(-0.20f, left.Y);
+        AssertClose(0.22f, right.X);
+        AssertClose(-0.20f, right.Y);
     }
 
     [Fact]
@@ -198,6 +209,9 @@ public sealed class SceneRenderSubmissionBuilderTests
         Assert.Equal(3, batch.MeshVertices.Count);
         AssertClose(-0.4f, batch.MeshVertices[0].X);
         AssertClose(0.3f, batch.MeshVertices[0].Y);
+        AssertClose(0f, batch.MeshVertices[0].NormalX);
+        AssertClose(0f, batch.MeshVertices[0].NormalY);
+        AssertClose(1f, batch.MeshVertices[0].NormalZ);
     }
 
     [Fact]
@@ -221,8 +235,11 @@ public sealed class SceneRenderSubmissionBuilderTests
         Assert.Equal(1, provider.CallCount);
         Assert.Equal("fallback://triangle", batch.MeshCacheKey);
         Assert.Equal(3, batch.MeshVertices.Count);
-        AssertClose(-0.65f, top.X);
-        AssertClose(0.05f, top.Y);
+        AssertClose(0f, batch.MeshVertices[0].NormalX);
+        AssertClose(0f, batch.MeshVertices[0].NormalY);
+        AssertClose(1f, batch.MeshVertices[0].NormalZ);
+        AssertClose(0f, top.X);
+        AssertClose(0.20f, top.Y);
     }
 
     [Fact]
@@ -299,6 +316,31 @@ public sealed class SceneRenderSubmissionBuilderTests
         Assert.InRange(top.Z, -1f, 1f);
     }
 
+    [Fact]
+    public void FlattenModelViewProjection_UploadsRowVectorMatrixForColumnVectorShader()
+    {
+        var matrix =
+            Matrix4x4.CreateScale(new Vector3(1.5f, 0.5f, 2.0f))
+            * Matrix4x4.CreateFromYawPitchRoll(0.3f, 0.2f, 0.1f)
+            * Matrix4x4.CreateTranslation(new Vector3(0.4f, -0.2f, 1.1f))
+            * Matrix4x4.CreateLookAt(new Vector3(1.4f, 0.9f, 3.2f), Vector3.Zero, Vector3.UnitY)
+            * Matrix4x4.CreatePerspectiveFieldOfView(0.7853982f, 16f / 9f, 0.1f, 10f);
+        var vertex = new Vector4(0.25f, -0.5f, 0.75f, 1.0f);
+
+        var expected = Vector4.Transform(vertex, matrix);
+        var flattened = NullRenderer.FlattenModelViewProjection(matrix);
+        var actual = TransformAsOpenGlShaderColumnVector(
+            flattened,
+            NullRenderer.ShouldTransposeModelViewProjectionUniform,
+            vertex);
+
+        Assert.False(NullRenderer.ShouldTransposeModelViewProjectionUniform);
+        AssertClose(expected.X, actual.X);
+        AssertClose(expected.Y, actual.Y);
+        AssertClose(expected.Z, actual.Z);
+        AssertClose(expected.W, actual.W);
+    }
+
     private static void AssertClose(float expected, float actual)
     {
         Assert.InRange(actual, expected - 0.0001f, expected + 0.0001f);
@@ -310,6 +352,30 @@ public sealed class SceneRenderSubmissionBuilderTests
         var transformed = Vector4.Transform(vector, modelViewProjection);
         var w = MathF.Abs(transformed.W) > 0.00001f ? transformed.W : 1f;
         return new Vector3(transformed.X / w, transformed.Y / w, transformed.Z / w);
+    }
+
+    private static Vector4 TransformAsOpenGlShaderColumnVector(
+        IReadOnlyList<float> flattened,
+        bool transpose,
+        Vector4 vector)
+    {
+        var matrix = transpose
+            ? new Matrix4x4(
+                flattened[0], flattened[1], flattened[2], flattened[3],
+                flattened[4], flattened[5], flattened[6], flattened[7],
+                flattened[8], flattened[9], flattened[10], flattened[11],
+                flattened[12], flattened[13], flattened[14], flattened[15])
+            : new Matrix4x4(
+                flattened[0], flattened[4], flattened[8], flattened[12],
+                flattened[1], flattened[5], flattened[9], flattened[13],
+                flattened[2], flattened[6], flattened[10], flattened[14],
+                flattened[3], flattened[7], flattened[11], flattened[15]);
+
+        return new Vector4(
+            (matrix.M11 * vector.X) + (matrix.M12 * vector.Y) + (matrix.M13 * vector.Z) + (matrix.M14 * vector.W),
+            (matrix.M21 * vector.X) + (matrix.M22 * vector.Y) + (matrix.M23 * vector.Z) + (matrix.M24 * vector.W),
+            (matrix.M31 * vector.X) + (matrix.M32 * vector.Y) + (matrix.M33 * vector.Z) + (matrix.M34 * vector.W),
+            (matrix.M41 * vector.X) + (matrix.M42 * vector.Y) + (matrix.M43 * vector.Z) + (matrix.M44 * vector.W));
     }
 
     private sealed class CountingMeshAssetProvider : IMeshAssetProvider

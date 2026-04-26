@@ -80,7 +80,10 @@ internal sealed class SceneRenderMeshGeometryCache
             vertices[index] = new SceneRenderMeshVertex(
                 assetVertex.Position.X,
                 assetVertex.Position.Y,
-                assetVertex.Position.Z);
+                assetVertex.Position.Z,
+                assetVertex.Normal.X,
+                assetVertex.Normal.Y,
+                assetVertex.Normal.Z);
         }
 
         geometry = new SceneRenderMeshGeometry(meshId, vertices);

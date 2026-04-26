@@ -96,14 +96,6 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         if (mUsesSceneDescription)
         {
             var descriptionItems = mRenderItems.ToArray();
-            for (var index = 0; index < mRenderItems.Count; index += 1)
-            {
-                var item = mRenderItems[index];
-                var meshCandidate = BuildMeshCandidate(item.NodeId);
-                var materialCandidate = BuildMaterialCandidate(mFrameNumber, item.NodeId);
-                var currentTransform = BuildFrameTransform(mFrameNumber, index);
-                mRenderItems[index] = CreateRenderItem(item.NodeId, meshCandidate, materialCandidate, currentTransform);
-            }
             var descriptionCamera = mSceneCamera ?? BuildDefaultSceneCamera();
             var descriptionFrame = new SceneRenderFrame(mFrameNumber, descriptionItems, descriptionCamera);
             mFrameNumber += 1;

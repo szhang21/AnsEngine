@@ -232,11 +232,15 @@ public sealed class SceneGraphServiceTests
 
         var firstFrame = sceneGraph.BuildRenderFrame();
         var secondFrame = sceneGraph.BuildRenderFrame();
+        var thirdFrame = sceneGraph.BuildRenderFrame();
 
         Assert.Equal(0, firstFrame.FrameNumber);
         Assert.Equal(1, secondFrame.FrameNumber);
+        Assert.Equal(2, thirdFrame.FrameNumber);
         Assert.Equal(firstFrame.Items, secondFrame.Items);
+        Assert.Equal(firstFrame.Items, thirdFrame.Items);
         Assert.Equal(firstFrame.Camera, secondFrame.Camera);
+        Assert.Equal(firstFrame.Camera, thirdFrame.Camera);
     }
 
     [Fact]
