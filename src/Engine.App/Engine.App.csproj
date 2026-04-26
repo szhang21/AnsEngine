@@ -6,11 +6,15 @@
     <ProjectReference Include="..\Engine.Platform\Engine.Platform.csproj" />
     <ProjectReference Include="..\Engine.Render\Engine.Render.csproj" />
     <ProjectReference Include="..\Engine.Scene\Engine.Scene.csproj" />
+    <ProjectReference Include="..\Engine.SceneData\Engine.SceneData.csproj" />
     <ProjectReference Include="..\Engine.Asset\Engine.Asset.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="SampleAssets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SampleScenes\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

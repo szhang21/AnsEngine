@@ -1,6 +1,8 @@
 using Engine.Contracts;
 using Engine.Core;
+using Engine.SceneData;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Engine.Scene;
 
@@ -37,6 +39,8 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
 
     private readonly EngineRuntimeInfo mRuntimeInfo;
     private readonly List<SceneRenderItem> mRenderItems = new();
+    private SceneCamera? mSceneCamera;
+    private bool mUsesSceneDescription;
     private int mNextNodeId = 1;
     private int mFrameNumber;
 
@@ -50,6 +54,7 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     public void AddRootNode()
     {
         _ = mRuntimeInfo.EngineName;
+        mUsesSceneDescription = false;
 
         var nodeId = mNextNodeId;
         mNextNodeId += 1;
@@ -57,8 +62,54 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         mRenderItems.Add(CreateRenderItem(nodeId, kDefaultMeshId, kDefaultMaterialId, SceneTransform.Identity));
     }
 
+    public void LoadSceneDescription(SceneDescription sceneDescription)
+    {
+        ArgumentNullException.ThrowIfNull(sceneDescription);
+
+        _ = mRuntimeInfo.EngineName;
+
+        mRenderItems.Clear();
+        mNextNodeId = 1;
+        NodeCount = 0;
+        mFrameNumber = 0;
+
+        for (var index = 0; index < sceneDescription.Objects.Count; index += 1)
+        {
+            var objectDescription = sceneDescription.Objects[index];
+            var nodeId = mNextNodeId;
+            mNextNodeId += 1;
+            NodeCount += 1;
+            mRenderItems.Add(
+                new SceneRenderItem(
+                    nodeId,
+                    objectDescription.Mesh,
+                    objectDescription.Material,
+                    ToSceneTransform(objectDescription.LocalTransform)));
+        }
+
+        mSceneCamera = BuildSceneCamera(sceneDescription.Camera);
+        mUsesSceneDescription = true;
+    }
+
     public SceneRenderFrame BuildRenderFrame()
     {
+        if (mUsesSceneDescription)
+        {
+            var descriptionItems = mRenderItems.ToArray();
+            for (var index = 0; index < mRenderItems.Count; index += 1)
+            {
+                var item = mRenderItems[index];
+                var meshCandidate = BuildMeshCandidate(item.NodeId);
+                var materialCandidate = BuildMaterialCandidate(mFrameNumber, item.NodeId);
+                var currentTransform = BuildFrameTransform(mFrameNumber, index);
+                mRenderItems[index] = CreateRenderItem(item.NodeId, meshCandidate, materialCandidate, currentTransform);
+            }
+            var descriptionCamera = mSceneCamera ?? BuildDefaultSceneCamera();
+            var descriptionFrame = new SceneRenderFrame(mFrameNumber, descriptionItems, descriptionCamera);
+            mFrameNumber += 1;
+            return descriptionFrame;
+        }
+
         for (var index = 0; index < mRenderItems.Count; index += 1)
         {
             var item = mRenderItems[index];
@@ -73,6 +124,42 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         var frame = new SceneRenderFrame(mFrameNumber, itemsSnapshot, camera);
         mFrameNumber += 1;
         return frame;
+    }
+
+    private static SceneTransform ToSceneTransform(SceneTransformDescription transformDescription)
+    {
+        return new SceneTransform(
+            transformDescription.Position,
+            transformDescription.Scale,
+            transformDescription.Rotation);
+    }
+
+    private static SceneCamera BuildSceneCamera(SceneCameraDescription? cameraDescription)
+    {
+        if (cameraDescription is null)
+        {
+            return BuildDefaultSceneCamera();
+        }
+
+        var view = Matrix4x4.CreateLookAt(cameraDescription.Position, cameraDescription.Target, Vector3.UnitY);
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
+            cameraDescription.FieldOfViewRadians,
+            kCameraAspectRatio,
+            kCameraNearPlane,
+            kCameraFarPlane);
+        return new SceneCamera(view, projection);
+    }
+
+    private static SceneCamera BuildDefaultSceneCamera()
+    {
+        var cameraPosition = new Vector3(0.0f, 0.0f, kCameraDistance);
+        var view = Matrix4x4.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
+            kCameraFieldOfViewRadians,
+            kCameraAspectRatio,
+            kCameraNearPlane,
+            kCameraFarPlane);
+        return new SceneCamera(view, projection);
     }
 
     private static SceneRenderItem CreateRenderItem(

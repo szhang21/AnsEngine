@@ -5,6 +5,8 @@ using Engine.Core;
 using Engine.Platform;
 using Engine.Render;
 using Engine.Scene;
+using Engine.SceneData;
+using Engine.SceneData.Abstractions;
 using System.Reflection;
 using System.Numerics;
 using Xunit;
@@ -63,6 +65,8 @@ public sealed class RuntimeBootstrapTests
             sceneRuntime,
             new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
             new StubMeshAssetProvider(),
+            new SuccessfulSceneDescriptionLoader(),
+            "sample.scene.json",
             new NullInputService(),
             new FixedTimeService(new TimeSnapshot(0.016, 0, 60)));
 
@@ -87,6 +91,8 @@ public sealed class RuntimeBootstrapTests
             sceneRuntime,
             new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
             new StubMeshAssetProvider(),
+            new SuccessfulSceneDescriptionLoader(),
+            "sample.scene.json",
             new NullInputService(),
             new FixedTimeService(new TimeSnapshot(0.016, 0, 60)));
 
@@ -100,6 +106,75 @@ public sealed class RuntimeBootstrapTests
         Assert.Equal(1, windowService.RequestCloseCalls);
         Assert.Equal(1, windowService.DisposeCalls);
         Assert.True(windowService.IsCloseRequested);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_LoaderFailure_ReturnsErrorAndSkipsSceneInitialization()
+    {
+        var windowService = new TrackingWindowService();
+        var renderer = new CountingRenderer();
+        var sceneRuntime = new SpySceneRuntime();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new FailingSceneDescriptionLoader(),
+            "missing.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0, 60)));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(1, exitCode);
+        Assert.False(sceneRuntime.InitializeCalled);
+        Assert.Equal(1, renderer.InitializeCalls);
+        Assert.Equal(0, renderer.RenderCalls);
+        Assert.Equal(1, renderer.ShutdownCalls);
+    }
+
+    [Fact]
+    public void ResolveSceneFilePath_UsesEnvironmentOverrideWhenPresent()
+    {
+        const string expectedPath = "/tmp/custom.scene.json";
+        var method = typeof(RuntimeBootstrap).GetMethod("ResolveSceneFilePath", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var previousValue = Environment.GetEnvironmentVariable("ANS_ENGINE_SCENE_PATH");
+        try
+        {
+            Environment.SetEnvironmentVariable("ANS_ENGINE_SCENE_PATH", expectedPath);
+
+            var resolvedPath = Assert.IsType<string>(method!.Invoke(null, Array.Empty<object>()));
+
+            Assert.Equal(expectedPath, resolvedPath);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ANS_ENGINE_SCENE_PATH", previousValue);
+        }
+    }
+
+    [Fact]
+    public void ResolveSceneFilePath_UsesBundledSampleSceneByDefault()
+    {
+        var method = typeof(RuntimeBootstrap).GetMethod("ResolveSceneFilePath", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var previousValue = Environment.GetEnvironmentVariable("ANS_ENGINE_SCENE_PATH");
+        try
+        {
+            Environment.SetEnvironmentVariable("ANS_ENGINE_SCENE_PATH", null);
+
+            var resolvedPath = Assert.IsType<string>(method!.Invoke(null, Array.Empty<object>()));
+
+            Assert.EndsWith(Path.Combine("SampleScenes", "default.scene.json"), resolvedPath, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ANS_ENGINE_SCENE_PATH", previousValue);
+        }
     }
 
     private sealed class TestWindowService : IWindowService
@@ -208,10 +283,12 @@ public sealed class RuntimeBootstrapTests
     private sealed class SpySceneRuntime : ISceneRuntime
     {
         public bool InitializeCalled { get; private set; }
+        public SceneDescription? SceneDescription { get; private set; }
 
-        public void InitializeScene()
+        public void InitializeScene(SceneDescription sceneDescription)
         {
             InitializeCalled = true;
+            SceneDescription = sceneDescription;
         }
     }
 
@@ -229,6 +306,39 @@ public sealed class RuntimeBootstrapTests
         public MeshAssetLoadResult GetMesh(SceneMeshRef mesh)
         {
             return MeshAssetLoadResult.Success(mesh, mAsset);
+        }
+    }
+
+    private sealed class SuccessfulSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(
+                new SceneDescription(
+                    "sample-scene",
+                    sceneFilePath,
+                    new SceneCameraDescription(new Vector3(0.0f, 0.25f, 2.2f), Vector3.Zero, 1.0471976f),
+                    new[]
+                    {
+                        new SceneObjectDescription(
+                            "cube-main",
+                            "Cube Main",
+                            new SceneMeshRef("mesh://cube"),
+                            new SceneMaterialRef("material://default"),
+                            SceneTransformDescription.Identity)
+                    }));
+        }
+    }
+
+    private sealed class FailingSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.FailureResult(
+                new SceneDescriptionLoadFailure(
+                    SceneDescriptionLoadFailureKind.NotFound,
+                    "Scene file was not found.",
+                    sceneFilePath));
         }
     }
 }

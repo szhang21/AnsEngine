@@ -1,9 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
-    <ProjectReference Include="..\Engine.SceneData\Engine.SceneData.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

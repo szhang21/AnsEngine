@@ -4,6 +4,8 @@ using Engine.Core;
 using Engine.Platform;
 using Engine.Render;
 using Engine.Scene;
+using Engine.SceneData;
+using Engine.SceneData.Abstractions;
 using System.Diagnostics;
 using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
@@ -12,6 +14,8 @@ namespace Engine.App;
 public sealed class RuntimeBootstrap : IRuntimeBootstrap
 {
     private const string kSampleMeshCatalogFileName = "mesh-catalog.txt";
+    private const string kDefaultSceneFileName = "default.scene.json";
+    private const string kScenePathEnvironmentVariableName = "ANS_ENGINE_SCENE_PATH";
 
     public IApplication Build()
     {
@@ -24,9 +28,20 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         ISceneRuntime sceneRuntime = new SceneRuntimeAdapter(sceneGraph);
         ContractsProvider renderInputProvider = sceneGraph;
         var meshAssetProvider = CreateMeshAssetProvider();
+        var sceneDescriptionLoader = CreateSceneDescriptionLoader();
+        var sceneFilePath = ResolveSceneFilePath();
         var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider, meshAssetProvider);
         var assetService = new NullAssetService(runtimeInfo, windowService, meshAssetProvider);
-        return new ApplicationHost(windowService, renderer, sceneRuntime, assetService, meshAssetProvider, inputService, timeService);
+        return new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            assetService,
+            meshAssetProvider,
+            sceneDescriptionLoader,
+            sceneFilePath,
+            inputService,
+            timeService);
     }
 
     private static IRenderer CreateRenderer(
@@ -48,9 +63,25 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         return new DiskMeshAssetProvider(catalogPath);
     }
 
+    private static ISceneDescriptionLoader CreateSceneDescriptionLoader()
+    {
+        return new JsonSceneDescriptionLoader();
+    }
+
     private static string ResolveSampleAssetRoot()
     {
         return Path.Combine(AppContext.BaseDirectory, "SampleAssets");
+    }
+
+    private static string ResolveSceneFilePath()
+    {
+        var overridePath = Environment.GetEnvironmentVariable(kScenePathEnvironmentVariableName);
+        if (!string.IsNullOrWhiteSpace(overridePath))
+        {
+            return overridePath;
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "SampleScenes", kDefaultSceneFileName);
     }
 
     private static bool ResolveUseNativeWindow()
@@ -75,9 +106,10 @@ internal sealed class SceneRuntimeAdapter : ISceneRuntime
         mSceneGraphService = sceneGraphService ?? throw new ArgumentNullException(nameof(sceneGraphService));
     }
 
-    public void InitializeScene()
+    public void InitializeScene(SceneDescription sceneDescription)
     {
-        mSceneGraphService.AddRootNode();
+        ArgumentNullException.ThrowIfNull(sceneDescription);
+        mSceneGraphService.LoadSceneDescription(sceneDescription);
     }
 }
 
@@ -112,6 +144,8 @@ public sealed class ApplicationHost : IApplication
     private readonly ISceneRuntime mSceneRuntime;
     private readonly IAssetService mAssetService;
     private readonly IMeshAssetProvider mMeshAssetProvider;
+    private readonly ISceneDescriptionLoader mSceneDescriptionLoader;
+    private readonly string mSceneFilePath;
     private readonly IInputService mInputService;
     private readonly ITimeService mTimeService;
     private readonly double? mAutoExitSeconds;
@@ -122,6 +156,8 @@ public sealed class ApplicationHost : IApplication
         ISceneRuntime sceneRuntime,
         IAssetService assetService,
         IMeshAssetProvider meshAssetProvider,
+        ISceneDescriptionLoader sceneDescriptionLoader,
+        string sceneFilePath,
         IInputService inputService,
         ITimeService timeService)
     {
@@ -130,6 +166,10 @@ public sealed class ApplicationHost : IApplication
         mSceneRuntime = sceneRuntime;
         mAssetService = assetService;
         mMeshAssetProvider = meshAssetProvider ?? throw new ArgumentNullException(nameof(meshAssetProvider));
+        mSceneDescriptionLoader = sceneDescriptionLoader ?? throw new ArgumentNullException(nameof(sceneDescriptionLoader));
+        mSceneFilePath = string.IsNullOrWhiteSpace(sceneFilePath)
+            ? throw new ArgumentException("Scene file path must not be null or whitespace.", nameof(sceneFilePath))
+            : sceneFilePath;
         mInputService = inputService;
         mTimeService = timeService;
         mAutoExitSeconds = ResolveAutoExitSeconds();
@@ -141,7 +181,14 @@ public sealed class ApplicationHost : IApplication
         {
             mRenderer.Initialize();
             var uptime = Stopwatch.StartNew();
-            mSceneRuntime.InitializeScene();
+            var loadResult = mSceneDescriptionLoader.Load(mSceneFilePath);
+            if (!loadResult.IsSuccess || loadResult.Scene is null)
+            {
+                Console.Error.WriteLine($"Scene load failed: {loadResult.Failure?.Kind} - {loadResult.Failure?.Message}");
+                return 1;
+            }
+
+            mSceneRuntime.InitializeScene(loadResult.Scene);
             _ = mAssetService.Load("bootstrap://placeholder");
             _ = mMeshAssetProvider.GetMesh(sBootstrapMesh);
 

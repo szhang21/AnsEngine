@@ -1,5 +1,7 @@
 using Engine.Core;
 using Engine.Scene;
+using Engine.SceneData;
+using Engine.Contracts;
 using System.Numerics;
 using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
@@ -73,7 +75,7 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(Vector3.Zero, firstItem.Transform.Position);
         Assert.Equal(Quaternion.Identity, firstItem.Transform.Rotation);
         Assert.Equal(new Vector3(0.00005f, 0.0f, 0.0f), secondItem.Transform.Position);
-        Assert.Equal(Quaternion.CreateFromYawPitchRoll(0.005f, 0.0f, 0.0f), secondItem.Transform.Rotation);
+        Assert.Equal(Quaternion.CreateFromYawPitchRoll(0.005f, 0.003f, 0.0f), secondItem.Transform.Rotation);
         Assert.Equal(Vector3.One, firstItem.Transform.Scale);
         Assert.Equal(Vector3.One, secondItem.Transform.Scale);
         Assert.NotEqual(firstItem.Transform, secondItem.Transform);
@@ -154,6 +156,114 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(Vector3.One, item.Transform.Scale);
         Assert.Equal(Quaternion.Identity, item.Transform.Rotation);
         AssertValidCamera(frame.Camera);
+    }
+
+    [Fact]
+    public void LoadSceneDescription_BuildRenderFrame_MapsObjectsCameraAndLocalTransforms()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        var description = new SceneDescription(
+            "sample-scene",
+            "Sample Scene",
+            new SceneCameraDescription(new Vector3(0.0f, 0.25f, 2.2f), Vector3.Zero, 1.0471976f),
+            new[]
+            {
+                new SceneObjectDescription(
+                    "cube-main",
+                    "Cube Main",
+                    new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                    new Engine.Contracts.SceneMaterialRef("material://highlight"),
+                    new SceneTransformDescription(
+                        new Vector3(1.0f, 2.0f, 3.0f),
+                        Quaternion.CreateFromYawPitchRoll(0.1f, 0.2f, 0.3f),
+                        new Vector3(2.0f, 2.0f, 2.0f))),
+                new SceneObjectDescription(
+                    "cube-secondary",
+                    "Cube Secondary",
+                    new Engine.Contracts.SceneMeshRef("mesh://missing"),
+                    new Engine.Contracts.SceneMaterialRef("material://default"),
+                    SceneTransformDescription.Identity)
+            });
+
+        sceneGraph.LoadSceneDescription(description);
+
+        var frame = sceneGraph.BuildRenderFrame();
+
+        Assert.Equal(0, frame.FrameNumber);
+        Assert.Equal(2, frame.Items.Count);
+
+        var first = frame.Items[0];
+        Assert.Equal(1, first.NodeId);
+        Assert.Equal("mesh://cube", first.MeshId);
+        Assert.Equal("material://highlight", first.MaterialId);
+        Assert.Equal(new Vector3(1.0f, 2.0f, 3.0f), first.Transform.Position);
+        Assert.Equal(new Vector3(2.0f, 2.0f, 2.0f), first.Transform.Scale);
+        Assert.Equal(Quaternion.CreateFromYawPitchRoll(0.1f, 0.2f, 0.3f), first.Transform.Rotation);
+
+        var second = frame.Items[1];
+        Assert.Equal(2, second.NodeId);
+        Assert.Equal("mesh://missing", second.MeshId);
+        Assert.Equal("material://default", second.MaterialId);
+        Assert.Equal(SceneTransform.Identity, second.Transform);
+
+        AssertValidCamera(frame.Camera);
+    }
+
+    [Fact]
+    public void LoadSceneDescription_ConsecutiveFrames_PreserveDescriptionDrivenOutputs()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.LoadSceneDescription(
+            new SceneDescription(
+                "sample-scene",
+                "Sample Scene",
+                new SceneCameraDescription(new Vector3(0.0f, 0.0f, 2.2f), Vector3.Zero, 1.0471976f),
+                new[]
+                {
+                    new SceneObjectDescription(
+                        "cube-main",
+                        "Cube Main",
+                        new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                        new Engine.Contracts.SceneMaterialRef("material://default"),
+                        SceneTransformDescription.Identity)
+                }));
+
+        var firstFrame = sceneGraph.BuildRenderFrame();
+        var secondFrame = sceneGraph.BuildRenderFrame();
+
+        Assert.Equal(0, firstFrame.FrameNumber);
+        Assert.Equal(1, secondFrame.FrameNumber);
+        Assert.Equal(firstFrame.Items, secondFrame.Items);
+        Assert.Equal(firstFrame.Camera, secondFrame.Camera);
+    }
+
+    [Fact]
+    public void LoadSceneDescription_NullCamera_UsesDefaultSceneCamera()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.LoadSceneDescription(
+            new SceneDescription(
+                "sample-scene",
+                "Sample Scene",
+                null!,
+                new[]
+                {
+                    new SceneObjectDescription(
+                        "cube-main",
+                        "Cube Main",
+                        new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                        new Engine.Contracts.SceneMaterialRef("material://default"),
+                        SceneTransformDescription.Identity)
+                }));
+
+        var frame = sceneGraph.BuildRenderFrame();
+
+        AssertValidCamera(frame.Camera);
+        Assert.NotEqual(Matrix4x4.Identity, frame.Camera.View);
+        Assert.NotEqual(Matrix4x4.Identity, frame.Camera.Projection);
     }
 
     private static void AssertValidTransform(Vector3 position, Quaternion rotation)
