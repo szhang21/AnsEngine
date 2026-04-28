@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M11-2026-04-27`
+  Status: `Closed`
+  LastUpdated: `2026-04-29`
+  MilestoneSummary: `M11 完成（SceneData 编辑底座、文档读写、保存往返与对象级编辑收口）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M11-2026-04-27.md`
+
 - PlanId: `PLAN-M10-2026-04-25`
   Status: `Closed`
   LastUpdated: `2026-04-26 00:00`
