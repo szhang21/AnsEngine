@@ -33,6 +33,10 @@
 
 ## Done
 
+- `TASK-QA-012` M11 SceneData 编辑底座门禁复验与收口（人工验收通过，已归档）
+- `TASK-SDATA-005` M11 对象级文档编辑操作与失败语义（人工验收通过，已归档）
+- `TASK-SDATA-004` M11 校验复用与 load-save-load 往返稳定（人工验收通过，已归档）
+- `TASK-SDATA-003` M11 SceneData 文档读写接口与 JSON store（人工验收通过，已归档）
 - `TASK-QA-011` M10 数据驱动场景链路门禁复验（人工验收通过，已归档）
 - `TASK-APP-009` M10 场景文件选择与 SceneData loader 装配（人工验收通过，已归档）
 - `TASK-SCENE-009` M10 SceneDescription 到运行时场景初始化入口（人工验收通过，已归档）

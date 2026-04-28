@@ -11,7 +11,7 @@
 - BoundaryContractPath
 - Owner
 - ClosedAt
-- Status（Done/Cancelled）
+- Status（Review/Done/Cancelled）
 - ModuleAttributionCheck（pass/fail）
 - Summary
 - FilesChanged
@@ -30,7 +30,7 @@
   BoundaryContractPath: <.ai-workflow/boundaries/xxx.md>
   Owner: <name>
   ClosedAt: <YYYY-MM-DD HH:mm>
-  Status: <Done|Cancelled>
+  Status: <Review|Done|Cancelled>
   ModuleAttributionCheck: <pass|fail>
   Summary:
     - <改动点1>
@@ -47,6 +47,107 @@
 ```
 
 ### 当前记录
+
+- TaskId: `TASK-QA-012`
+  Title: `M11 SceneData 编辑底座门禁复验与收口`
+  Priority: `P1`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `QA`
+  ClosedAt: `2026-04-26 16:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 复验 `TASK-SDATA-003/004/005` 的构建、测试、smoke 与失败语义证据
+    - 确认 M11 SceneData 编辑底座链路通过人工验收并完成归档收口
+  FilesChanged:
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/tasks/task-qa-012.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-012.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-SDATA-003/004/005` 的 SceneData 构建证据）
+    - Test: pass（沿用 `Engine.SceneData.Tests` 28 条通过证据）
+    - Smoke: pass（覆盖保存后 reload、对象编辑后 reload 与失败语义）
+    - Perf: pass（显式调用路径，无运行时逐帧 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-012.md`
+
+- TaskId: `TASK-SDATA-005`
+  Title: `M11 对象级文档编辑操作与失败语义`
+  Priority: `P2`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-04-28 01:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增文档级对象编辑服务与显式编辑失败语义
+    - 支持对象增删、id/name、mesh/material 与 transform 修改
+    - 编辑后文档可保存并重新加载为 `SceneDescription`
+  FilesChanged:
+    - `src/Engine.SceneData/Editing/**`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+  ValidationEvidence:
+    - Build: pass（SceneData Debug/Release 构建通过）
+    - Test: pass（SceneData.Tests 28 条通过）
+    - Smoke: pass（编辑后保存并 reload 为 `SceneDescription`）
+    - Perf: pass（文档级小步编辑，无运行时逐帧 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SDATA-005.md`
+
+- TaskId: `TASK-SDATA-004`
+  Title: `M11 校验复用与 load-save-load 往返稳定`
+  Priority: `P1`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-04-28 01:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 抽出 `SceneFileDocumentNormalizer` 统一校验、默认值与规范化规则
+    - `JsonSceneDescriptionLoader` 复用 document store 与 normalizer
+    - 保存后的 `.scene.json` 可重新加载为语义等价 `SceneDescription`
+  FilesChanged:
+    - `src/Engine.SceneData/Loading/JsonSceneDescriptionLoader.cs`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+  ValidationEvidence:
+    - Build: pass（SceneData Debug/Release 构建通过）
+    - Test: pass（SceneData.Tests 28 条通过）
+    - Smoke: pass（load-save-load 等价测试通过）
+    - Perf: pass（复用 normalizer，未引入多套重复规范化主路径）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SDATA-004.md`
+
+- TaskId: `TASK-SDATA-003`
+  Title: `M11 SceneData 文档读写接口与 JSON store`
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-04-28 01:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `ISceneDocumentStore` 与 JSON document store
+    - `SceneFileDocument` 支持显式读取、保存与读写失败语义
+    - 保持 `ISceneDescriptionLoader` 作为运行时规范化加载入口
+  FilesChanged:
+    - `src/Engine.SceneData/Abstractions/ISceneDocumentStore.cs`
+    - `src/Engine.SceneData/DocumentStore/**`
+    - `src/Engine.SceneData/Loading/JsonSceneDescriptionLoader.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+  ValidationEvidence:
+    - Build: pass（SceneData Debug/Release 构建通过）
+    - Test: pass（SceneData.Tests 28 条通过）
+    - Smoke: pass（`SceneFileDocument` 保存后可读取）
+    - Perf: pass（读写仅由显式 document store 操作触发）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SDATA-003.md`
 
 - TaskId: `TASK-QA-011`
   Title: `M10 数据驱动场景链路门禁复验`

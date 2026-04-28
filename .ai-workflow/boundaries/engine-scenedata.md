@@ -57,6 +57,18 @@
   - 错误语义：缺失文件、非法 JSON、重复对象 `Id`、缺少必填字段等通过显式失败结果返回
   - 生命周期约束：仅负责单次加载与规范化，不持有运行时状态
 
+- `ISceneDocumentStore`
+  - 用途：读取与保存文档层 `SceneFileDocument`
+  - 输入/输出：输入 `.scene.json` 路径与文档对象，输出文档级 load/save 结果
+  - 错误语义：缺失文件、非法 JSON、读取失败、写入失败等通过显式文档级失败结果返回
+  - 生命周期约束：仅负责显式文档操作，不参与运行时逐帧加载或场景对象管理
+
+- `SceneFileDocumentEditor`
+  - 用途：对 `SceneFileDocument` 执行最小对象级增删改
+  - 输入/输出：输入原文档与对象编辑参数，输出编辑后的新文档或显式编辑失败
+  - 错误语义：对象不存在、重复 id、空 mesh、非法引用、非有限 transform 值等通过编辑失败结果返回
+  - 生命周期约束：无状态文档编辑服务，不触碰 `SceneGraphService` 或运行时对象
+
 ## 8) 数据与状态边界
 
 - 模块内部可变状态：可选的格式版本策略与默认值规则；不维护运行时场景缓存作为主职责。
@@ -77,6 +89,21 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-04-28
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `ISceneDocumentStore`、`JsonSceneDocumentStore` 与文档级读写结果类型，支持 `SceneFileDocument` 的 JSON 读取、保存和显式读写失败语义；运行时 `ISceneDescriptionLoader` 保持为规范化加载入口。
+  - 变更原因：支撑 `TASK-SDATA-003`，让 M11 文档读写能力收敛在 `Engine.SceneData`，避免保存逻辑外溢到 App/Scene。
+  - 风险与回滚方案：若后续保存策略需要原子写或备份文件，可在 document store 内扩展实现；不改变 `ISceneDescriptionLoader` 的运行时职责。
+- 2026-04-28
+  - 变更人：Execution-Agent
+  - 变更内容：抽出 `SceneFileDocumentNormalizer` 统一承载文件描述层到 `SceneDescription` 的校验、默认值与规范化规则；`JsonSceneDescriptionLoader` 复用 document store 与 normalizer。
+  - 变更原因：支撑 `TASK-SDATA-004`，保证保存后的 `.scene.json` 能重新加载为语义等价的运行时描述，并避免 loader/store 规则分叉。
+  - 风险与回滚方案：若后续 schema 扩展，优先扩展 normalizer 和对应测试；不把默认值责任转移到 Scene/App。
+- 2026-04-28
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `SceneFileDocumentEditor` 与对象级编辑结果/失败类型，支持文档对象的增删、id/name、mesh/material 和 transform 修改，并复用 normalizer 验证编辑后文档。
+  - 变更原因：支撑 `TASK-SDATA-005`，为后续编辑器宿主提供文档层对象编辑底座，不触碰运行时 Scene 对象。
+  - 风险与回滚方案：若后续需要 Undo/Redo、层级或 GUI 状态，应另立编辑器/工具任务；当前编辑服务保持无状态文档操作。
 - 2026-04-26
   - 变更人：Execution-Agent
   - 变更内容：明确 `Engine.App` 会作为组合根显式装配并调用 `ISceneDescriptionLoader`，而 `SceneData` 仍只暴露加载契约与规范化结果，不承载场景文件选择策略。
