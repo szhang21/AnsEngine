@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M12-2026-04-30`
+  Status: `Closed`
+  LastUpdated: `2026-04-30`
+  MilestoneSummary: `M12 完成（GUI 编辑器前置底座、Engine.Editor 无界面编辑器核心、session/dirty/selection/save-reload 语义收口）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M12-2026-04-30.md`
+
 - PlanId: `PLAN-M11-2026-04-27`
   Status: `Closed`
   LastUpdated: `2026-04-29`
