@@ -19,6 +19,7 @@
   - `engine-platform.md`
   - `engine-app.md`
   - `engine-contracts.md`
+  - `engine-editor.md`
 
 ## 3) 任务卡引用规范
 
@@ -42,6 +43,7 @@
 - `Engine.App` -> `src/Engine.App/**`
 - `Engine.Contracts` -> `src/Engine.Contracts/**`（或 `src/Engine.Render.Contracts/**`，二选一）
 - `Engine.SceneData` -> `src/Engine.SceneData/**`
+- `Engine.Editor` -> `src/Engine.Editor/**`
 
 ## 5) 变更管理
 
@@ -51,3 +53,10 @@
   - `BoundaryContractPath`
   - `ModuleAttributionCheck`
 - 若任务发生跨模块改动，必须在归档中写明审批依据和影响范围。
+
+## 6) 变更记录
+
+- 2026-04-30
+  - 变更人：Execution-Agent
+  - 变更内容：确认 `Engine.Editor` 边界合同和路径映射已纳入目录索引，支撑 `TASK-EDITOR-001` 新模块落地。
+  - 变更原因：M12 新增 headless editor core 模块，需要边界目录能被后续任务卡稳定引用。

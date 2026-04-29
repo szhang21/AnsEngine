@@ -33,6 +33,11 @@
 
 ## Done
 
+- `TASK-QA-013` M12 GUI 编辑器前置底座门禁复验与归档（人工验收通过，已归档）
+- `TASK-EDITOR-004` M12 保存、另存为与 reload 验证（人工验收通过，已归档）
+- `TASK-EDITOR-003` M12 编辑命令编排与 selection/dirty 语义（人工验收通过，已归档）
+- `TASK-EDITOR-002` M12 SceneEditorSession 打开场景与会话状态（人工验收通过，已归档）
+- `TASK-EDITOR-001` M12 Engine.Editor 模块与边界合同落地（人工验收通过，已归档）
 - `TASK-QA-012` M11 SceneData 编辑底座门禁复验与收口（人工验收通过，已归档）
 - `TASK-SDATA-005` M11 对象级文档编辑操作与失败语义（人工验收通过，已归档）
 - `TASK-SDATA-004` M11 校验复用与 load-save-load 往返稳定（人工验收通过，已归档）

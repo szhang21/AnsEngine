@@ -48,6 +48,131 @@
 
 ### 当前记录
 
+- TaskId: `TASK-QA-013`
+  Title: `M12 GUI 编辑器前置底座门禁复验与归档`
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-04-30 01:21`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 复验 `TASK-EDITOR-001~004` 的 M12 Editor core 交付结果
+    - 确认打开、编辑、保存、reload 闭环和边界约束均通过
+    - 完成 M12 看板、任务归档索引与计划归档状态收口
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-013.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-013.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/plan-archive/2026-04/PLAN-M12-2026-04-30.md`
+    - `.ai-workflow/plan-archive/plan-archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet test AnsEngine.sln --no-restore` 完成构建与测试；仅既有 `net7.0` EOL warning）
+    - Test: pass（整解测试通过；Editor.Tests 26 条通过；Render.Tests 16 条专项通过）
+    - Smoke: pass（M12 已覆盖 `open -> edit -> save -> reload`；保存成功清 dirty；失败路径保留内存状态）
+    - Boundary: pass（`Engine.Editor` 保持 headless core；未接入 App 默认启动路径，Render 不感知 Editor）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-013.md`
+
+- TaskId: `TASK-EDITOR-004`
+  Title: `M12 保存、另存为与 reload 验证`
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-04-30 01:07`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneEditorSession` 新增保存与另存为入口
+    - 保存成功必须经过写盘后 reload/normalize 验证
+    - 保存失败或 reload 失败保留内存修改、路径和 dirty
+  FilesChanged:
+    - `src/Engine.Editor/Session/SceneEditorSession.cs`
+    - `tests/Engine.Editor.Tests/SceneEditorSessionTests.cs`
+    - `.ai-workflow/boundaries/engine-editor.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln` 通过，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln` 通过，Editor.Tests 26 条通过）
+    - Smoke: pass（`open -> edit -> save -> reload` 成功；保存成功清 dirty；失败保留 dirty 与内存修改）
+    - Boundary: pass（未新增禁止依赖，未改 SceneData/App/Render/Platform/Asset）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EDITOR-004.md`
+
+- TaskId: `TASK-EDITOR-003`
+  Title: `M12 编辑命令编排与 selection/dirty 语义`
+  Priority: `P2`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-04-30 01:04`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneEditorSession` 新增 selection 与对象编辑命令编排入口
+    - 编辑成功同步 document/scene 并置 dirty
+    - 选择、selection 跟随和编辑失败回滚语义已测试覆盖
+  FilesChanged:
+    - `src/Engine.Editor/Session/SceneEditorSession.cs`
+    - `tests/Engine.Editor.Tests/SceneEditorSessionTests.cs`
+    - `.ai-workflow/boundaries/engine-editor.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln` 通过，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln` 通过，Editor.Tests 21 条通过）
+    - Smoke: pass（无文档 select/edit 显式失败；选择不置 dirty；编辑成功置 dirty；失败不污染状态）
+    - Boundary: pass（未新增禁止依赖，未改 SceneData/App/Render/Platform/Asset）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EDITOR-003.md`
+
+- TaskId: `TASK-EDITOR-002`
+  Title: `M12 SceneEditorSession 打开场景与会话状态`
+  Priority: `P1`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-04-30 00:56`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneEditorSession` 支持打开、关闭、状态查询和 reload validate
+    - 打开成功持有文档快照与规范化场景快照
+    - 打开失败不污染已有 session
+  FilesChanged:
+    - `src/Engine.Editor/Session/SceneEditorSession.cs`
+    - `tests/Engine.Editor.Tests/SceneEditorSessionTests.cs`
+    - `.ai-workflow/boundaries/engine-editor.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln` 通过，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln` 通过，Editor.Tests 11 条通过）
+    - Smoke: pass（打开合法 scene 后状态正确，关闭后清空）
+    - Perf: pass（仅显式打开阶段 IO/normalize，无逐帧轮询）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EDITOR-002.md`
+
+- TaskId: `TASK-EDITOR-001`
+  Title: `M12 Engine.Editor 模块与边界合同落地`
+  Priority: `P0`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-04-30 00:50`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `Engine.Editor` 与 `Engine.Editor.Tests` 工程并接入 solution
+    - 新增 `SceneEditorSession` 与显式结果/失败类型种子
+    - 边界测试确认无禁止依赖、无 OpenTK/OpenGL 路线
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.Editor/**`
+    - `tests/Engine.Editor.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor.md`
+    - `.ai-workflow/boundaries/README.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln` 通过，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln` 通过，Editor.Tests 4 条通过）
+    - Smoke: pass（solution 可加载新模块，边界测试确认无禁止依赖）
+    - Perf: pass（未改运行时路径，仅新增编译与测试成本）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EDITOR-001.md`
+
 - TaskId: `TASK-QA-012`
   Title: `M11 SceneData 编辑底座门禁复验与收口`
   Priority: `P1`
