@@ -1720,4 +1720,178 @@
     - Perf: pass（`ANS_ENGINE_USE_NATIVE_WINDOW=false`，`ANS_ENGINE_AUTO_EXIT_SECONDS=30`，`ExitCode=0`，`30.84s`）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-SCENE-007.md`
 
+- TaskId: `TASK-EAPP-001`
+  Title: M13 Editor GUI 宿主入口
+  Priority: `P0`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 14:28`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增独立 `Engine.Editor.App` 可执行宿主与 OpenTK/ImGui 边界
+    - 启动时装配 `SceneEditorSession` 并默认解析源码 sample scene
+    - 新增边界测试确认 `Engine.Editor` 仍保持 headless，`Engine.App` 不引用 Editor App
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.Editor.App/**`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/boundaries/README.md`
+    - `.ai-workflow/tasks/task-eapp-001.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-001.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（仅新增 GUI 宿主启动成本；无逐帧文件 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-001.md`
 
+- TaskId: `TASK-EAPP-002`
+  Title: M13 编辑器基础布局与状态栏
+  Priority: `P1`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 15:35`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 Toolbar、Hierarchy、Inspector、Status Bar 的 GUI snapshot 模型
+    - 补齐真实 ImGui/OpenGL 渲染后端，修复 native NewFrame 崩溃
+    - 状态栏从 session 读取 scene path、dirty、selected object id 和 last error
+  FilesChanged:
+    - `src/Engine.Editor.App/**`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-002.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（无逐帧文件 IO 或重复 session open）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-002.md`
+
+- TaskId: `TASK-EAPP-003`
+  Title: M13 Hierarchy 面板与选择联动
+  Priority: `P2`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 15:40`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Hierarchy 点击调用 `EditorAppController.SelectObject`
+    - 选中高亮、Inspector 选中态和 Status Bar selected id 均从 session 生成
+    - 选择成功不 dirty，选择失败保留原 selection 并显示 last error
+  FilesChanged:
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-003.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-003.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（Hierarchy 每帧只消费 session 快照）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-003.md`
+
+- TaskId: `TASK-EAPP-004`
+  Title: M13 Inspector 对象编辑
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 15:48`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Inspector 支持 Id、Name、Mesh、Material、Position、Rotation、Scale 输入
+    - 显式 Apply 提交全部通过 `SceneEditorSession` update API
+    - 成功 dirty=true，失败显示 last error 并回滚到 session 当前有效值
+  FilesChanged:
+    - `src/Engine.Editor.App/**`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-004.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-004.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（Inspector 无逐帧文件写入或重新加载）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-004.md`
+
+- TaskId: `TASK-EAPP-005`
+  Title: M13 Open/Save/Save As 工作流
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 15:53`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Toolbar Open、Save、Save As 接入路径输入工作流
+    - 文件操作全部通过 `SceneEditorSession.Open/Save/SaveAs`
+    - 验证环境变量覆盖、保存写盘、Save As 路径更新和 Open 失败不污染 session
+  FilesChanged:
+    - `src/Engine.Editor.App/**`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-005.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-005.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（Open/Save 仅用户触发，无逐帧文件 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-005.md`
+
+- TaskId: `TASK-EAPP-006`
+  Title: M13 Add/Remove Object GUI 工作流
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-04-30 15:58`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Add Object 创建默认 cube 对象并自动选中
+    - Remove Selected 删除当前选中对象并清 selection
+    - 保存后 reload 验证增删结果持久化
+  FilesChanged:
+    - `src/Engine.Editor.App/**`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-006.md`
+    - `.ai-workflow/archive/2026-04/TASK-EAPP-006.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Perf: pass（id 生成只扫描当前对象集合，无逐帧文件 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-006.md`

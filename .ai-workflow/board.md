@@ -17,7 +17,7 @@
 
 ## Todo
 
-- （空）
+- `TASK-QA-014` M13 最小 GUI 编辑器门禁复验与归档
 
 ## InProgress
 
@@ -29,7 +29,12 @@
 
 ## Review
 
-- （空）
+- `TASK-EAPP-001` M13 Editor GUI 宿主入口（Execution 验证通过，待人工复验）
+- `TASK-EAPP-002` M13 编辑器基础布局与状态栏（Execution 验证通过，待人工复验）
+- `TASK-EAPP-003` M13 Hierarchy 面板与选择联动（Execution 验证通过，待人工复验）
+- `TASK-EAPP-004` M13 Inspector 对象编辑（Execution 验证通过，待人工复验）
+- `TASK-EAPP-005` M13 Open/Save/Save As 工作流（Execution 验证通过，待人工复验）
+- `TASK-EAPP-006` M13 Add/Remove Object GUI 工作流（Execution 验证通过，待人工复验）
 
 ## Done
 
@@ -95,6 +100,3 @@
 ## Blocked
 
 - （空）
-
-
-

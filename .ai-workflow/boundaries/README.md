@@ -44,6 +44,7 @@
 - `Engine.Contracts` -> `src/Engine.Contracts/**`（或 `src/Engine.Render.Contracts/**`，二选一）
 - `Engine.SceneData` -> `src/Engine.SceneData/**`
 - `Engine.Editor` -> `src/Engine.Editor/**`
+- `Engine.Editor.App` -> `src/Engine.Editor.App/**`
 
 ## 5) 变更管理
 
@@ -56,6 +57,10 @@
 
 ## 6) 变更记录
 
+- 2026-04-30
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `Engine.Editor.App` 边界合同与路径映射，支撑 M13 独立 GUI 编辑器宿主入口。
+  - 变更原因：`TASK-EAPP-001` 新增独立可执行编辑器宿主，需要边界目录能稳定引用 `.ai-workflow/boundaries/engine-editor-app.md`。
 - 2026-04-30
   - 变更人：Execution-Agent
   - 变更内容：确认 `Engine.Editor` 边界合同和路径映射已纳入目录索引，支撑 `TASK-EDITOR-001` 新模块落地。

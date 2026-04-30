@@ -4,8 +4,16 @@
     "id": "app-default-scene",
     "name": "App Default Scene",
     "camera": {
-      "position": { "x": 1.4, "y": 0.9, "z": 3.2 },
-      "target": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "position": {
+        "x": 1.4,
+        "y": 0.9,
+        "z": 3.2
+      },
+      "target": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
       "fieldOfViewRadians": 0.7853982
     },
     "objects": [
@@ -15,9 +23,70 @@
         "mesh": "mesh://cube",
         "material": "material://highlight",
         "transform": {
-          "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
-          "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 },
-          "scale": { "x": 1.0, "y": 1.0, "z": 1.0 }
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 1
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          }
+        }
+      },
+      {
+        "id": "object-001",
+        "name": "object-001",
+        "mesh": "mesh://cube",
+        "material": "material://default",
+        "transform": {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 1
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          }
+        }
+      },
+      {
+        "id": "object-002",
+        "name": "object-002",
+        "mesh": "mesh://cube",
+        "material": "material://default",
+        "transform": {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 1
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          }
         }
       }
     ]
