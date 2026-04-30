@@ -22,6 +22,7 @@ public sealed class ImGuiOpenGlRenderer : IDisposable
     private int mShaderProgram;
     private int mProjectionLocation;
     private bool mDisposed;
+    private readonly List<int> mQueuedTextInput = new();
 
     public ImGuiOpenGlRenderer(GameWindow window)
     {
@@ -49,8 +50,17 @@ public sealed class ImGuiOpenGlRenderer : IDisposable
         io.MouseDown[0] = mWindow.MouseState.IsButtonDown(MouseButton.Left);
         io.MouseDown[1] = mWindow.MouseState.IsButtonDown(MouseButton.Right);
         io.MouseDown[2] = mWindow.MouseState.IsButtonDown(MouseButton.Middle);
+        UpdateKeyboardInput(io);
 
         ImGui.NewFrame();
+    }
+
+    public void QueueTextInput(int unicodeCodePoint)
+    {
+        if (unicodeCodePoint > 0)
+        {
+            mQueuedTextInput.Add(unicodeCodePoint);
+        }
     }
 
     public void EndFrame()
@@ -247,6 +257,47 @@ public sealed class ImGuiOpenGlRenderer : IDisposable
             -1.0f, 1.0f, 0.0f, 1.0f
         };
         GL.UniformMatrix4(mProjectionLocation, 1, false, projection);
+    }
+
+    private void UpdateKeyboardInput(ImGuiIOPtr io)
+    {
+        var keyboard = mWindow.KeyboardState;
+        io.AddKeyEvent(ImGuiKey.ModCtrl, keyboard.IsKeyDown(Keys.LeftControl) || keyboard.IsKeyDown(Keys.RightControl));
+        io.AddKeyEvent(ImGuiKey.ModShift, keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift));
+        io.AddKeyEvent(ImGuiKey.ModAlt, keyboard.IsKeyDown(Keys.LeftAlt) || keyboard.IsKeyDown(Keys.RightAlt));
+        io.AddKeyEvent(ImGuiKey.ModSuper, keyboard.IsKeyDown(Keys.LeftSuper) || keyboard.IsKeyDown(Keys.RightSuper));
+
+        AddKeyEvent(io, ImGuiKey.Tab, Keys.Tab);
+        AddKeyEvent(io, ImGuiKey.LeftArrow, Keys.Left);
+        AddKeyEvent(io, ImGuiKey.RightArrow, Keys.Right);
+        AddKeyEvent(io, ImGuiKey.UpArrow, Keys.Up);
+        AddKeyEvent(io, ImGuiKey.DownArrow, Keys.Down);
+        AddKeyEvent(io, ImGuiKey.PageUp, Keys.PageUp);
+        AddKeyEvent(io, ImGuiKey.PageDown, Keys.PageDown);
+        AddKeyEvent(io, ImGuiKey.Home, Keys.Home);
+        AddKeyEvent(io, ImGuiKey.End, Keys.End);
+        AddKeyEvent(io, ImGuiKey.Delete, Keys.Delete);
+        AddKeyEvent(io, ImGuiKey.Backspace, Keys.Backspace);
+        AddKeyEvent(io, ImGuiKey.Enter, Keys.Enter);
+        AddKeyEvent(io, ImGuiKey.Escape, Keys.Escape);
+        AddKeyEvent(io, ImGuiKey.A, Keys.A);
+        AddKeyEvent(io, ImGuiKey.C, Keys.C);
+        AddKeyEvent(io, ImGuiKey.V, Keys.V);
+        AddKeyEvent(io, ImGuiKey.X, Keys.X);
+        AddKeyEvent(io, ImGuiKey.Y, Keys.Y);
+        AddKeyEvent(io, ImGuiKey.Z, Keys.Z);
+
+        foreach (var unicodeCodePoint in mQueuedTextInput)
+        {
+            io.AddInputCharacter((uint)unicodeCodePoint);
+        }
+
+        mQueuedTextInput.Clear();
+    }
+
+    private void AddKeyEvent(ImGuiIOPtr io, ImGuiKey imguiKey, Keys key)
+    {
+        io.AddKeyEvent(imguiKey, mWindow.KeyboardState.IsKeyDown(key));
     }
 
     private static int CreateShaderProgram()

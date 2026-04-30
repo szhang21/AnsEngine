@@ -7,6 +7,45 @@ namespace Engine.Editor.App.Tests;
 public sealed class EditorInspectorInputStateTests
 {
     [Fact]
+    public void SyncFrom_SameSelectedObject_PreservesPendingTransformInput()
+    {
+        var controller = CreateControllerWithSelectedObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+        inputState.SyncFrom(snapshot.Inspector);
+        var pendingPosition = new Vector3(9, 8, 7);
+        var pendingScale = new Vector3(3, 3, 3);
+        inputState.SetTransformValues(pendingPosition, Quaternion.Identity, pendingScale);
+
+        var nextFrameSnapshot = EditorGuiSnapshotFactory.Create(controller);
+        inputState.SyncFrom(nextFrameSnapshot.Inspector);
+
+        Assert.Equal(pendingPosition, inputState.Position);
+        Assert.Equal(pendingScale, inputState.Scale);
+        Assert.Equal(snapshot.Inspector.ObjectId, inputState.ObjectId);
+    }
+
+    [Fact]
+    public void SyncFrom_DifferentSelectedObject_LoadsNewObjectValues()
+    {
+        var controller = CreateControllerWithSelectedObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+        inputState.SyncFrom(snapshot.Inspector);
+        inputState.SetTextValues(snapshot.Inspector.ObjectId, "Pending Edit", snapshot.Inspector.Mesh, snapshot.Inspector.Material);
+        inputState.SetTransformValues(new Vector3(9, 8, 7), Quaternion.Identity, new Vector3(3, 3, 3));
+
+        Assert.True(controller.SelectObject("cube-b"), controller.LastError);
+        var nextObjectSnapshot = EditorGuiSnapshotFactory.Create(controller);
+        inputState.SyncFrom(nextObjectSnapshot.Inspector);
+
+        Assert.Equal("cube-b", inputState.ObjectId);
+        Assert.Equal("Cube B", inputState.ObjectName);
+        Assert.Equal(nextObjectSnapshot.Inspector.Position, inputState.Position);
+        Assert.Equal(nextObjectSnapshot.Inspector.Scale, inputState.Scale);
+    }
+
+    [Fact]
     public void Apply_NameAndTransform_UpdatesSessionAndDirty()
     {
         var controller = CreateControllerWithSelectedObject();
@@ -65,7 +104,7 @@ public sealed class EditorInspectorInputStateTests
     private static EditorAppController CreateControllerWithSelectedObject()
     {
         var controller = new EditorAppController(new EditorScenePathResolver());
-        Assert.True(controller.OpenStartupScene(), controller.LastError);
+        Assert.True(controller.OpenScene(WriteTemporarySceneFile()), controller.LastError);
         var objectId = controller.Session.Objects[0].ObjectId;
         Assert.True(controller.SelectObject(objectId), controller.LastError);
         if (controller.Session.Objects.Count == 1)
@@ -80,5 +119,32 @@ public sealed class EditorInspectorInputStateTests
         }
 
         return controller;
+    }
+
+    private static string WriteTemporarySceneFile()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        var scenePath = Path.Combine(directoryPath, "sample.scene.json");
+        File.WriteAllText(
+            scenePath,
+            """
+            {
+              "version": "1.0",
+              "scene": {
+                "id": "editor-app-test-scene",
+                "name": "Editor App Test Scene",
+                "objects": [
+                  {
+                    "id": "cube-main",
+                    "name": "Cube Main",
+                    "mesh": "mesh://cube",
+                    "material": "material://highlight"
+                  }
+                ]
+              }
+            }
+            """);
+        return scenePath;
     }
 }

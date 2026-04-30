@@ -74,6 +74,12 @@ public sealed class EditorAppWindow : GameWindow
         mImGuiRenderer?.Resize(ClientSize.X, ClientSize.Y);
     }
 
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        base.OnTextInput(e);
+        mImGuiRenderer?.QueueTextInput(e.Unicode);
+    }
+
     protected override void OnUnload()
     {
         mImGuiRenderer?.Dispose();

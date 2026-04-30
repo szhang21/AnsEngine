@@ -92,13 +92,40 @@ public sealed class EditorObjectWorkflowStateTests
     private static EditorAppController CreateController()
     {
         var controller = new EditorAppController(new EditorScenePathResolver());
-        Assert.True(controller.OpenStartupScene(), controller.LastError);
+        Assert.True(controller.OpenScene(WriteTemporarySceneFile()), controller.LastError);
         return controller;
+    }
+
+    private static string WriteTemporarySceneFile()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        var scenePath = Path.Combine(directoryPath, "sample.scene.json");
+        File.WriteAllText(
+            scenePath,
+            """
+            {
+              "version": "1.0",
+              "scene": {
+                "id": "editor-app-test-scene",
+                "name": "Editor App Test Scene",
+                "objects": [
+                  {
+                    "id": "cube-main",
+                    "name": "Cube Main",
+                    "mesh": "mesh://cube",
+                    "material": "material://highlight"
+                  }
+                ]
+              }
+            }
+            """);
+        return scenePath;
     }
 
     private static string CopySampleSceneToTemporaryFile()
     {
-        var sourcePath = new EditorScenePathResolver().ResolveStartupScenePath();
+        var sourcePath = WriteTemporarySceneFile();
         var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directoryPath);
         var destinationPath = Path.Combine(directoryPath, "sample.scene.json");

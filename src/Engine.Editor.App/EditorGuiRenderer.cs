@@ -19,7 +19,8 @@ public sealed class EditorGuiRenderer
 
     public void RenderFrame(bool enableNativeImGuiFrames)
     {
-        var snapshot = EditorGuiSnapshotFactory.Create(mController);
+        var displaySize = enableNativeImGuiFrames ? ImGui.GetIO().DisplaySize : new Vector2(1100.0f, 720.0f);
+        var snapshot = EditorGuiSnapshotFactory.Create(mController, displaySize);
         LastSnapshot = snapshot;
         if (!enableNativeImGuiFrames)
         {
@@ -28,6 +29,7 @@ public sealed class EditorGuiRenderer
 
         DrawToolbar(snapshot);
         DrawHierarchy(snapshot);
+        DrawMainWorkspace(snapshot);
         DrawInspector(snapshot);
         DrawStatusBar(snapshot);
     }
@@ -35,7 +37,8 @@ public sealed class EditorGuiRenderer
     private void DrawToolbar(EditorGuiSnapshot snapshot)
     {
         mFileWorkflowState.SyncFrom(snapshot);
-        ImGui.Begin("Toolbar");
+        SetDockedPanelBounds(snapshot.Layout.ToolbarPosition, snapshot.Layout.ToolbarSize);
+        ImGui.Begin("Toolbar", DockedPanelFlags());
         var openPath = mFileWorkflowState.OpenPath;
         var saveAsPath = mFileWorkflowState.SaveAsPath;
         ImGui.InputText("Open Path", ref openPath, 512);
@@ -75,7 +78,8 @@ public sealed class EditorGuiRenderer
 
     private void DrawHierarchy(EditorGuiSnapshot snapshot)
     {
-        ImGui.Begin("Hierarchy");
+        SetDockedPanelBounds(snapshot.Layout.HierarchyPosition, snapshot.Layout.HierarchySize);
+        ImGui.Begin("Hierarchy", DockedPanelFlags());
         if (snapshot.HierarchyItems.Count == 0)
         {
             ImGui.TextUnformatted("No objects.");
@@ -94,9 +98,19 @@ public sealed class EditorGuiRenderer
         ImGui.End();
     }
 
+    private static void DrawMainWorkspace(EditorGuiSnapshot snapshot)
+    {
+        SetDockedPanelBounds(snapshot.Layout.MainWorkspacePosition, snapshot.Layout.MainWorkspaceSize);
+        ImGui.Begin("Workspace", DockedPanelFlags());
+        ImGui.TextUnformatted("Workspace");
+        ImGui.TextUnformatted("Viewport is intentionally reserved for a later milestone.");
+        ImGui.End();
+    }
+
     private void DrawInspector(EditorGuiSnapshot snapshot)
     {
-        ImGui.Begin("Inspector");
+        SetDockedPanelBounds(snapshot.Layout.InspectorPosition, snapshot.Layout.InspectorSize);
+        ImGui.Begin("Inspector", DockedPanelFlags());
         if (!snapshot.Inspector.HasSelectedObject)
         {
             mInspectorInputState.SyncFrom(snapshot.Inspector);
@@ -141,7 +155,8 @@ public sealed class EditorGuiRenderer
 
     private static void DrawStatusBar(EditorGuiSnapshot snapshot)
     {
-        ImGui.Begin("Status Bar");
+        SetDockedPanelBounds(snapshot.Layout.StatusBarPosition, snapshot.Layout.StatusBarSize);
+        ImGui.Begin("Status Bar", DockedPanelFlags());
         ImGui.TextUnformatted($"Scene: {snapshot.StatusBar.ScenePath}");
         ImGui.SameLine();
         ImGui.TextUnformatted($"Dirty: {snapshot.StatusBar.DirtyText}");
@@ -153,5 +168,19 @@ public sealed class EditorGuiRenderer
         }
 
         ImGui.End();
+    }
+
+    private static void SetDockedPanelBounds(Vector2 position, Vector2 size)
+    {
+        ImGui.SetNextWindowPos(position, ImGuiCond.Always);
+        ImGui.SetNextWindowSize(size, ImGuiCond.Always);
+    }
+
+    private static ImGuiWindowFlags DockedPanelFlags()
+    {
+        return ImGuiWindowFlags.NoMove |
+               ImGuiWindowFlags.NoResize |
+               ImGuiWindowFlags.NoCollapse |
+               ImGuiWindowFlags.NoSavedSettings;
     }
 }

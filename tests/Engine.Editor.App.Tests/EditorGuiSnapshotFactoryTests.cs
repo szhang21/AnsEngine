@@ -1,4 +1,5 @@
 using Engine.Editor.App;
+using System.Numerics;
 using Xunit;
 
 namespace Engine.Editor.App.Tests;
@@ -19,6 +20,34 @@ public sealed class EditorGuiSnapshotFactoryTests
         Assert.Equal("<no scene>", snapshot.StatusBar.ScenePath);
         Assert.Equal("clean", snapshot.StatusBar.DirtyText);
         Assert.Equal("<none>", snapshot.StatusBar.SelectedObjectId);
+        Assert.Equal(Vector2.Zero, snapshot.Layout.ToolbarPosition);
+        Assert.Equal(0.0f, snapshot.Layout.HierarchyPosition.X);
+        Assert.Equal(snapshot.Layout.ToolbarSize.Y, snapshot.Layout.HierarchyPosition.Y);
+        Assert.Equal(snapshot.Layout.ToolbarSize.Y, snapshot.Layout.InspectorPosition.Y);
+        Assert.Equal(snapshot.Layout.DisplaySize.Y - snapshot.Layout.StatusBarSize.Y, snapshot.Layout.StatusBarPosition.Y);
+        Assert.Equal(snapshot.Layout.DisplaySize.X, snapshot.Layout.ToolbarSize.X);
+        Assert.Equal(snapshot.Layout.DisplaySize.X, snapshot.Layout.StatusBarSize.X);
+    }
+
+    [Fact]
+    public void Create_CustomDisplaySize_ComputesStableDockedPanelLayout()
+    {
+        var controller = new EditorAppController(new EditorScenePathResolver());
+        var displaySize = new Vector2(1280.0f, 800.0f);
+
+        var snapshot = EditorGuiSnapshotFactory.Create(controller, displaySize);
+
+        Assert.Equal(displaySize, snapshot.Layout.DisplaySize);
+        Assert.Equal(Vector2.Zero, snapshot.Layout.ToolbarPosition);
+        Assert.Equal(new Vector2(displaySize.X, 104.0f), snapshot.Layout.ToolbarSize);
+        Assert.Equal(new Vector2(0.0f, 104.0f), snapshot.Layout.HierarchyPosition);
+        Assert.Equal(new Vector2(260.0f, 662.0f), snapshot.Layout.HierarchySize);
+        Assert.Equal(new Vector2(920.0f, 104.0f), snapshot.Layout.InspectorPosition);
+        Assert.Equal(new Vector2(360.0f, 662.0f), snapshot.Layout.InspectorSize);
+        Assert.Equal(new Vector2(260.0f, 104.0f), snapshot.Layout.MainWorkspacePosition);
+        Assert.Equal(new Vector2(660.0f, 662.0f), snapshot.Layout.MainWorkspaceSize);
+        Assert.Equal(new Vector2(0.0f, 766.0f), snapshot.Layout.StatusBarPosition);
+        Assert.Equal(new Vector2(displaySize.X, 34.0f), snapshot.Layout.StatusBarSize);
     }
 
     [Fact]
