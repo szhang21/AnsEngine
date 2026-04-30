@@ -175,27 +175,29 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Review
+Done
 
 ## 完成度（Completion）
-95
+100
 
 ## 缺陷回流字段（Defect Triage）
-- FailureType: `Other`
-- DetectedAt:
-- ReopenReason:
+- FailureType: `Functional/UIInput`
+- DetectedAt: `2026-04-30 18:46`
+- ReopenReason: `人工复验发现 Inspector Position/Rotation/Scale 输入框不可编辑，违反本卡 Inspector transform 编辑验收。`
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-04/TASK-EAPP-004.md`
-- ClosedAt: `2026-04-30 15:48`
-- Summary: Inspector 新增 Id、Name、Mesh、Material、Position、Rotation、Scale 输入缓冲和显式 Apply，提交全部经 `SceneEditorSession` API，失败回滚到 session 当前有效值。
+- ClosedAt: `2026-05-01 03:19`
+- Summary: Inspector 新增 Id、Name、Mesh、Material、Position、Rotation、Scale 输入缓冲和显式 Apply；回流修复补齐 ImGui 键盘/文本输入桥接，Position/Rotation/Scale 输入框可编辑，提交全部经 `SceneEditorSession` API。
 - FilesChanged:
   - `src/Engine.Editor.App/EditorInspectorSnapshot.cs`
   - `src/Engine.Editor.App/EditorInspectorInputState.cs`
   - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
   - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+  - `src/Engine.Editor.App/ImGuiOpenGlRenderer.cs`
+  - `src/Engine.Editor.App/EditorAppWindow.cs`
   - `tests/Engine.Editor.App.Tests/EditorInspectorInputStateTests.cs`
   - `.ai-workflow/boundaries/engine-editor-app.md`
   - `.ai-workflow/tasks/task-eapp-004.md`
@@ -204,9 +206,8 @@ Review
   - `.ai-workflow/board.md`
 - ValidationEvidence:
   - Build: `pass`（`dotnet build AnsEngine.sln --nologo -v minimal`；仅既有 `net7.0` EOL warning）
-  - Test: `pass`（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`；Inspector 提交与失败回滚测试通过，`Engine.Editor.App.Tests` 18 条通过）
-  - Smoke: `pass`（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`；Inspector 字段渲染在真实 ImGui frame，退出码 0）
+  - Test: `pass`（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`；Inspector 输入缓冲回归测试通过，`Engine.Editor.App.Tests` 30 条通过）
+  - Smoke: `pass`（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`；真实 ImGui frame 启动并关闭，退出码 0）
   - Perf: `pass`（Inspector 不做逐帧文件写入或重新加载；输入缓冲仅保留当前选中对象编辑态）
   - Boundary: `pass`（仅改 `src/Engine.Editor.App/**`、`tests/Engine.Editor.App.Tests/**` 与任务指定边界/归档文档）
 - ModuleAttributionCheck: pass
-- HumanSignoff: `pending`

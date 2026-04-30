@@ -17,7 +17,7 @@
 
 ## Todo
 
-- `TASK-QA-014` M13 最小 GUI 编辑器门禁复验与归档
+- （空）
 
 ## InProgress
 
@@ -29,15 +29,18 @@
 
 ## Review
 
-- `TASK-EAPP-001` M13 Editor GUI 宿主入口（Execution 验证通过，待人工复验）
-- `TASK-EAPP-002` M13 编辑器基础布局与状态栏（Execution 验证通过，待人工复验）
-- `TASK-EAPP-003` M13 Hierarchy 面板与选择联动（Execution 验证通过，待人工复验）
-- `TASK-EAPP-004` M13 Inspector 对象编辑（Execution 验证通过，待人工复验）
-- `TASK-EAPP-005` M13 Open/Save/Save As 工作流（Execution 验证通过，待人工复验）
-- `TASK-EAPP-006` M13 Add/Remove Object GUI 工作流（Execution 验证通过，待人工复验）
+- （空）
 
 ## Done
 
+- `TASK-QA-014` M13 最小 GUI 编辑器门禁复验与归档（人工验收通过，已归档）
+- `TASK-EAPP-007` M13 Docked Editor Layout（人工验收通过，已归档）
+- `TASK-EAPP-006` M13 Add/Remove Object GUI 工作流（人工验收通过，已归档）
+- `TASK-EAPP-005` M13 Open/Save/Save As 工作流（人工验收通过，已归档）
+- `TASK-EAPP-004` M13 Inspector 对象编辑（人工验收通过，已归档）
+- `TASK-EAPP-003` M13 Hierarchy 面板与选择联动（人工验收通过，已归档）
+- `TASK-EAPP-002` M13 编辑器基础布局与状态栏（人工验收通过，已归档）
+- `TASK-EAPP-001` M13 Editor GUI 宿主入口（人工验收通过，已归档）
 - `TASK-QA-013` M12 GUI 编辑器前置底座门禁复验与归档（人工验收通过，已归档）
 - `TASK-EDITOR-004` M12 保存、另存为与 reload 验证（人工验收通过，已归档）
 - `TASK-EDITOR-003` M12 编辑命令编排与 selection/dirty 语义（人工验收通过，已归档）

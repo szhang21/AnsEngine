@@ -48,6 +48,57 @@
 
 ### 当前记录
 
+- TaskId: `TASK-QA-014`
+  Title: `M13 最小 GUI 编辑器门禁复验与归档`
+  Priority: `P3`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-01 10:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 复验 `TASK-EAPP-001~007` 的 GUI 宿主、布局、Hierarchy、Inspector、Open/Save/Save As、Add/Remove 与固定布局收口结果
+    - 确认最小 GUI 编辑器可启动、可编辑、可保存，并保持 `Engine.App` 继续作为运行时入口
+    - 按人工验收结果完成 M13 任务卡、看板与归档索引收口
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-014.md`
+    - `.ai-workflow/archive/2026-04/TASK-QA-014.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-EAPP-001~007` 的构建通过证据）
+    - Test: pass（沿用 `TASK-EAPP-001~007` 的测试通过证据）
+    - Smoke: pass（综合 GUI 启动、对象选择、Inspector 编辑、Open/Save/Save As、Add/Remove 与固定布局 smoke 证据）
+    - Perf: pass（无新增逐帧文件 IO、重复 session open 或热重载轮询）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-QA-014.md`
+
+- TaskId: `TASK-EAPP-007`
+  Title: `M13 Docked Editor Layout`
+  Priority: `P3`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-05-01 03:24`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Editor GUI 收敛为固定停靠布局
+    - Toolbar 顶部、Hierarchy 左侧、Inspector 右侧、Status Bar 底部稳定可见
+    - 布局尺寸进入 GUI snapshot 并补充测试
+  FilesChanged:
+    - `src/Engine.Editor.App/EditorGuiSnapshot.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `tests/Engine.Editor.App.Tests/**`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，`Engine.Editor.App.Tests` 31 条通过）
+    - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
+    - Boundary: pass（未改 `Engine.Editor`、`SceneData`、`Engine.App` 或 `Render`）
+  SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-007.md`
+
 - TaskId: `TASK-QA-013`
   Title: `M12 GUI 编辑器前置底座门禁复验与归档`
   Priority: `P3`
@@ -1727,8 +1778,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-04-30 14:28`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - 新增独立 `Engine.Editor.App` 可执行宿主与 OpenTK/ImGui 边界
@@ -1758,8 +1809,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-04-30 15:35`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - 新增 Toolbar、Hierarchy、Inspector、Status Bar 的 GUI snapshot 模型
@@ -1787,8 +1838,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-04-30 15:40`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Hierarchy 点击调用 `EditorAppController.SelectObject`
@@ -1815,14 +1866,15 @@
   PrimaryModule: `Engine.Editor.App`
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
-  ClosedAt: `2026-04-30 15:48`
-  Status: `Review`
-  HumanSignoff: `pending`
+  ClosedAt: `2026-05-01 03:19`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Inspector 支持 Id、Name、Mesh、Material、Position、Rotation、Scale 输入
     - 显式 Apply 提交全部通过 `SceneEditorSession` update API
     - 成功 dirty=true，失败显示 last error 并回滚到 session 当前有效值
+    - 回流修复 native ImGui 文本/键盘输入桥接，Position/Rotation/Scale 输入框可编辑
   FilesChanged:
     - `src/Engine.Editor.App/**`
     - `tests/Engine.Editor.App.Tests/**`
@@ -1832,8 +1884,8 @@
     - `.ai-workflow/archive/archive-index.md`
     - `.ai-workflow/board.md`
   ValidationEvidence:
-    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`）
-    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，`Engine.Editor.App.Tests` 30 条通过）
     - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
     - Perf: pass（Inspector 无逐帧文件写入或重新加载）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-004.md`
@@ -1845,8 +1897,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-04-30 15:53`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Toolbar Open、Save、Save As 接入路径输入工作流
@@ -1874,8 +1926,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-04-30 15:58`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Add Object 创建默认 cube 对象并自动选中

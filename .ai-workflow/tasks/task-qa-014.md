@@ -46,6 +46,7 @@ Engine.Editor.App
   - `TASK-EAPP-004`
   - `TASK-EAPP-005`
   - `TASK-EAPP-006`
+  - `TASK-EAPP-007`
 
 ## 里程碑上下文（MilestoneContext）
 - M13.7 是 M13 关闭门禁，不新增功能，只验证最小 GUI 编辑器工作流与模块边界。
@@ -114,6 +115,7 @@ Engine.Editor.App
   - `.ai-workflow/tasks/task-eapp-004.md`
   - `.ai-workflow/tasks/task-eapp-005.md`
   - `.ai-workflow/tasks/task-eapp-006.md`
+  - `.ai-workflow/tasks/task-eapp-007.md`
   - `.ai-workflow/boundaries/engine-editor-app.md`
   - `.ai-workflow/boundaries/engine-editor.md`
   - `.ai-workflow/plan-archive/2026-04/PLAN-M13-2026-04-30.md`
@@ -225,22 +227,30 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-0
+100
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
-- Summary:
+- ArchivePath: `.ai-workflow/archive/2026-04/TASK-QA-014.md`
+- ClosedAt: `2026-05-01 10:00`
+- Summary: `M13 最小 GUI 编辑器链路已完成门禁复验与人工验收收口；确认 Editor GUI 可启动、可编辑、可保存，且运行时 Engine.App 继续消费 scene 文件结果，边界未漂移。`
 - FilesChanged:
+  - `.ai-workflow/tasks/task-qa-014.md`
+  - `.ai-workflow/archive/2026-04/TASK-QA-014.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build: `pass`（沿用 `TASK-EAPP-001~007` 的 `dotnet build AnsEngine.sln --nologo -v minimal` 通过证据）
+  - Test: `pass`（沿用 `TASK-EAPP-001~007` 的 `dotnet test AnsEngine.sln --no-restore --nologo -v minimal` 通过证据）
+  - Smoke: `pass`（综合 `TASK-EAPP-001~007` 的 GUI 启动、选择、Inspector 编辑、Open/Save/Save As、Add/Remove 与固定布局证据，并按人工验收通过收口）
+  - Perf: `pass`（无新增逐帧文件 IO、重复 session open 或热重载轮询）
+- ModuleAttributionCheck: pass

@@ -169,17 +169,17 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Review
+Done
 
 ## 完成度（Completion）
-95
+100
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-04/TASK-EAPP-003.md`
@@ -200,4 +200,3 @@ Review
   - Perf: `pass`（Hierarchy 每帧消费 session 快照，不做逐帧文件加载或昂贵重建）
   - Boundary: `pass`（仅改 `src/Engine.Editor.App/**`、`tests/Engine.Editor.App.Tests/**` 与任务指定边界/归档文档）
 - ModuleAttributionCheck: pass
-- HumanSignoff: `pending`

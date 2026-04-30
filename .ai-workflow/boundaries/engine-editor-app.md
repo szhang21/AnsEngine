@@ -87,6 +87,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：将 Editor GUI 收敛为固定停靠布局，Toolbar 顶部、Hierarchy 左侧、Workspace 中央留白、Inspector 右侧、Status Bar 底部，并将布局尺寸写入可测试 GUI snapshot。
+  - 变更原因：支撑 `TASK-EAPP-007`，让 M13 最小 GUI 编辑器具备稳定 Unity-like 工作区骨架，不再依赖自由漂浮窗口位置。
+  - 风险与回滚方案：当前采用固定分区而非复杂 docking 框架；若后续需要可拖拽 dock tabs 或 viewport，应另立卡扩展，不改变现有编辑业务语义。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：修复 Inspector 输入回流缺陷，`ImGuiOpenGlRenderer` 将 OpenTK 文本输入与键盘导航/编辑键转发给 ImGui；补充输入缓冲同选中对象跨帧不被 snapshot 覆盖、切换选中对象时重载有效值的回归测试。
+  - 变更原因：`TASK-EAPP-004` 人工复验发现 Position/Rotation/Scale 输入框不可编辑，根因是 native ImGui frame 未接收键盘字符输入。
+  - 风险与回滚方案：该修复只限 `Engine.Editor.App` GUI 输入桥接，不改变显式 Apply 提交语义；若后续要支持快捷键/复制粘贴完整矩阵，应继续局部扩展输入映射。
 - 2026-04-30
   - 变更人：Execution-Agent
   - 变更内容：Toolbar 的 Add Object 与 Remove Selected 接入 `EditorObjectWorkflowState`，默认对象工厂生成 `mesh://cube`、`material://default`、identity transform 的 `object-XXX` 对象。
