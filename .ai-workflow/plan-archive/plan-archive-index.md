@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M13-2026-04-30`
+  Status: `Active`
+  LastUpdated: `2026-04-30`
+  MilestoneSummary: `M13 进行中（最小可运行 GUI 场景编辑器、Engine.Editor.App、Hierarchy/Inspector/Open-Save 工作流）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-04/PLAN-M13-2026-04-30.md`
+
 - PlanId: `PLAN-M12-2026-04-30`
   Status: `Closed`
   LastUpdated: `2026-04-30`
