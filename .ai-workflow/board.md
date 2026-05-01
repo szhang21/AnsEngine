@@ -17,7 +17,7 @@
 
 ## Todo
 
-- `TASK-QA-016` M15 Runtime Update Pipeline 门禁复验与归档
+- （空）
 
 ## InProgress
 
@@ -29,13 +29,15 @@
 
 ## Review
 
-- `TASK-SCENE-015` M15 Runtime update context 与统计地基（Build/Test/Smoke/Boundary 通过，待人工复验）
-- `TASK-SCENE-016` M15 Runtime update 默认旋转 smoke behavior（Build/Test/Smoke/Boundary 通过，待人工复验）
-- `TASK-APP-010` M15 App 主循环 runtime update 接线（Build/Test/Smoke/Boundary 通过，待人工复验）
-- `TASK-SCENE-017` M15 Runtime snapshot 诊断与边界测试（Build/Test/Smoke/Boundary 通过，待人工复验）
+- （空）
 
 ## Done
 
+- `TASK-QA-016` M15 Runtime Update Pipeline 门禁复验与归档（人工验收通过，已归档）
+- `TASK-SCENE-017` M15 Runtime snapshot 诊断与边界测试（人工验收通过，已归档）
+- `TASK-APP-010` M15 App 主循环 runtime update 接线（人工验收通过，已归档）
+- `TASK-SCENE-016` M15 Runtime update 默认旋转 smoke behavior（人工验收通过，已归档）
+- `TASK-SCENE-015` M15 Runtime update context 与统计地基（人工验收通过，已归档）
 - `TASK-QA-015` M14 Runtime Object Model 门禁复验与归档（人工验收通过，已归档）
 - `TASK-SCENE-014` M14 Runtime Snapshot 查询与边界测试（人工验收通过，已归档）
 - `TASK-SCENE-013` M14 RuntimeScene 到 SceneRenderFrame 输出（人工验收通过，已归档）

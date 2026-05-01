@@ -225,22 +225,32 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
-- Summary:
+- ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-016.md`
+- ClosedAt: `2026-05-02 10:00`
+- Summary: `M15 runtime update pipeline 已完成门禁复验与人工验收收口；确认 App 在 render 前驱动 Scene update，默认样例场景可观察到旋转推进，snapshot 与 render frame 都能观察 update 后状态，且未越界到脚本/物理/动画/Play Mode 或 schema/contract 扩张。`
 - FilesChanged:
+  - `.ai-workflow/boundaries/engine-scene.md`
+  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/tasks/task-qa-016.md`
+  - `.ai-workflow/archive/2026-05/TASK-QA-016.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build: `pass`（沿用 `TASK-SCENE-015`、`TASK-SCENE-016`、`TASK-APP-010`、`TASK-SCENE-017` 的 `dotnet build AnsEngine.sln --no-restore --nologo -v minimal` 通过证据）
+  - Test: `pass`（沿用 `TASK-SCENE-015`、`TASK-SCENE-016`、`TASK-APP-010`、`TASK-SCENE-017` 的 Scene/App/Render/SceneData 测试通过证据）
+  - Smoke: `pass`（综合默认样例场景 rotation 推进、update-before-render、snapshot 可观察性与 headless app 退出码 0 的执行证据，并按人工验收通过收口）
+  - Perf: `pass`（无新增逐帧文件 IO、双重 update、scene rebuild、render side effect 或热重载轮询）
+- ModuleAttributionCheck: pass

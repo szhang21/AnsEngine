@@ -2058,8 +2058,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
   Owner: `Exec-Scene`
   ClosedAt: `2026-05-01 20:36`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - `RuntimeSceneSnapshot` 新增 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`
@@ -2084,6 +2084,33 @@
     - Perf: pass（snapshot 诊断不引入 scene rebuild、文件 IO 或 render side effect）
   SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-017.md`
 
+- TaskId: `TASK-QA-016`
+  Title: M15 Runtime Update Pipeline 门禁复验与归档
+  Priority: `P3`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-02 10:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - M15 全量 Build/Test 与 Scene/App/Render/SceneData 回归通过
+    - 确认 App 在 render 前驱动 Scene update，默认样例场景可观察到 rotation 推进
+    - snapshot 与 render frame 均可观察 update 后状态，且未越界到脚本/物理/动画/Play Mode 或 schema/contract 扩张
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-qa-016.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-016.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-SCENE-015`、`TASK-SCENE-016`、`TASK-APP-010`、`TASK-SCENE-017` 的构建通过证据）
+    - Test: pass（沿用 Scene/App/Render/SceneData 测试通过证据）
+    - Smoke: pass（综合默认样例场景 rotation 推进、update-before-render、snapshot 可观察性与 headless app 退出码 0 的执行证据）
+    - Perf: pass（无新增逐帧文件 IO、双重 update、scene rebuild、render side effect 或热重载轮询）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-016.md`
+
 - TaskId: `TASK-APP-010`
   Title: M15 App 主循环 runtime update 接线
   Priority: `P1`
@@ -2091,8 +2118,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
   Owner: `Exec-App`
   ClosedAt: `2026-05-01 20:33`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - App 主循环在 render 前显式调用 scene runtime update
@@ -2121,8 +2148,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
   Owner: `Exec-Scene`
   ClosedAt: `2026-05-01 20:20`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - `RuntimeScene.Update(...)` 新增第一个可渲染对象默认旋转 smoke behavior
@@ -2150,8 +2177,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
   Owner: `Exec-Scene`
   ClosedAt: `2026-05-01 20:16`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - 新增 `SceneUpdateContext` 与 `SceneGraphService.UpdateRuntime(...)`
