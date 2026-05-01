@@ -81,6 +81,41 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：回流修复 `TASK-SCENE-013`，移除 `SceneGraphService` 中的 legacy render item list 与逐帧 demo frame generator；`AddRootNode` 改为直接写入 `RuntimeScene` runtime object/components，`BuildRenderFrame` 无条件从 `RuntimeScene` 生成 `SceneRenderFrame`。
+  - 变更原因：修复 M14 Review 发现的 `Architecture/LegacyPath` 缺陷，确保 `RuntimeScene` 是 render frame 的单一 runtime state source。
+  - 风险与回滚方案：App 回归测试同步改为验证稳定 runtime state 而非旧 demo 动画；若后续需要动画或 runtime update，应在后续 update pipeline 任务中实现，不回退为 `BuildRenderFrame` 内部逐帧造数据。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M14 QA 复验，确认 runtime object/component model、SceneDescription 映射、SceneRenderFrame 输出与 runtime snapshot/query 均留在 `Engine.Scene` 边界内；`Engine.Render` 仍只消费 `Engine.Contracts.SceneRenderFrame`，`Engine.SceneData` 不感知 runtime object/component。
+  - 变更原因：支撑 `TASK-QA-015`，为 M14 runtime object model 收口提供边界证据。
+  - 风险与回滚方案：当前未发现 MustFix；若人工复验发现 runtime component 泄露到 App/Render/Editor，应打回对应 Scene 任务而非在 QA 卡中补实现。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneGraphService` 新增 `CreateRuntimeSnapshot()` 与 `FindObject(string objectId)` 只读查询面，`RuntimeScene` 输出 `RuntimeSceneSnapshot`、`SceneRuntimeObjectSnapshot` 与 `SceneCameraRuntimeSnapshot` 值对象，不暴露内部 runtime object/component 集合。
+  - 变更原因：支撑 `TASK-SCENE-014`，为测试和后续系统提供稳定可观察面，同时保持 runtime state 仍归属 `Engine.Scene` 内部。
+  - 风险与回滚方案：snapshot 仅含只读值与契约引用，不引入 Render/SceneData 反向依赖；若后续查询字段扩展，继续通过 snapshot 增量扩展，不开放内部可变集合。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneGraphService.BuildRenderFrame` 在 scene description 路径下改为从 `RuntimeScene` 的 runtime objects/components 输出 `SceneRenderFrame`，mesh/material/transform 来自 runtime components，camera 来自 runtime camera state。
+  - 变更原因：支撑 `TASK-SCENE-013`，完成 M14 内部状态源迁移，同时保持 `Engine.Contracts.SceneRenderFrame` 对外 contract 不变。
+  - 风险与回滚方案：legacy `AddRootNode` demo path 已在回流修复中移除；若后续 snapshot 查询异常，不需要改 Render/App contract。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：`RuntimeScene` 新增 `LoadFromDescription`，将 `SceneDescription` 映射为 runtime objects、transform/mesh renderer components 与 camera state；`SceneGraphService.LoadSceneDescription` 改为以 runtime scene 为主状态源。
+  - 变更原因：支撑 `TASK-SCENE-012`，把 SceneData 输入先落到 Engine.Scene runtime model，再由后续任务输出 render frame。
+  - 风险与回滚方案：当前 `mRenderItems` 仍作为 013 前的兼容输出缓存保留；若后续 render 输出迁移失败，可回退 `BuildRenderFrame` 而不改变 SceneData schema 或跨模块依赖。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `SceneTransformComponent`、`SceneMeshRendererComponent` 与 `SceneCameraRuntimeState`，支持从 `SceneData` description 映射到 runtime component/camera state，并复用 camera runtime state 生成 `SceneCamera`。
+  - 变更原因：支撑 `TASK-SCENE-011`，让 M14 runtime object model 从 identity 壳推进到 transform、mesh/material 与 camera 最小运行时语义。
+  - 风险与回滚方案：当前不实现 world transform、层级、资源加载或 camera-on-object；若后续映射调整，应保持组件仍仅依赖 Contracts/SceneData，不引入 Render/Asset/App。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `SceneRuntimeObject` 与 `RuntimeScene` 内部 runtime 基础模型，`SceneGraphService` 持有 runtime scene owner，并让 `NodeCount` 从 runtime object count 返回。
+  - 变更原因：支撑 `TASK-SCENE-010`，为 M14 轻量 GameObject/Component 风格 runtime object model 建立稳定落点。
+  - 风险与回滚方案：当前仅承载 object identity 与 object count，不实现组件、层级、update loop 或 render 输出重写；如后续组件映射异常，可回退到 runtime scene 内部实现，不扩散到 Render/App/Editor。
 - 2026-04-26
   - 变更人：Execution-Agent
   - 变更内容：新增 `Engine.Scene -> Engine.SceneData` 允许依赖，并在 `SceneGraphService` 中接入 `SceneDescription` 到运行时渲染帧的初始化入口。

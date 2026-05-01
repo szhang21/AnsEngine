@@ -48,6 +48,109 @@
 
 ### 当前记录
 
+- TaskId: `TASK-SCENE-013`
+  Title: `M14 RuntimeScene 到 SceneRenderFrame 输出`
+  Priority: `P2`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 14:18`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 回流修复 `Architecture/LegacyPath`，移除 legacy render item list 与逐帧 demo frame generator
+    - `BuildRenderFrame` 无条件从 `RuntimeScene` runtime objects/components 输出 render frame
+    - `AddRootNode` 改为写入 runtime components，RuntimeScene 成为单一 render-frame 状态源
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Scene.Tests 30 条通过；Render.Tests 16 条通过；App.Tests 6 条通过；整解测试通过）
+    - Smoke: pass（render frame 来自 RuntimeScene 单一状态源，runtime component 修改可反映到 frame）
+    - Boundary: pass（legacy path 符号无残留，未新增禁止依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-013.md`
+
+- TaskId: `TASK-SCENE-012`
+  Title: `M14 SceneDescription 到 RuntimeScene 映射`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 05:51`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `RuntimeScene.LoadFromDescription` 映射 objects/components/camera
+    - `SceneGraphService.LoadSceneDescription` 改以 runtime scene 为主状态源
+    - 重复 load 清空旧 runtime state，NodeId 从 1 稳定分配
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`；Scene.Tests 22 条通过；整解测试通过）
+    - Smoke: pass（空/单/多对象 scene 可映射，重复 load 清空旧 runtime state）
+    - Boundary: pass（未新增 Render/Asset/App/Editor/OpenTK/ImGui/OpenGL 依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-012.md`
+
+- TaskId: `TASK-SCENE-011`
+  Title: `M14 Transform/MeshRenderer/Camera 组件`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 05:49`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 transform、mesh renderer、camera runtime state 组件
+    - 支持 description 到 runtime component/camera state 映射
+    - 默认 camera 语义保持当前行为兼容
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/SceneTransformComponent.cs`
+    - `src/Engine.Scene/Runtime/SceneMeshRendererComponent.cs`
+    - `src/Engine.Scene/Runtime/SceneCameraRuntimeState.cs`
+    - `src/Engine.Scene/Runtime/SceneRuntimeObject.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`；Scene.Tests 19 条通过；整解测试通过）
+    - Smoke: pass（transform/mesh/material/camera 映射均通过测试，默认 camera 与当前行为一致）
+    - Boundary: pass（未新增 Render/Asset/App/Editor/OpenTK/ImGui/OpenGL 依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-011.md`
+
+- TaskId: `TASK-SCENE-010`
+  Title: `M14 Runtime Object 基础模型`
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 05:46`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 internal `SceneRuntimeObject` 与 `RuntimeScene`
+    - `SceneGraphService.NodeCount` 改从 runtime scene object count 返回
+    - 重新 load scene 时旧 runtime objects 清空并重建
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/SceneRuntimeObject.cs`
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`；Scene.Tests 14 条通过；整解测试通过）
+    - Smoke: pass（重新 load scene 后 runtime object count 清空并重建，`NodeCount` 与 runtime scene object count 一致）
+    - Boundary: pass（未新增 Render/Asset/App/Editor/OpenTK/ImGui/OpenGL 依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-010.md`
+
 - TaskId: `TASK-QA-014`
   Title: `M13 最小 GUI 编辑器门禁复验与归档`
   Priority: `P3`
@@ -1859,6 +1962,64 @@
     - Smoke: pass（`ANS_ENGINE_EDITOR_AUTO_EXIT_SECONDS=1 dotnet run --project src/Engine.Editor.App/Engine.Editor.App.csproj --no-build`，ExitCode=0）
     - Perf: pass（Hierarchy 每帧只消费 session 快照）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-003.md`
+
+- TaskId: `TASK-QA-015`
+  Title: M14 Runtime Object Model 门禁复验与归档
+  Priority: `P3`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-01 13:29`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - M14 全量 Build/Test 与 Scene/App/Render/SceneData 回归通过
+    - 复核 runtime object/component model 未越界到 Render/App/Editor/SceneData
+    - CodeQuality: NoNewHighRisk=true, MustFixCount=0, MustFixDisposition=none
+    - DesignQuality: DQ-1/DQ-2/DQ-3/DQ-4 均 pass
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-qa-015.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-015.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/plan-archive/2026-05/PLAN-M14-2026-05-01.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（整解测试通过；Scene.Tests 30 条、App.Tests 6 条、Render.Tests 16 条、SceneData.Tests 28 条均通过）
+    - Smoke: pass（空/单/多对象、重复 load、render frame 输出、camera 与 snapshot/query 只读性通过）
+    - Boundary: pass（未发现禁止依赖、runtime component 泄露或 M14 非范围能力）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-015.md`
+
+- TaskId: `TASK-SCENE-014`
+  Title: M14 Runtime Snapshot 查询与边界测试
+  Priority: `P2`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 10:39`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `SceneGraphService.CreateRuntimeSnapshot()` 与 `FindObject(string objectId)` 只读查询面
+    - snapshot 覆盖 runtime object identity、transform、mesh/material 与 camera state
+    - 新增 snapshot/query 行为测试与 Scene/Render/SceneData 边界测试
+  FilesChanged:
+    - `src/Engine.Scene/**`
+    - `tests/Engine.Scene.Tests/**`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-014.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-014.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Scene.Tests 30 条通过；Render.Tests 16 条通过；SceneData.Tests 28 条通过；整解测试通过）
+    - Smoke: pass（object id 查询可用；snapshot 不暴露内部可变集合；Render 不引用 runtime component 类型）
+    - Boundary: pass（AllowedPaths 内变更，无禁止依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-014.md`
 
 - TaskId: `TASK-EAPP-004`
   Title: M13 Inspector 对象编辑

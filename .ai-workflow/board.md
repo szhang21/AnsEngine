@@ -33,6 +33,12 @@
 
 ## Done
 
+- `TASK-QA-015` M14 Runtime Object Model 门禁复验与归档（人工验收通过，已归档）
+- `TASK-SCENE-014` M14 Runtime Snapshot 查询与边界测试（人工验收通过，已归档）
+- `TASK-SCENE-013` M14 RuntimeScene 到 SceneRenderFrame 输出（人工验收通过，已归档）
+- `TASK-SCENE-012` M14 SceneDescription 到 RuntimeScene 映射（人工验收通过，已归档）
+- `TASK-SCENE-011` M14 Transform/MeshRenderer/Camera 组件（人工验收通过，已归档）
+- `TASK-SCENE-010` M14 Runtime Object 基础模型（人工验收通过，已归档）
 - `TASK-QA-014` M13 最小 GUI 编辑器门禁复验与归档（人工验收通过，已归档）
 - `TASK-EAPP-007` M13 Docked Editor Layout（人工验收通过，已归档）
 - `TASK-EAPP-006` M13 Add/Remove Object GUI 工作流（人工验收通过，已归档）
