@@ -2051,6 +2051,129 @@
     - Perf: pass（Inspector 无逐帧文件写入或重新加载）
   SnapshotPath: `.ai-workflow/archive/2026-04/TASK-EAPP-004.md`
 
+- TaskId: `TASK-SCENE-017`
+  Title: M15 Runtime snapshot 诊断与边界测试
+  Priority: `P2`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 20:36`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `RuntimeSceneSnapshot` 新增 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`
+    - snapshot 与 render frame 均可观察 update 后 rotation，且 update count 与 render frame number 分离
+    - 补齐 Scene/App/Render 边界回归测试
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/RuntimeSceneSnapshot.cs`
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `tests/Engine.Scene.Tests/SceneBoundaryTests.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `tests/Engine.Render.Tests/RenderBoundaryTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-017.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-017.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`；`Engine.Render.Tests` 18 条通过）
+    - Smoke: pass（snapshot 可观察 update 统计；Render 不感知 update context/runtime scene 类型）
+    - Perf: pass（snapshot 诊断不引入 scene rebuild、文件 IO 或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-017.md`
+
+- TaskId: `TASK-APP-010`
+  Title: M15 App 主循环 runtime update 接线
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-01 20:33`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - App 主循环在 render 前显式调用 scene runtime update
+    - `SceneRuntimeAdapter` 将 `TimeSnapshot` / `InputSnapshot` 翻译为 `SceneUpdateContext`
+    - loader failure 与 render failure 收口语义保持稳定
+  FilesChanged:
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-010.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-010.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，8 条通过）
+    - Smoke: pass（headless app run 退出码 0）
+    - Perf: pass（无逐帧文件 IO、重复 scene initialize 或双重 update）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-010.md`
+
+- TaskId: `TASK-SCENE-016`
+  Title: M15 Runtime update 默认旋转 smoke behavior
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 20:20`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `RuntimeScene.Update(...)` 新增第一个可渲染对象默认旋转 smoke behavior
+    - rotation 只由 `DeltaSeconds` 驱动，position/scale 与资源引用保持不变
+    - `BuildRenderFrame()` 与 snapshot 观察同一 update 后 rotation
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-016.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-016.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，41 条通过）
+    - Smoke: pass（首个可渲染对象 rotation 变化；render frame 与 snapshot 观察一致）
+    - Perf: pass（无逐帧对象重建、文件读取或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-016.md`
+
+- TaskId: `TASK-SCENE-015`
+  Title: M15 Runtime update context 与统计地基
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-01 20:16`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - 新增 `SceneUpdateContext` 与 `SceneGraphService.UpdateRuntime(...)`
+    - `RuntimeScene.Update(...)` 维护 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`
+    - `Clear()` / `LoadFromDescription(...)` 重置 update 统计
+  FilesChanged:
+    - `src/Engine.Scene/SceneUpdateContext.cs`
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-015.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-015.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，36 条通过）
+    - Smoke: pass（update 入口可调用，空 scene 不崩溃，统计可观察）
+    - Perf: pass（无逐帧文件 IO、scene rebuild 或 render frame number 隐式依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-015.md`
+
 - TaskId: `TASK-EAPP-005`
   Title: M13 Open/Save/Save As 工作流
   Priority: `P3`

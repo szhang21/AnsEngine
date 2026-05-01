@@ -82,6 +82,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：`ISceneRuntime` 新增显式 update 入口，`ApplicationHost.Run()` 每帧按 ProcessEvents -> Input -> Time -> SceneRuntime.Update -> RenderFrame -> Present 顺序执行；`SceneRuntimeAdapter` 负责把 `TimeSnapshot` / `InputSnapshot` 翻译成 `SceneUpdateContext` 后转发给 `SceneGraphService.UpdateRuntime(...)`。
+  - 变更原因：支撑 `TASK-APP-010`，打通 M15 App 主循环到 Scene runtime update 的主链路，同时保持 Scene 不直接依赖 Platform 类型。
+  - 风险与回滚方案：当前不改变 loader failure 与 render failure 收口；若后续主循环阶段增加，应继续通过 App 层编排与 adapter 翻译，不把 Platform 类型泄露到 Scene 内部。
 - 2026-04-26
   - 变更人：Execution-Agent
   - 变更内容：组合根新增 `Engine.SceneData` loader 装配、默认样例场景路径与 `ANS_ENGINE_SCENE_PATH` 覆盖入口；`ApplicationHost` 启动时先加载 `SceneDescription`，再初始化 Scene 运行时。

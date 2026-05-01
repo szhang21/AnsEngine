@@ -83,6 +83,21 @@
 
 - 2026-05-01
   - 变更人：Execution-Agent
+  - 变更内容：`RuntimeSceneSnapshot` 新增只读诊断字段 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`，并补充 Scene/App/Render 边界测试，确认 update context 与 runtime scene/object/component 类型不泄露到 Render，App 仍通过 runtime abstraction 驱动 update。
+  - 变更原因：支撑 `TASK-SCENE-017`，让 M15 runtime update 状态可被 snapshot 只读观察，同时补齐跨模块边界证据。
+  - 风险与回滚方案：snapshot 诊断字段只读且不改 render contract；若后续需要更多诊断，应继续通过 Scene snapshot 增量扩展，不要求 Render 感知 update 统计。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：`RuntimeScene.Update(...)` 新增最小默认旋转 smoke behavior：每次 update 只选择第一个同时具备 transform 与 mesh renderer 的 runtime object，按传入 `DeltaSeconds` 绕 Y 轴推进 local rotation，并保留 position、scale、mesh/material 与 camera 语义不变。
+  - 变更原因：支撑 `TASK-SCENE-016`，证明 M15 update pipeline 能推进 runtime state，且 `BuildRenderFrame()` 与 snapshot 只读取 update 后状态。
+  - 风险与回滚方案：该行为仅作为 smoke behavior，不引入 animation/script/system 抽象；若后续正式动画系统落地，可将该最小行为替换为受控 update system，同时保留 update/render 分离边界。
+- 2026-05-01
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `SceneUpdateContext`、`SceneGraphService.UpdateRuntime(...)` 与 `RuntimeScene.Update(...)` 统计地基；runtime update 统计包含 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`，并在 `Clear()` / `LoadFromDescription(...)` 时重置。
+  - 变更原因：支撑 `TASK-SCENE-015`，为 M15 runtime update pipeline 建立 Scene 自有 update 入口和可诊断统计状态。
+  - 风险与回滚方案：当前只做记账和参数校验，不引入 Platform/App/Render 依赖、不推进 transform 行为；若后续 update 行为异常，可回退 `RuntimeScene.Update(...)` 内部实现而保持 `SceneUpdateContext` 边界入口稳定。
+- 2026-05-01
+  - 变更人：Execution-Agent
   - 变更内容：回流修复 `TASK-SCENE-013`，移除 `SceneGraphService` 中的 legacy render item list 与逐帧 demo frame generator；`AddRootNode` 改为直接写入 `RuntimeScene` runtime object/components，`BuildRenderFrame` 无条件从 `RuntimeScene` 生成 `SceneRenderFrame`。
   - 变更原因：修复 M14 Review 发现的 `Architecture/LegacyPath` 缺陷，确保 `RuntimeScene` 是 render frame 的单一 runtime state source。
   - 风险与回滚方案：App 回归测试同步改为验证稳定 runtime state 而非旧 demo 动画；若后续需要动画或 runtime update，应在后续 update pipeline 任务中实现，不回退为 `BuildRenderFrame` 内部逐帧造数据。
