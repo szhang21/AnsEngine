@@ -2,12 +2,19 @@ namespace Engine.Scene;
 
 using Engine.Contracts;
 using Engine.SceneData;
+using System.Numerics;
 
 internal sealed class RuntimeScene
 {
+    private const float kDefaultRotationRadiansPerSecond = MathF.PI * 0.5f;
+
     private readonly List<SceneRuntimeObject> mObjects = new();
 
     public int ObjectCount => mObjects.Count;
+
+    public int UpdateFrameCount { get; private set; }
+
+    public double AccumulatedUpdateSeconds { get; private set; }
 
     public IReadOnlyList<SceneRuntimeObject> Objects => mObjects;
 
@@ -29,6 +36,7 @@ internal sealed class RuntimeScene
     {
         mObjects.Clear();
         Camera = SceneCameraRuntimeState.CreateDefault();
+        ResetUpdateStatistics();
     }
 
     public void LoadFromDescription(SceneDescription sceneDescription)
@@ -48,6 +56,13 @@ internal sealed class RuntimeScene
                 SceneTransformComponent.FromDescription(objectDescription.LocalTransform),
                 SceneMeshRendererComponent.FromDescription(objectDescription));
         }
+    }
+
+    public void Update(SceneUpdateContext context)
+    {
+        UpdateFrameCount += 1;
+        AccumulatedUpdateSeconds += context.DeltaSeconds;
+        ApplyDefaultRotationSmokeBehavior(context);
     }
 
     public IReadOnlyList<SceneRenderItem> BuildRenderItems()
@@ -81,7 +96,11 @@ internal sealed class RuntimeScene
         var objectSnapshots = mObjects
             .Select(item => item.CreateSnapshot())
             .ToArray();
-        return new RuntimeSceneSnapshot(objectSnapshots, Camera.CreateSnapshot());
+        return new RuntimeSceneSnapshot(
+            objectSnapshots,
+            Camera.CreateSnapshot(),
+            UpdateFrameCount,
+            AccumulatedUpdateSeconds);
     }
 
     public SceneRuntimeObjectSnapshot? FindObject(string objectId)
@@ -95,5 +114,34 @@ internal sealed class RuntimeScene
         }
 
         return null;
+    }
+
+    private void ResetUpdateStatistics()
+    {
+        UpdateFrameCount = 0;
+        AccumulatedUpdateSeconds = 0.0d;
+    }
+
+    private void ApplyDefaultRotationSmokeBehavior(SceneUpdateContext context)
+    {
+        if (context.DeltaSeconds == 0.0d)
+        {
+            return;
+        }
+
+        foreach (var runtimeObject in mObjects)
+        {
+            if (runtimeObject.Transform is null || runtimeObject.MeshRenderer is null)
+            {
+                continue;
+            }
+
+            var transform = runtimeObject.Transform;
+            var rotationDelta = (float)context.DeltaSeconds * kDefaultRotationRadiansPerSecond;
+            var updatedRotation = Quaternion.Normalize(
+                Quaternion.CreateFromAxisAngle(Vector3.UnitY, rotationDelta) * transform.LocalRotation);
+            transform.SetLocalTransform(transform.LocalPosition, updatedRotation, transform.LocalScale);
+            return;
+        }
     }
 }

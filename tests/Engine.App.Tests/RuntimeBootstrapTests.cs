@@ -74,9 +74,72 @@ public sealed class RuntimeBootstrapTests
 
         Assert.Equal(0, exitCode);
         Assert.True(sceneRuntime.InitializeCalled);
+        Assert.Equal(1, sceneRuntime.UpdateCalls);
         Assert.Equal(1, renderer.InitializeCalls);
         Assert.True(renderer.RenderCalls >= 1);
         Assert.Equal(1, renderer.ShutdownCalls);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_UpdatesSceneRuntimeBeforeRender()
+    {
+        var callLog = new List<string>();
+        var windowService = new AutoCloseWindowService(callLog);
+        var renderer = new CountingRenderer(callLog);
+        var sceneRuntime = new SpySceneRuntime(callLog);
+        var inputService = new StubInputService(new InputSnapshot(true), callLog);
+        var timeService = new StubTimeService(new TimeSnapshot(0.25, 1.5, 4.0), callLog);
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new SuccessfulSceneDescriptionLoader(),
+            "sample.scene.json",
+            inputService,
+            timeService);
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(1, sceneRuntime.UpdateCalls);
+        Assert.Equal(new TimeSnapshot(0.25, 1.5, 4.0), sceneRuntime.LastTime);
+        Assert.Equal(new InputSnapshot(true), sceneRuntime.LastInput);
+        Assert.True(callLog.IndexOf("ProcessEvents") < callLog.IndexOf("Input"));
+        Assert.True(callLog.IndexOf("Input") < callLog.IndexOf("Time"));
+        Assert.True(callLog.IndexOf("Time") < callLog.IndexOf("SceneUpdate"));
+        Assert.True(callLog.IndexOf("SceneUpdate") < callLog.IndexOf("RenderFrame"));
+        Assert.True(callLog.IndexOf("RenderFrame") < callLog.IndexOf("Present"));
+    }
+
+    [Fact]
+    public void SceneRuntimeAdapter_Update_TranslatesTimeAndInputToSceneUpdateContext()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        sceneGraph.AddRootNode();
+        var adapterType = typeof(RuntimeBootstrap).Assembly.GetType("Engine.App.SceneRuntimeAdapter");
+        Assert.NotNull(adapterType);
+        var sceneRuntime = Assert.IsAssignableFrom<ISceneRuntime>(
+            Activator.CreateInstance(adapterType!, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new object[] { sceneGraph }, null));
+
+        sceneRuntime.Update(new TimeSnapshot(0.25, 1.5, 4.0), new InputSnapshot(true));
+
+        var rotation = Assert.Single(sceneGraph.BuildRenderFrame().Items).Transform.Rotation;
+        AssertQuaternionNearlyEqual(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.125f), rotation);
+    }
+
+    [Fact]
+    public void ApplicationHost_UsesSceneRuntimeAbstractionWithoutRuntimeInternals()
+    {
+        var sceneRuntimeField = typeof(ApplicationHost).GetField("mSceneRuntime", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(sceneRuntimeField);
+        Assert.Equal(typeof(ISceneRuntime), sceneRuntimeField!.FieldType);
+
+        var fields = typeof(ApplicationHost).GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.DoesNotContain(fields, field => field.FieldType == typeof(SceneGraphService));
+        Assert.DoesNotContain(fields, field => field.FieldType.Name.Contains("RuntimeScene", StringComparison.Ordinal));
+        Assert.DoesNotContain(fields, field => field.FieldType.Name.Contains("SceneRuntimeObject", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -102,6 +165,7 @@ public sealed class RuntimeBootstrapTests
         Assert.True(sceneRuntime.InitializeCalled);
         Assert.Equal(1, renderer.InitializeCalls);
         Assert.Equal(1, renderer.RenderCalls);
+        Assert.Equal(1, sceneRuntime.UpdateCalls);
         Assert.Equal(1, renderer.ShutdownCalls);
         Assert.Equal(1, windowService.RequestCloseCalls);
         Assert.Equal(1, windowService.DisposeCalls);
@@ -129,6 +193,7 @@ public sealed class RuntimeBootstrapTests
 
         Assert.Equal(1, exitCode);
         Assert.False(sceneRuntime.InitializeCalled);
+        Assert.Equal(0, sceneRuntime.UpdateCalls);
         Assert.Equal(1, renderer.InitializeCalls);
         Assert.Equal(0, renderer.RenderCalls);
         Assert.Equal(1, renderer.ShutdownCalls);
@@ -188,14 +253,34 @@ public sealed class RuntimeBootstrapTests
         public void Dispose() { }
     }
 
+    private static void AssertQuaternionNearlyEqual(Quaternion expected, Quaternion actual)
+    {
+        Assert.Equal(expected.X, actual.X, 5);
+        Assert.Equal(expected.Y, actual.Y, 5);
+        Assert.Equal(expected.Z, actual.Z, 5);
+        Assert.Equal(expected.W, actual.W, 5);
+    }
+
     private sealed class AutoCloseWindowService : IWindowService
     {
+        private readonly List<string>? mCallLog;
+
+        public AutoCloseWindowService(List<string>? callLog = null)
+        {
+            mCallLog = callLog;
+        }
+
         public WindowConfig Configuration { get; } = new(1280, 720, "AnsEngine-Tests");
         public bool Exists => true;
         public bool IsCloseRequested { get; private set; }
-        public void ProcessEvents(double timeoutSeconds = 0) { }
+        public void ProcessEvents(double timeoutSeconds = 0)
+        {
+            mCallLog?.Add("ProcessEvents");
+        }
+
         public void Present()
         {
+            mCallLog?.Add("Present");
             IsCloseRequested = true;
         }
 
@@ -209,6 +294,13 @@ public sealed class RuntimeBootstrapTests
 
     private sealed class CountingRenderer : IRenderer
     {
+        private readonly List<string>? mCallLog;
+
+        public CountingRenderer(List<string>? callLog = null)
+        {
+            mCallLog = callLog;
+        }
+
         public int InitializeCalls { get; private set; }
         public int RenderCalls { get; private set; }
         public int ShutdownCalls { get; private set; }
@@ -221,6 +313,7 @@ public sealed class RuntimeBootstrapTests
         public void RenderFrame()
         {
             RenderCalls += 1;
+            mCallLog?.Add("RenderFrame");
         }
 
         public void Shutdown()
@@ -282,13 +375,70 @@ public sealed class RuntimeBootstrapTests
 
     private sealed class SpySceneRuntime : ISceneRuntime
     {
+        private readonly List<string>? mCallLog;
+
+        public SpySceneRuntime(List<string>? callLog = null)
+        {
+            mCallLog = callLog;
+        }
+
         public bool InitializeCalled { get; private set; }
         public SceneDescription? SceneDescription { get; private set; }
+        public int UpdateCalls { get; private set; }
+        public TimeSnapshot LastTime { get; private set; }
+        public InputSnapshot LastInput { get; private set; }
 
         public void InitializeScene(SceneDescription sceneDescription)
         {
             InitializeCalled = true;
             SceneDescription = sceneDescription;
+        }
+
+        public void Update(TimeSnapshot time, InputSnapshot input)
+        {
+            UpdateCalls += 1;
+            LastTime = time;
+            LastInput = input;
+            mCallLog?.Add("SceneUpdate");
+        }
+    }
+
+    private sealed class StubInputService : IInputService
+    {
+        private readonly InputSnapshot mSnapshot;
+        private readonly List<string> mCallLog;
+
+        public StubInputService(InputSnapshot snapshot, List<string> callLog)
+        {
+            mSnapshot = snapshot;
+            mCallLog = callLog;
+        }
+
+        public InputSnapshot GetSnapshot()
+        {
+            mCallLog.Add("Input");
+            return mSnapshot;
+        }
+    }
+
+    private sealed class StubTimeService : ITimeService
+    {
+        private readonly TimeSnapshot mSnapshot;
+        private readonly List<string> mCallLog;
+
+        public StubTimeService(TimeSnapshot snapshot, List<string> callLog)
+        {
+            mSnapshot = snapshot;
+            mCallLog = callLog;
+        }
+
+        public TimeSnapshot Current
+        {
+            get
+            {
+                mCallLog.Add("Time");
+                return mSnapshot;
+            }
         }
     }
 

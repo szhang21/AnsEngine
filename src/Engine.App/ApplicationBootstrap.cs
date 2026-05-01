@@ -111,6 +111,12 @@ internal sealed class SceneRuntimeAdapter : ISceneRuntime
         ArgumentNullException.ThrowIfNull(sceneDescription);
         mSceneGraphService.LoadSceneDescription(sceneDescription);
     }
+
+    public void Update(TimeSnapshot time, InputSnapshot input)
+    {
+        mSceneGraphService.UpdateRuntime(
+            new SceneUpdateContext(time.DeltaSeconds, time.TotalSeconds, input.AnyInputDetected));
+    }
 }
 
 internal sealed class HeadlessRenderer : IRenderer
@@ -195,8 +201,9 @@ public sealed class ApplicationHost : IApplication
             while (mWindowService.Exists && !mWindowService.IsCloseRequested)
             {
                 mWindowService.ProcessEvents();
-                _ = mInputService.GetSnapshot();
-                _ = mTimeService.Current;
+                var input = mInputService.GetSnapshot();
+                var time = mTimeService.Current;
+                mSceneRuntime.Update(time, input);
                 mRenderer.RenderFrame();
                 mWindowService.Present();
 

@@ -64,6 +64,11 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         mNextNodeId = mRuntimeScene.ObjectCount + 1;
     }
 
+    public void UpdateRuntime(SceneUpdateContext context)
+    {
+        mRuntimeScene.Update(context);
+    }
+
     public SceneRenderFrame BuildRenderFrame()
     {
         var items = mRuntimeScene.BuildRenderItems();

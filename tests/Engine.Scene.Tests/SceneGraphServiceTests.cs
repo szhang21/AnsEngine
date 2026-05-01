@@ -197,6 +197,7 @@ public sealed class SceneGraphServiceTests
     {
         var runtimeScene = new RuntimeScene();
         runtimeScene.CreateObject(1, "old-object", "Old Object");
+        runtimeScene.Update(new SceneUpdateContext(0.25d, 0.25d, false));
 
         runtimeScene.LoadFromDescription(
             new SceneDescription(
@@ -208,6 +209,167 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(0, runtimeScene.ObjectCount);
         Assert.Empty(runtimeScene.Objects);
         Assert.Equal(SceneCameraRuntimeState.CreateDefault().Position, runtimeScene.Camera.Position);
+        Assert.Equal(0, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.0d, runtimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void UpdateRuntime_FirstUpdate_IncrementsRuntimeStatistics()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.25d, 0.25d, false));
+
+        Assert.Equal(1, sceneGraph.RuntimeScene.UpdateFrameCount);
+        Assert.Equal(0.25d, sceneGraph.RuntimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_MultipleUpdates_AccumulatesDeltaSeconds()
+    {
+        var runtimeScene = new RuntimeScene();
+
+        runtimeScene.Update(new SceneUpdateContext(0.25d, 0.25d, false));
+        runtimeScene.Update(new SceneUpdateContext(0.5d, 0.75d, true));
+
+        Assert.Equal(2, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.75d, runtimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_ZeroDelta_IsValidAndIncrementsCount()
+    {
+        var runtimeScene = new RuntimeScene();
+
+        runtimeScene.Update(new SceneUpdateContext(0.0d, 1.0d, false));
+
+        Assert.Equal(1, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.0d, runtimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void SceneUpdateContext_NegativeDelta_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new SceneUpdateContext(-0.01d, 1.0d, false));
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_EmptyScene_DoesNotThrow()
+    {
+        var runtimeScene = new RuntimeScene();
+
+        runtimeScene.Update(new SceneUpdateContext(0.016d, 0.016d, false));
+
+        Assert.Equal(0, runtimeScene.ObjectCount);
+        Assert.Equal(1, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.016d, runtimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void RuntimeScene_Clear_ResetsUpdateStatistics()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.Update(new SceneUpdateContext(0.25d, 0.25d, true));
+
+        runtimeScene.Clear();
+
+        Assert.Equal(0, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.0d, runtimeScene.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_RenderableObject_RotatesFirstRenderableObject()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.CreateObject(1, "empty-object", "Empty Object");
+        runtimeScene.CreateObject(
+            2,
+            "cube-main",
+            "Cube Main",
+            SceneTransformComponent.FromDescription(SceneTransformDescription.Identity),
+            new SceneMeshRendererComponent(
+                new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                new Engine.Contracts.SceneMaterialRef("material://default")));
+
+        runtimeScene.Update(new SceneUpdateContext(0.5d, 0.5d, false));
+
+        Assert.Equal(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.25f), runtimeScene.Objects[1].Transform!.LocalRotation);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_PreservesPositionScaleAndResourceReferences()
+    {
+        var runtimeScene = new RuntimeScene();
+        var position = new Vector3(1.0f, 2.0f, 3.0f);
+        var scale = new Vector3(2.0f, 3.0f, 4.0f);
+        runtimeScene.CreateObject(
+            1,
+            "cube-main",
+            "Cube Main",
+            new SceneTransformComponent(position, Quaternion.Identity, scale),
+            new SceneMeshRendererComponent(
+                new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                new Engine.Contracts.SceneMaterialRef("material://highlight")));
+
+        runtimeScene.Update(new SceneUpdateContext(0.5d, 0.5d, true));
+
+        var runtimeObject = runtimeScene.Objects[0];
+        Assert.Equal(position, runtimeObject.Transform!.LocalPosition);
+        Assert.Equal(scale, runtimeObject.Transform.LocalScale);
+        Assert.Equal("mesh://cube", runtimeObject.MeshRenderer!.Mesh.MeshId);
+        Assert.Equal("material://highlight", runtimeObject.MeshRenderer.Material.MaterialId);
+    }
+
+    [Fact]
+    public void UpdateRuntime_BuildRenderFrameAndSnapshot_ObserveSameRotation()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.5d, 0.5d, false));
+
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+        var frame = sceneGraph.BuildRenderFrame();
+
+        var snapshotRotation = Assert.Single(snapshot.Objects).LocalTransform!.Value.Rotation;
+        var frameRotation = Assert.Single(frame.Items).Transform.Rotation;
+        Assert.Equal(snapshotRotation, frameRotation);
+        Assert.Equal(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.25f), frameRotation);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_WithoutRenderableObject_DoesNotThrowAndKeepsStatistics()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.CreateObject(1, "empty-object", "Empty Object");
+
+        runtimeScene.Update(new SceneUpdateContext(0.5d, 0.5d, false));
+
+        Assert.Equal(1, runtimeScene.UpdateFrameCount);
+        Assert.Equal(0.5d, runtimeScene.AccumulatedUpdateSeconds);
+        Assert.Null(runtimeScene.Objects[0].Transform);
+    }
+
+    [Fact]
+    public void RuntimeScene_Update_ZeroDelta_DoesNotAdvanceRotation()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.CreateObject(
+            1,
+            "cube-main",
+            "Cube Main",
+            SceneTransformComponent.FromDescription(SceneTransformDescription.Identity),
+            new SceneMeshRendererComponent(
+                new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                new Engine.Contracts.SceneMaterialRef("material://default")));
+
+        runtimeScene.Update(new SceneUpdateContext(0.0d, 1.0d, false));
+
+        Assert.Equal(1, runtimeScene.UpdateFrameCount);
+        Assert.Equal(Quaternion.Identity, runtimeScene.Objects[0].Transform!.LocalRotation);
     }
 
     [Fact]
@@ -521,6 +683,58 @@ public sealed class SceneGraphServiceTests
         Assert.True(item.HasMeshRenderer);
         Assert.Equal("mesh://cube", item.Mesh!.Value.MeshId);
         Assert.Equal("material://highlight", item.Material!.Value.MaterialId);
+    }
+
+    [Fact]
+    public void CreateRuntimeSnapshot_AfterUpdate_ReturnsUpdateDiagnostics()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.25d, 0.25d, false));
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.5d, 0.75d, true));
+
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+
+        Assert.Equal(2, snapshot.UpdateFrameCount);
+        Assert.Equal(0.75d, snapshot.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void CreateRuntimeSnapshot_AfterUpdate_ObservesRotationThroughLocalTransform()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.5d, 0.5d, false));
+
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+        var frame = sceneGraph.BuildRenderFrame();
+
+        var snapshotRotation = Assert.Single(snapshot.Objects).LocalTransform!.Value.Rotation;
+        var frameRotation = Assert.Single(frame.Items).Transform.Rotation;
+        Assert.Equal(snapshotRotation, frameRotation);
+        Assert.Equal(1, snapshot.UpdateFrameCount);
+        Assert.Equal(0.5d, snapshot.AccumulatedUpdateSeconds);
+    }
+
+    [Fact]
+    public void BuildRenderFrame_DoesNotAdvanceRuntimeUpdateDiagnostics()
+    {
+        var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
+        var sceneGraph = new SceneGraphService(runtimeInfo);
+        sceneGraph.AddRootNode();
+        sceneGraph.UpdateRuntime(new SceneUpdateContext(0.25d, 0.25d, false));
+
+        var firstFrame = sceneGraph.BuildRenderFrame();
+        var secondFrame = sceneGraph.BuildRenderFrame();
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+
+        Assert.Equal(0, firstFrame.FrameNumber);
+        Assert.Equal(1, secondFrame.FrameNumber);
+        Assert.Equal(1, snapshot.UpdateFrameCount);
+        Assert.Equal(0.25d, snapshot.AccumulatedUpdateSeconds);
     }
 
     [Fact]

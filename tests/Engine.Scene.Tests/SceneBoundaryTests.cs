@@ -22,6 +22,20 @@ public sealed class SceneBoundaryTests
     }
 
     [Fact]
+    public void EngineScene_Source_DoesNotReferencePlatformAppOrRenderNamespaces()
+    {
+        var sourceText = string.Join(
+            '\n',
+            Directory.GetFiles(FindRepositoryDirectory("src", "Engine.Scene"), "*.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .Select(File.ReadAllText));
+
+        Assert.DoesNotContain("Engine.Platform", sourceText);
+        Assert.DoesNotContain("Engine.Render", sourceText);
+        Assert.DoesNotContain("Engine.App", sourceText);
+    }
+
+    [Fact]
     public void EngineRenderAndSceneData_DoNotReferenceRuntimeSceneTypes()
     {
         var sceneAssemblyName = typeof(SceneGraphService).Assembly.GetName().Name;
@@ -71,5 +85,22 @@ public sealed class SceneBoundaryTests
         }
 
         throw new FileNotFoundException($"Could not find repository file '{Path.Combine(pathParts)}'.");
+    }
+
+    private static string FindRepositoryDirectory(params string[] pathParts)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(pathParts).ToArray());
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException($"Could not find repository directory '{Path.Combine(pathParts)}'.");
     }
 }
