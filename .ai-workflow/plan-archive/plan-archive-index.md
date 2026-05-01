@@ -13,9 +13,9 @@
 ## 当前记录
 
 - PlanId: `PLAN-M15-2026-05-01`
-  Status: `Active`
-  LastUpdated: `2026-05-01 19:00`
-  MilestoneSummary: `M15 进行中（Runtime Update Pipeline，核心 Update 生命周期、App 主循环接线、默认旋转 smoke behavior）`
+  Status: `Closed`
+  LastUpdated: `2026-05-02 02:43`
+  MilestoneSummary: `M15 完成（Runtime Update Pipeline，核心 Update 生命周期、App 主循环接线、默认旋转 smoke behavior 与 snapshot 诊断收口）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M15-2026-05-01.md`
 
 - PlanId: `PLAN-M14-2026-05-01`
