@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M14-2026-05-01`
+  Status: `Closed`
+  LastUpdated: `2026-05-01 14:30`
+  MilestoneSummary: `M14 完成（Runtime Object/Component Foundation，Engine.Scene 轻量运行时对象模型落地）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M14-2026-05-01.md`
+
 - PlanId: `PLAN-M13-2026-04-30`
   Status: `Active`
   LastUpdated: `2026-04-30`
