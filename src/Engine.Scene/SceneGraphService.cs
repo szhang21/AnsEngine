@@ -1,8 +1,6 @@
 using Engine.Contracts;
 using Engine.Core;
 using Engine.SceneData;
-using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Engine.Scene;
 
@@ -11,36 +9,12 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
     private const string kDefaultMeshId = "mesh://cube";
     private const string kMissingMeshId = "mesh://missing";
     private const string kDefaultMaterialId = "material://default";
-    private const string kPulseMaterialId = "material://pulse";
-    private const string kHighlightMaterialId = "material://highlight";
-    private const string kMissingMaterialId = "material://missing";
-    private const float kPositionStepPerFrame = 0.00005f;
-    private const float kRotationStepPerFrameRadians = 0.005f;
-    private const float kCameraOrbitStepPerFrameRadians = 0.01f;
-    private const float kCameraOrbitRadius = 0.15f;
-    private const float kCameraDistance = 2.2f;
-    private const float kCameraFieldOfViewRadians = 1.0471976f;
     private const float kCameraNearPlane = 0.1f;
     private const float kCameraFarPlane = 10.0f;
     private const float kCameraAspectRatio = 16.0f / 9.0f;
-    private static readonly string[] sMaterialCycle =
-    {
-        kDefaultMaterialId,
-        kPulseMaterialId,
-        kHighlightMaterialId,
-        kMissingMaterialId
-    };
-    private static readonly HashSet<string> sSupportedMaterialIds = new(StringComparer.Ordinal)
-    {
-        kDefaultMaterialId,
-        kPulseMaterialId,
-        kHighlightMaterialId
-    };
 
     private readonly EngineRuntimeInfo mRuntimeInfo;
-    private readonly List<SceneRenderItem> mRenderItems = new();
-    private SceneCamera? mSceneCamera;
-    private bool mUsesSceneDescription;
+    private readonly RuntimeScene mRuntimeScene = new();
     private int mNextNodeId = 1;
     private int mFrameNumber;
 
@@ -49,17 +23,34 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         mRuntimeInfo = runtimeInfo;
     }
 
-    public int NodeCount { get; private set; }
+    public int NodeCount => mRuntimeScene.ObjectCount;
+
+    internal RuntimeScene RuntimeScene => mRuntimeScene;
+
+    public RuntimeSceneSnapshot CreateRuntimeSnapshot()
+    {
+        return mRuntimeScene.CreateSnapshot();
+    }
+
+    public SceneRuntimeObjectSnapshot? FindObject(string objectId)
+    {
+        return mRuntimeScene.FindObject(objectId);
+    }
 
     public void AddRootNode()
     {
         _ = mRuntimeInfo.EngineName;
-        mUsesSceneDescription = false;
 
         var nodeId = mNextNodeId;
         mNextNodeId += 1;
-        NodeCount += 1;
-        mRenderItems.Add(CreateRenderItem(nodeId, kDefaultMeshId, kDefaultMaterialId, SceneTransform.Identity));
+        mRuntimeScene.CreateObject(
+            nodeId,
+            $"node-{nodeId}",
+            $"Node {nodeId}",
+            SceneTransformComponent.FromDescription(SceneTransformDescription.Identity),
+            new SceneMeshRendererComponent(
+                new SceneMeshRef(GetDefaultMeshId(nodeId)),
+                new SceneMaterialRef(kDefaultMaterialId)));
     }
 
     public void LoadSceneDescription(SceneDescription sceneDescription)
@@ -68,142 +59,22 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
 
         _ = mRuntimeInfo.EngineName;
 
-        mRenderItems.Clear();
-        mNextNodeId = 1;
-        NodeCount = 0;
+        mRuntimeScene.LoadFromDescription(sceneDescription);
         mFrameNumber = 0;
-
-        for (var index = 0; index < sceneDescription.Objects.Count; index += 1)
-        {
-            var objectDescription = sceneDescription.Objects[index];
-            var nodeId = mNextNodeId;
-            mNextNodeId += 1;
-            NodeCount += 1;
-            mRenderItems.Add(
-                new SceneRenderItem(
-                    nodeId,
-                    objectDescription.Mesh,
-                    objectDescription.Material,
-                    ToSceneTransform(objectDescription.LocalTransform)));
-        }
-
-        mSceneCamera = BuildSceneCamera(sceneDescription.Camera);
-        mUsesSceneDescription = true;
+        mNextNodeId = mRuntimeScene.ObjectCount + 1;
     }
 
     public SceneRenderFrame BuildRenderFrame()
     {
-        if (mUsesSceneDescription)
-        {
-            var descriptionItems = mRenderItems.ToArray();
-            var descriptionCamera = mSceneCamera ?? BuildDefaultSceneCamera();
-            var descriptionFrame = new SceneRenderFrame(mFrameNumber, descriptionItems, descriptionCamera);
-            mFrameNumber += 1;
-            return descriptionFrame;
-        }
-
-        for (var index = 0; index < mRenderItems.Count; index += 1)
-        {
-            var item = mRenderItems[index];
-            var meshCandidate = BuildMeshCandidate(item.NodeId);
-            var materialCandidate = BuildMaterialCandidate(mFrameNumber, item.NodeId);
-            var currentTransform = BuildFrameTransform(mFrameNumber, index);
-            mRenderItems[index] = CreateRenderItem(item.NodeId, meshCandidate, materialCandidate, currentTransform);
-        }
-
-        var itemsSnapshot = mRenderItems.ToArray();
-        var camera = BuildFrameCamera(mFrameNumber);
-        var frame = new SceneRenderFrame(mFrameNumber, itemsSnapshot, camera);
+        var items = mRuntimeScene.BuildRenderItems();
+        var camera = mRuntimeScene.BuildCamera(kCameraAspectRatio, kCameraNearPlane, kCameraFarPlane);
+        var frame = new SceneRenderFrame(mFrameNumber, items, camera);
         mFrameNumber += 1;
         return frame;
     }
 
-    private static SceneTransform ToSceneTransform(SceneTransformDescription transformDescription)
-    {
-        return new SceneTransform(
-            transformDescription.Position,
-            transformDescription.Scale,
-            transformDescription.Rotation);
-    }
-
-    private static SceneCamera BuildSceneCamera(SceneCameraDescription? cameraDescription)
-    {
-        if (cameraDescription is null)
-        {
-            return BuildDefaultSceneCamera();
-        }
-
-        var view = Matrix4x4.CreateLookAt(cameraDescription.Position, cameraDescription.Target, Vector3.UnitY);
-        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
-            cameraDescription.FieldOfViewRadians,
-            kCameraAspectRatio,
-            kCameraNearPlane,
-            kCameraFarPlane);
-        return new SceneCamera(view, projection);
-    }
-
-    private static SceneCamera BuildDefaultSceneCamera()
-    {
-        var cameraPosition = new Vector3(0.0f, 0.0f, kCameraDistance);
-        var view = Matrix4x4.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
-        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
-            kCameraFieldOfViewRadians,
-            kCameraAspectRatio,
-            kCameraNearPlane,
-            kCameraFarPlane);
-        return new SceneCamera(view, projection);
-    }
-
-    private static SceneRenderItem CreateRenderItem(
-        int nodeId,
-        string meshCandidate,
-        string materialCandidate,
-        SceneTransform transform)
-    {
-        var materialId = ResolveMaterialId(materialCandidate);
-        return new SceneRenderItem(nodeId, new SceneMeshRef(meshCandidate), new SceneMaterialRef(materialId), transform);
-    }
-
-    private static string BuildMeshCandidate(int nodeId)
+    private static string GetDefaultMeshId(int nodeId)
     {
         return (nodeId & 1) == 0 ? kMissingMeshId : kDefaultMeshId;
-    }
-
-    private static string BuildMaterialCandidate(int frameNumber, int nodeId)
-    {
-        var cycleIndex = (frameNumber + nodeId - 1) % sMaterialCycle.Length;
-        return sMaterialCycle[cycleIndex];
-    }
-
-    private static string ResolveMaterialId(string materialCandidate)
-    {
-        return sSupportedMaterialIds.Contains(materialCandidate) ? materialCandidate : kDefaultMaterialId;
-    }
-
-    private static SceneTransform BuildFrameTransform(int frameNumber, int itemIndex)
-    {
-        var position = new Vector3(frameNumber * kPositionStepPerFrame, itemIndex * 0.2f, 0.0f);
-        var scale = Vector3.One;
-        var rotation = Quaternion.CreateFromYawPitchRoll(
-            frameNumber * kRotationStepPerFrameRadians,
-            frameNumber * (kRotationStepPerFrameRadians * 0.6f),
-            0.0f);
-        return new SceneTransform(position, scale, rotation);
-    }
-
-    private static SceneCamera BuildFrameCamera(int frameNumber)
-    {
-        var orbitAngle = frameNumber * kCameraOrbitStepPerFrameRadians;
-        var cameraPosition = new Vector3(
-            MathF.Sin(orbitAngle) * kCameraOrbitRadius,
-            0.0f,
-            kCameraDistance);
-        var view = Matrix4x4.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
-        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
-            kCameraFieldOfViewRadians,
-            kCameraAspectRatio,
-            kCameraNearPlane,
-            kCameraFarPlane);
-        return new SceneCamera(view, projection);
     }
 }

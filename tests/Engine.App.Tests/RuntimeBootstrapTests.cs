@@ -46,10 +46,10 @@ public sealed class RuntimeBootstrapTests
 
         Assert.Equal(Vector3.Zero, firstItem.Transform.Position);
         Assert.Equal(Quaternion.Identity, firstItem.Transform.Rotation);
-        Assert.NotEqual(firstItem.Transform, secondItem.Transform);
+        Assert.Equal(firstItem.Transform, secondItem.Transform);
         Assert.NotEqual(Matrix4x4.Identity, firstFrame.Camera.View);
         Assert.NotEqual(Matrix4x4.Identity, firstFrame.Camera.Projection);
-        Assert.NotEqual(firstFrame.Camera.View, secondFrame.Camera.View);
+        Assert.Equal(firstFrame.Camera.View, secondFrame.Camera.View);
         Assert.Equal(firstFrame.Camera.Projection, secondFrame.Camera.Projection);
     }
 
