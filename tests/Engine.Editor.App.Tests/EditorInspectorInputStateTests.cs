@@ -1,5 +1,6 @@
 using System.Numerics;
 using Engine.Editor.App;
+using Engine.SceneData;
 using Xunit;
 
 namespace Engine.Editor.App.Tests;
@@ -43,6 +44,7 @@ public sealed class EditorInspectorInputStateTests
         Assert.Equal("Cube B", inputState.ObjectName);
         Assert.Equal(nextObjectSnapshot.Inspector.Position, inputState.Position);
         Assert.Equal(nextObjectSnapshot.Inspector.Scale, inputState.Scale);
+        Assert.True(inputState.HasMeshRenderer);
     }
 
     [Fact]
@@ -62,6 +64,26 @@ public sealed class EditorInspectorInputStateTests
         Assert.Equal("Edited Cube", controller.Session.SelectedObject!.ObjectName);
         Assert.Equal(new Vector3(1, 2, 3), controller.Session.SelectedObject.LocalTransform.Position);
         Assert.Equal(new Vector3(2, 2, 2), controller.Session.SelectedObject.LocalTransform.Scale);
+        Assert.Equal("mesh://cube", controller.Session.SelectedObject.MeshRendererComponent!.Mesh.MeshId);
+    }
+
+    [Fact]
+    public void Apply_TransformOnlyObject_DoesNotAddMeshRenderer()
+    {
+        var controller = CreateControllerWithTransformOnlyObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+        inputState.SyncFrom(snapshot.Inspector);
+        inputState.SetTextValues(snapshot.Inspector.ObjectId, "Edited Empty", "mesh://sphere", "material://highlight");
+        inputState.SetTransformValues(new Vector3(4, 5, 6), Quaternion.Identity, Vector3.One);
+
+        var result = inputState.Apply(controller, snapshot.Inspector);
+
+        Assert.True(result, controller.LastError);
+        Assert.True(controller.Session.IsDirty);
+        Assert.Equal("Edited Empty", controller.Session.SelectedObject!.ObjectName);
+        Assert.Equal(new Vector3(4, 5, 6), controller.Session.SelectedObject.LocalTransform.Position);
+        Assert.Null(controller.Session.SelectedObject.MeshRendererComponent);
     }
 
     [Fact]
@@ -112,12 +134,22 @@ public sealed class EditorInspectorInputStateTests
             Assert.True(controller.AddObject(new Engine.SceneData.SceneFileObjectDefinition(
                 "cube-b",
                 "Cube B",
-                "mesh://cube",
-                "material://default",
-                null)), controller.LastError);
+                new SceneFileComponentDefinition[]
+                {
+                    new SceneFileTransformComponentDefinition(new SceneFileTransformDefinition(null, null, null)),
+                    new SceneFileMeshRendererComponentDefinition("mesh://cube", "material://default")
+                })), controller.LastError);
             Assert.True(controller.SelectObject(objectId), controller.LastError);
         }
 
+        return controller;
+    }
+
+    private static EditorAppController CreateControllerWithTransformOnlyObject()
+    {
+        var controller = new EditorAppController(new EditorScenePathResolver());
+        Assert.True(controller.OpenScene(WriteTransformOnlyTemporarySceneFile()), controller.LastError);
+        Assert.True(controller.SelectObject("empty-main"), controller.LastError);
         return controller;
     }
 
@@ -130,7 +162,7 @@ public sealed class EditorInspectorInputStateTests
             scenePath,
             """
             {
-              "version": "1.0",
+              "version": "2.0",
               "scene": {
                 "id": "editor-app-test-scene",
                 "name": "Editor App Test Scene",
@@ -138,8 +170,46 @@ public sealed class EditorInspectorInputStateTests
                   {
                     "id": "cube-main",
                     "name": "Cube Main",
-                    "mesh": "mesh://cube",
-                    "material": "material://highlight"
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube",
+                        "material": "material://highlight"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        return scenePath;
+    }
+
+    private static string WriteTransformOnlyTemporarySceneFile()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        var scenePath = Path.Combine(directoryPath, "transform-only.scene.json");
+        File.WriteAllText(
+            scenePath,
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "editor-app-test-scene",
+                "name": "Editor App Test Scene",
+                "objects": [
+                  {
+                    "id": "empty-main",
+                    "name": "Empty Main",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      }
+                    ]
                   }
                 ]
               }

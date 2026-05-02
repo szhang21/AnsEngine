@@ -92,7 +92,7 @@ public sealed class EditorFileWorkflowStateTests
         var controller = new EditorAppController(new EditorScenePathResolver());
         Assert.True(controller.OpenScene(scenePath), controller.LastError);
         var objectId = controller.Session.Objects[0].ObjectId;
-        Assert.True(controller.UpdateObjectTransform(
+        Assert.True(controller.UpdateObjectTransformComponent(
             objectId,
             new Engine.SceneData.SceneFileTransformDefinition(new Vector3(4, 5, 6), Quaternion.Identity, Vector3.One)), controller.LastError);
         var workflow = new EditorFileWorkflowState();

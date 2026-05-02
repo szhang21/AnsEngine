@@ -135,6 +135,20 @@ public sealed class SceneEditorSession
         return ApplyEditResult(editResult);
     }
 
+    public SceneEditorSessionResult AddObject(string objectId, string objectName)
+    {
+        var objectDefinition = new SceneFileObjectDefinition(
+            objectId,
+            objectName,
+            new SceneFileComponentDefinition[]
+            {
+                new SceneFileTransformComponentDefinition(
+                    new SceneFileTransformDefinition(null, null, null)),
+                new SceneFileMeshRendererComponentDefinition("mesh://cube", "material://default")
+            });
+        return AddObject(objectDefinition);
+    }
+
     public SceneEditorSessionResult RemoveObject(string objectId)
     {
         if (mDocument is null)
@@ -204,24 +218,62 @@ public sealed class SceneEditorSession
 
     public SceneEditorSessionResult UpdateObjectResources(string objectId, string mesh, string? material)
     {
+        return UpdateObjectMeshRendererComponent(
+            objectId,
+            new SceneFileMeshRendererComponentDefinition(mesh, material));
+    }
+
+    public SceneEditorSessionResult UpdateObjectTransform(string objectId, SceneFileTransformDefinition? transform)
+    {
+        return UpdateObjectTransformComponent(
+            objectId,
+            new SceneFileTransformComponentDefinition(transform));
+    }
+
+    public SceneEditorSessionResult UpdateObjectTransformComponent(
+        string objectId,
+        SceneFileTransformComponentDefinition transform)
+    {
+        ArgumentNullException.ThrowIfNull(transform);
+
         if (mDocument is null)
         {
             return CreateNoDocumentFailure();
         }
 
-        var editResult = mDocumentEditor.UpdateObjectResources(mDocument, objectId, mesh, material);
-        return ApplyEditResult(editResult);
+        return UpdateObjectComponents(
+            objectId,
+            components => ReplaceComponent(components, transform));
     }
 
-    public SceneEditorSessionResult UpdateObjectTransform(string objectId, SceneFileTransformDefinition? transform)
+    public SceneEditorSessionResult UpdateObjectMeshRendererComponent(
+        string objectId,
+        SceneFileMeshRendererComponentDefinition meshRenderer)
+    {
+        ArgumentNullException.ThrowIfNull(meshRenderer);
+
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => ReplaceComponent(components, meshRenderer));
+    }
+
+    public SceneEditorSessionResult RemoveObjectMeshRendererComponent(string objectId)
     {
         if (mDocument is null)
         {
             return CreateNoDocumentFailure();
         }
 
-        var editResult = mDocumentEditor.UpdateObjectTransform(mDocument, objectId, transform);
-        return ApplyEditResult(editResult);
+        return UpdateObjectComponents(
+            objectId,
+            components => components
+                .Where(item => !string.Equals(item.Type, SceneFileComponentTypes.MeshRenderer, StringComparison.Ordinal))
+                .ToArray());
     }
 
     public SceneEditorSessionResult Save()
@@ -322,6 +374,55 @@ public sealed class SceneEditorSession
         return Objects.FirstOrDefault(item => string.Equals(item.ObjectId, objectId, StringComparison.Ordinal));
     }
 
+    private SceneEditorSessionResult UpdateObjectComponents(
+        string objectId,
+        Func<IReadOnlyList<SceneFileComponentDefinition>, IReadOnlyList<SceneFileComponentDefinition>> update)
+    {
+        var objectIndex = FindDocumentObjectIndex(objectId);
+        if (objectIndex < 0)
+        {
+            return SceneEditorSessionResult.FailureResult(
+                new SceneEditorFailure(
+                    SceneEditorFailureKind.ObjectNotFound,
+                    $"Scene object id '{objectId}' was not found.",
+                    objectId: objectId));
+        }
+
+        var objects = mDocument!.Scene.Objects.ToArray();
+        var objectDefinition = objects[objectIndex];
+        objects[objectIndex] = objectDefinition with
+        {
+            Components = update(objectDefinition.Components)
+        };
+
+        var updatedDocument = mDocument with
+        {
+            Scene = mDocument.Scene with
+            {
+                Objects = objects
+            }
+        };
+        return ApplyDocumentCandidate(updatedDocument);
+    }
+
+    private int FindDocumentObjectIndex(string objectId)
+    {
+        if (mDocument is null)
+        {
+            return -1;
+        }
+
+        for (var index = 0; index < mDocument.Scene.Objects.Count; index += 1)
+        {
+            if (string.Equals(mDocument.Scene.Objects[index].Id, objectId, StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
     private SceneEditorSessionResult ApplyEditResult(SceneDocumentEditResult editResult, Action? afterApply = null)
     {
         if (!editResult.IsSuccess)
@@ -329,17 +430,22 @@ public sealed class SceneEditorSession
             return SceneEditorSessionResult.FailureResult(MapEditFailure(editResult.Failure!));
         }
 
-        var normalizeResult = SceneFileDocumentNormalizer.Normalize(editResult.Document!, SceneFilePath ?? "<memory>");
+        return ApplyDocumentCandidate(editResult.Document!, afterApply);
+    }
+
+    private SceneEditorSessionResult ApplyDocumentCandidate(SceneFileDocument document, Action? afterApply = null)
+    {
+        var normalizeResult = SceneFileDocumentNormalizer.Normalize(document, SceneFilePath ?? "<memory>");
         if (!normalizeResult.IsSuccess)
         {
             return SceneEditorSessionResult.FailureResult(
                 new SceneEditorFailure(
-                    SceneEditorFailureKind.ReloadValidationFailed,
+                    MapNormalizeFailureKind(normalizeResult.Failure!.Kind),
                     normalizeResult.Failure!.Message,
                     normalizeResult.Failure.Path));
         }
 
-        mDocument = editResult.Document;
+        mDocument = document;
         mScene = normalizeResult.Scene;
         IsDirty = true;
         afterApply?.Invoke();
@@ -372,5 +478,27 @@ public sealed class SceneEditorSession
             SceneDocumentEditFailureKind.InvalidTransform => SceneEditorFailureKind.InvalidTransform,
             _ => SceneEditorFailureKind.InvalidDocument
         };
+    }
+
+    private static SceneEditorFailureKind MapNormalizeFailureKind(SceneDescriptionLoadFailureKind kind)
+    {
+        return kind switch
+        {
+            SceneDescriptionLoadFailureKind.DuplicateObjectId => SceneEditorFailureKind.DuplicateObjectId,
+            SceneDescriptionLoadFailureKind.MissingRequiredField => SceneEditorFailureKind.InvalidReference,
+            SceneDescriptionLoadFailureKind.InvalidReference => SceneEditorFailureKind.InvalidReference,
+            SceneDescriptionLoadFailureKind.InvalidValue => SceneEditorFailureKind.InvalidTransform,
+            _ => SceneEditorFailureKind.InvalidDocument
+        };
+    }
+
+    private static IReadOnlyList<SceneFileComponentDefinition> ReplaceComponent(
+        IReadOnlyList<SceneFileComponentDefinition> components,
+        SceneFileComponentDefinition component)
+    {
+        return components
+            .Where(item => !string.Equals(item.Type, component.Type, StringComparison.Ordinal))
+            .Concat(new[] { component })
+            .ToArray();
     }
 }

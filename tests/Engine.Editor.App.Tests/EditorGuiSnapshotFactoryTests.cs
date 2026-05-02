@@ -89,7 +89,28 @@ public sealed class EditorGuiSnapshotFactoryTests
         Assert.Equal(objectId, snapshot.StatusBar.SelectedObjectId);
         Assert.True(snapshot.Inspector.HasSelectedObject);
         Assert.Equal(objectId, snapshot.Inspector.ObjectId);
+        Assert.Equal("Object", snapshot.Inspector.Object.Title);
+        Assert.Equal("Transform", snapshot.Inspector.Transform.Title);
+        Assert.Equal("MeshRenderer", snapshot.Inspector.MeshRenderer.Title);
+        Assert.True(snapshot.Inspector.Transform.HasTransform);
+        Assert.True(snapshot.Inspector.MeshRenderer.HasMeshRenderer);
         Assert.Contains(snapshot.HierarchyItems, item => item.ObjectId == objectId && item.IsSelected);
+    }
+
+    [Fact]
+    public void Create_SelectedTransformOnlyObject_ShowsMeshRendererEmptyState()
+    {
+        var controller = new EditorAppController(new EditorScenePathResolver());
+        Assert.True(controller.OpenScene(WriteTransformOnlyTemporarySceneFile()), controller.LastError);
+
+        Assert.True(controller.SelectObject("empty-main"), controller.LastError);
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+
+        Assert.True(snapshot.Inspector.HasSelectedObject);
+        Assert.Equal("empty-main", snapshot.Inspector.ObjectId);
+        Assert.True(snapshot.Inspector.Transform.HasTransform);
+        Assert.False(snapshot.Inspector.MeshRenderer.HasMeshRenderer);
+        Assert.Equal("No MeshRenderer component.", snapshot.Inspector.MeshRenderer.EmptyMessage);
     }
 
     [Fact]
@@ -107,5 +128,35 @@ public sealed class EditorGuiSnapshotFactoryTests
         Assert.Equal(objectId, snapshot.StatusBar.SelectedObjectId);
         Assert.Equal(objectId, snapshot.Inspector.ObjectId);
         Assert.Contains("not found", snapshot.StatusBar.LastError, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string WriteTransformOnlyTemporarySceneFile()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        var scenePath = Path.Combine(directoryPath, "transform-only.scene.json");
+        File.WriteAllText(
+            scenePath,
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "editor-app-test-scene",
+                "name": "Editor App Test Scene",
+                "objects": [
+                  {
+                    "id": "empty-main",
+                    "name": "Empty Main",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        return scenePath;
     }
 }

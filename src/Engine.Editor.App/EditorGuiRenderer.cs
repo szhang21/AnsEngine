@@ -131,13 +131,28 @@ public sealed class EditorGuiRenderer
                 mInspectorInputState.Rotation.W);
             var scale = mInspectorInputState.Scale;
 
+            ImGui.TextUnformatted(snapshot.Inspector.Object.Title);
             ImGui.InputText("Id", ref objectId, 128);
             ImGui.InputText("Name", ref objectName, 128);
-            ImGui.InputText("Mesh", ref mesh, 256);
-            ImGui.InputText("Material", ref material, 256);
+            ImGui.Separator();
+
+            ImGui.TextUnformatted(snapshot.Inspector.Transform.Title);
             ImGui.InputFloat3("Position", ref position);
             ImGui.InputFloat4("Rotation", ref rotation);
             ImGui.InputFloat3("Scale", ref scale);
+            ImGui.Separator();
+
+            ImGui.TextUnformatted(snapshot.Inspector.MeshRenderer.Title);
+            if (snapshot.Inspector.MeshRenderer.HasMeshRenderer)
+            {
+                ImGui.InputText("Mesh", ref mesh, 256);
+                ImGui.InputText("Material", ref material, 256);
+            }
+            else
+            {
+                ImGui.TextUnformatted(snapshot.Inspector.MeshRenderer.EmptyMessage);
+            }
+
             mInspectorInputState.SetTextValues(objectId, objectName, mesh, material);
             mInspectorInputState.SetTransformValues(
                 position,

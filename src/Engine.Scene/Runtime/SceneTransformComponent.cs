@@ -27,6 +27,12 @@ internal sealed class SceneTransformComponent
             transformDescription.Scale);
     }
 
+    public static SceneTransformComponent FromDescription(SceneTransformComponentDescription transformDescription)
+    {
+        ArgumentNullException.ThrowIfNull(transformDescription);
+        return FromDescription(transformDescription.Transform);
+    }
+
     public SceneTransform ToSceneTransform()
     {
         return new SceneTransform(LocalPosition, LocalScale, LocalRotation);

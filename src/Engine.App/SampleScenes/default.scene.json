@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "scene": {
     "id": "app-default-scene",
     "name": "App Default Scene",
@@ -20,50 +20,69 @@
       {
         "id": "cube-main",
         "name": "Cube Main",
-        "mesh": "mesh://cube",
-        "material": "material://highlight",
-        "transform": {
-          "position": {
-            "x": 0,
-            "y": 0,
-            "z": 0
+        "components": [
+          {
+            "type": "Transform",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
           },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0,
-            "w": 1
+          {
+            "type": "MeshRenderer",
+            "mesh": "mesh://cube",
+            "material": "material://highlight"
           },
-          "scale": {
-            "x": 1,
-            "y": 1,
-            "z": 1
+          {
+            "type": "Script",
+            "scriptId": "RotateSelf",
+            "properties": {
+              "speedRadiansPerSecond": 1.5707964
+            }
           }
-        }
+        ]
       },
       {
         "id": "object-001",
         "name": "object-001",
-        "mesh": "mesh://cube",
-        "material": "material://default",
-        "transform": {
-          "position": {
-            "x": 0,
-            "y": 0.1,
-            "z": 0.1
+        "components": [
+          {
+            "type": "Transform",
+            "position": {
+              "x": 0,
+              "y": 0.1,
+              "z": 0.1
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1.1,
+              "z": 1
+            }
           },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0,
-            "w": 1
-          },
-          "scale": {
-            "x": 1,
-            "y": 1.1,
-            "z": 1
+          {
+            "type": "MeshRenderer",
+            "mesh": "mesh://cube",
+            "material": "material://default"
           }
-        }
+        ]
       }
     ]
   }

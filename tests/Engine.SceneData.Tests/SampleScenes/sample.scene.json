@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "scene": {
     "id": "sample-scene",
     "name": "Sample Scene",
@@ -12,18 +12,32 @@
       {
         "id": "cube-main",
         "name": "Cube Main",
-        "mesh": "mesh://cube",
-        "material": "material://highlight",
-        "transform": {
-          "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
-          "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 },
-          "scale": { "x": 1.0, "y": 1.0, "z": 1.0 }
-        }
+        "components": [
+          {
+            "type": "Transform",
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 }
+          },
+          {
+            "type": "MeshRenderer",
+            "mesh": "mesh://cube",
+            "material": "material://highlight"
+          }
+        ]
       },
       {
         "id": "cube-secondary",
         "name": "Cube Secondary",
-        "mesh": "mesh://cube"
+        "components": [
+          {
+            "type": "Transform"
+          },
+          {
+            "type": "MeshRenderer",
+            "mesh": "mesh://cube"
+          }
+        ]
       }
     ]
   }

@@ -41,23 +41,28 @@ public static class EditorGuiSnapshotFactory
         var inspector = selectedObject is null
             ? new EditorInspectorSnapshot(
                 false,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                Vector3.Zero,
-                Quaternion.Identity,
-                Vector3.One,
+                new EditorInspectorObjectGroupSnapshot("Object", string.Empty, string.Empty),
+                new EditorInspectorTransformGroupSnapshot("Transform", false, Vector3.Zero, Quaternion.Identity, Vector3.One),
+                new EditorInspectorMeshRendererGroupSnapshot("MeshRenderer", false, string.Empty, string.Empty, string.Empty),
                 "No object selected.")
             : new EditorInspectorSnapshot(
                 true,
-                selectedObject.ObjectId,
-                selectedObject.ObjectName,
-                selectedObject.Mesh.MeshId,
-                selectedObject.Material.MaterialId,
-                selectedObject.LocalTransform.Position,
-                selectedObject.LocalTransform.Rotation,
-                selectedObject.LocalTransform.Scale,
+                new EditorInspectorObjectGroupSnapshot(
+                    "Object",
+                    selectedObject.ObjectId,
+                    selectedObject.ObjectName),
+                new EditorInspectorTransformGroupSnapshot(
+                    "Transform",
+                    selectedObject.TransformComponent is not null,
+                    selectedObject.LocalTransform.Position,
+                    selectedObject.LocalTransform.Rotation,
+                    selectedObject.LocalTransform.Scale),
+                new EditorInspectorMeshRendererGroupSnapshot(
+                    "MeshRenderer",
+                    selectedObject.MeshRendererComponent is not null,
+                    selectedObject.MeshRendererComponent?.Mesh.MeshId ?? string.Empty,
+                    selectedObject.MeshRendererComponent?.Material.MaterialId ?? string.Empty,
+                    selectedObject.MeshRendererComponent is null ? "No MeshRenderer component." : string.Empty),
                 string.Empty);
 
         var scenePath = string.IsNullOrWhiteSpace(controller.Session.SceneFilePath)

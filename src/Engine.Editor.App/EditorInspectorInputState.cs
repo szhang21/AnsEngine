@@ -15,6 +15,8 @@ public sealed class EditorInspectorInputState
 
     public string Material { get; private set; } = string.Empty;
 
+    public bool HasMeshRenderer { get; private set; }
+
     public Vector3 Position { get; private set; }
 
     public Quaternion Rotation { get; private set; } = Quaternion.Identity;
@@ -46,6 +48,7 @@ public sealed class EditorInspectorInputState
             ObjectName = string.Empty;
             Mesh = string.Empty;
             Material = string.Empty;
+            HasMeshRenderer = false;
             Position = Vector3.Zero;
             Rotation = Quaternion.Identity;
             Scale = Vector3.One;
@@ -57,6 +60,7 @@ public sealed class EditorInspectorInputState
         ObjectName = snapshot.ObjectName;
         Mesh = snapshot.Mesh;
         Material = snapshot.Material;
+        HasMeshRenderer = snapshot.MeshRenderer.HasMeshRenderer;
         Position = snapshot.Position;
         Rotation = snapshot.Rotation;
         Scale = snapshot.Scale;
@@ -116,8 +120,14 @@ public sealed class EditorInspectorInputState
         }
 
         if (!controller.UpdateObjectName(currentObjectId, ObjectName) ||
-            !controller.UpdateObjectResources(currentObjectId, Mesh, Material) ||
-            !controller.UpdateObjectTransform(currentObjectId, new SceneFileTransformDefinition(Position, Rotation, Scale)))
+            !controller.UpdateObjectTransformComponent(currentObjectId, new SceneFileTransformDefinition(Position, Rotation, Scale)))
+        {
+            ResetFrom(EditorGuiSnapshotFactory.Create(controller).Inspector);
+            return false;
+        }
+
+        if (HasMeshRenderer &&
+            !controller.UpdateObjectMeshRendererComponent(currentObjectId, Mesh, Material))
         {
             ResetFrom(EditorGuiSnapshotFactory.Create(controller).Inspector);
             return false;

@@ -2,12 +2,9 @@ namespace Engine.Scene;
 
 using Engine.Contracts;
 using Engine.SceneData;
-using System.Numerics;
 
 internal sealed class RuntimeScene
 {
-    private const float kDefaultRotationRadiansPerSecond = MathF.PI * 0.5f;
-
     private readonly List<SceneRuntimeObject> mObjects = new();
 
     public int ObjectCount => mObjects.Count;
@@ -53,8 +50,12 @@ internal sealed class RuntimeScene
                 index + 1,
                 objectDescription.ObjectId,
                 objectDescription.ObjectName,
-                SceneTransformComponent.FromDescription(objectDescription.LocalTransform),
-                SceneMeshRendererComponent.FromDescription(objectDescription));
+                objectDescription.TransformComponent is null
+                    ? null
+                    : SceneTransformComponent.FromDescription(objectDescription.TransformComponent),
+                objectDescription.MeshRendererComponent is null
+                    ? null
+                    : SceneMeshRendererComponent.FromDescription(objectDescription.MeshRendererComponent));
         }
     }
 
@@ -62,7 +63,6 @@ internal sealed class RuntimeScene
     {
         UpdateFrameCount += 1;
         AccumulatedUpdateSeconds += context.DeltaSeconds;
-        ApplyDefaultRotationSmokeBehavior(context);
     }
 
     public IReadOnlyList<SceneRenderItem> BuildRenderItems()
@@ -116,32 +116,37 @@ internal sealed class RuntimeScene
         return null;
     }
 
-    private void ResetUpdateStatistics()
+    public SceneScriptObjectBindResult BindScriptObject(string objectId)
     {
-        UpdateFrameCount = 0;
-        AccumulatedUpdateSeconds = 0.0d;
-    }
-
-    private void ApplyDefaultRotationSmokeBehavior(SceneUpdateContext context)
-    {
-        if (context.DeltaSeconds == 0.0d)
+        for (var index = 0; index < mObjects.Count; index += 1)
         {
-            return;
-        }
-
-        foreach (var runtimeObject in mObjects)
-        {
-            if (runtimeObject.Transform is null || runtimeObject.MeshRenderer is null)
+            if (!string.Equals(mObjects[index].ObjectId, objectId, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            var transform = runtimeObject.Transform;
-            var rotationDelta = (float)context.DeltaSeconds * kDefaultRotationRadiansPerSecond;
-            var updatedRotation = Quaternion.Normalize(
-                Quaternion.CreateFromAxisAngle(Vector3.UnitY, rotationDelta) * transform.LocalRotation);
-            transform.SetLocalTransform(transform.LocalPosition, updatedRotation, transform.LocalScale);
-            return;
+            if (mObjects[index].Transform is null)
+            {
+                return SceneScriptObjectBindResult.FailureResult(
+                    new SceneScriptObjectBindFailure(
+                        SceneScriptObjectBindFailureKind.MissingTransform,
+                        $"Scene object id '{objectId}' has no Transform component.",
+                        objectId));
+            }
+
+            return SceneScriptObjectBindResult.Success(new SceneScriptObjectHandle(mObjects[index]));
         }
+
+        return SceneScriptObjectBindResult.FailureResult(
+            new SceneScriptObjectBindFailure(
+                SceneScriptObjectBindFailureKind.ObjectNotFound,
+                $"Scene object id '{objectId}' was not found.",
+                objectId));
+    }
+
+    private void ResetUpdateStatistics()
+    {
+        UpdateFrameCount = 0;
+        AccumulatedUpdateSeconds = 0.0d;
     }
 }

@@ -155,7 +155,7 @@ public sealed class SceneEditorSessionTests
     {
         var session = new SceneEditorSession();
 
-        var result = session.AddObject(CreateSceneObject("cube-b"));
+        var result = session.AddObject("cube-b", "Cube B");
 
         Assert.False(result.IsSuccess);
         Assert.Equal(SceneEditorFailureKind.NoDocumentOpen, result.Failure!.Kind);
@@ -209,6 +209,23 @@ public sealed class SceneEditorSessionTests
     }
 
     [Fact]
+    public void AddObject_DefaultFactory_CreatesTransformAndMeshRendererComponents()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+
+        var result = session.AddObject("cube-b", "Cube B");
+
+        Assert.True(result.IsSuccess);
+        Assert.True(session.IsDirty);
+        var item = Assert.Single(session.Objects, item => item.ObjectId == "cube-b");
+        Assert.NotNull(item.TransformComponent);
+        Assert.NotNull(item.MeshRendererComponent);
+        Assert.Equal("mesh://cube", item.MeshRendererComponent!.Mesh.MeshId);
+    }
+
+    [Fact]
     public void RemoveSelectedObject_SelectedObject_ClearsSelectionAndDirty()
     {
         var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
@@ -256,27 +273,94 @@ public sealed class SceneEditorSessionTests
     }
 
     [Fact]
-    public void UpdateObjectProperties_ValidValues_UpdatesNormalizedScene()
+    public void UpdateObjectComponentProperties_ValidValues_UpdatesNormalizedScene()
     {
         var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
         var session = new SceneEditorSession();
         Assert.True(session.Open(scenePath).IsSuccess);
 
         Assert.True(session.UpdateObjectName("cube-a", "Renamed Cube").IsSuccess);
-        Assert.True(session.UpdateObjectResources("cube-a", "mesh://sphere", null).IsSuccess);
         var transform = new SceneFileTransformDefinition(
             new Vector3(1.0f, 2.0f, 3.0f),
             Quaternion.Identity,
             new Vector3(2.0f, 2.0f, 2.0f));
-        var result = session.UpdateObjectTransform("cube-a", transform);
+        Assert.True(
+            session.UpdateObjectMeshRendererComponent(
+                "cube-a",
+                new SceneFileMeshRendererComponentDefinition("mesh://sphere", null)).IsSuccess);
+        var result = session.UpdateObjectTransformComponent(
+            "cube-a",
+            new SceneFileTransformComponentDefinition(transform));
 
         Assert.True(result.IsSuccess);
         Assert.True(session.IsDirty);
         var item = Assert.Single(session.Objects);
         Assert.Equal("Renamed Cube", item.ObjectName);
-        Assert.Equal("mesh://sphere", item.Mesh.MeshId);
-        Assert.Equal(new Vector3(1.0f, 2.0f, 3.0f), item.LocalTransform.Position);
-        Assert.Equal(new Vector3(2.0f, 2.0f, 2.0f), item.LocalTransform.Scale);
+        Assert.Equal("mesh://sphere", item.MeshRendererComponent!.Mesh.MeshId);
+        Assert.Equal(new Vector3(1.0f, 2.0f, 3.0f), item.TransformComponent!.Transform.Position);
+        Assert.Equal(new Vector3(2.0f, 2.0f, 2.0f), item.TransformComponent.Transform.Scale);
+    }
+
+    [Fact]
+    public void RemoveObjectMeshRendererComponent_LeavesTransformOnlyObject()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+
+        var result = session.RemoveObjectMeshRendererComponent("cube-a");
+
+        Assert.True(result.IsSuccess);
+        Assert.True(session.IsDirty);
+        var item = Assert.Single(session.Objects);
+        Assert.NotNull(item.TransformComponent);
+        Assert.Null(item.MeshRendererComponent);
+        Assert.DoesNotContain(
+            session.Document!.Scene.Objects.Single().Components,
+            item => item.Type == SceneFileComponentTypes.MeshRenderer);
+    }
+
+    [Fact]
+    public void Open_TransformOnlyObject_CanSelectWithoutMeshRenderer()
+    {
+        var scenePath = WriteSceneFile(CreateTransformOnlySceneJson("scene-a", "empty-a"));
+        var session = new SceneEditorSession();
+
+        var result = session.Open(scenePath);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(session.SelectObject("empty-a").IsSuccess);
+        var item = Assert.Single(session.Objects);
+        Assert.Equal("empty-a", item.ObjectId);
+        Assert.NotNull(item.TransformComponent);
+        Assert.Null(item.MeshRendererComponent);
+        Assert.Equal("empty-a", session.SelectedObject!.ObjectId);
+    }
+
+    [Fact]
+    public void Save_TransformOnlyObject_DoesNotAddMeshRenderer()
+    {
+        var scenePath = WriteSceneFile(CreateTransformOnlySceneJson("scene-a", "empty-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+        Assert.True(
+            session.UpdateObjectTransformComponent(
+                "empty-a",
+                new SceneFileTransformComponentDefinition(
+                    new SceneFileTransformDefinition(
+                        new Vector3(4.0f, 5.0f, 6.0f),
+                        null,
+                        null))).IsSuccess);
+
+        var result = session.Save();
+
+        Assert.True(result.IsSuccess);
+        Assert.False(session.IsDirty);
+        var item = Assert.Single(session.Objects);
+        Assert.Null(item.MeshRendererComponent);
+        Assert.DoesNotContain(
+            session.Document!.Scene.Objects.Single().Components,
+            item => item.Type == SceneFileComponentTypes.MeshRenderer);
     }
 
     [Fact]
@@ -399,7 +483,7 @@ public sealed class SceneEditorSessionTests
     {
         return $$"""
             {
-              "version": "1.0",
+              "version": "2.0",
               "scene": {
                 "id": "{{sceneId}}",
                 "name": "Sample Scene",
@@ -407,8 +491,40 @@ public sealed class SceneEditorSessionTests
                   {
                     "id": "{{objectId}}",
                     "name": "Cube",
-                    "mesh": "mesh://cube",
-                    "material": "material://default"
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube",
+                        "material": "material://default"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """;
+    }
+
+    private static string CreateTransformOnlySceneJson(string sceneId, string objectId)
+    {
+        return $$"""
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "{{sceneId}}",
+                "name": "Sample Scene",
+                "objects": [
+                  {
+                    "id": "{{objectId}}",
+                    "name": "Empty",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      }
+                    ]
                   }
                 ]
               }
@@ -429,7 +545,7 @@ public sealed class SceneEditorSessionTests
     private static SceneFileDocument CreateDocument(string sceneId, string objectId)
     {
         return new SceneFileDocument(
-            "1.0",
+            "2.0",
             new SceneFileDefinition(
                 sceneId,
                 "Sample Scene",

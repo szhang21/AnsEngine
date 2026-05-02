@@ -1,6 +1,7 @@
 using Engine.Contracts;
 using Engine.SceneData.Abstractions;
 using System.Numerics;
+using System.Text.Json;
 using Xunit;
 
 namespace Engine.SceneData.Tests;
@@ -34,7 +35,7 @@ public sealed class SceneDataContractsTests
     public void SceneFileDocument_ReservesFileModelShape()
     {
         var document = new SceneFileDocument(
-            "1.0",
+            "2.0",
             new SceneFileDefinition(
                 "sample-scene",
                 "Sample Scene",
@@ -49,9 +50,10 @@ public sealed class SceneDataContractsTests
                         new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One))
                 }));
 
-        Assert.Equal("1.0", document.Version);
+        Assert.Equal("2.0", document.Version);
         Assert.Equal("sample-scene", document.Scene.Id);
         Assert.Single(document.Scene.Objects);
+        Assert.Equal(2, document.Scene.Objects[0].Components.Count);
     }
 
     [Fact]
@@ -88,6 +90,7 @@ public sealed class SceneDataContractsTests
 
         Assert.Contains("Engine.Contracts", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Scene", referencedAssemblyNames);
+        Assert.DoesNotContain("Engine.Scripting", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Asset", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Render", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.App", referencedAssemblyNames);
@@ -158,12 +161,20 @@ public sealed class SceneDataContractsTests
         var scenePath = WriteSceneFile(
             """
             {
-              "version": "1.0",
+              "version": "2.0",
               "scene": {
                 "id": "scene-a",
                 "objects": [
                   {
-                    "id": "cube-a"
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer"
+                      }
+                    ]
                   }
                 ]
               }
@@ -183,17 +194,33 @@ public sealed class SceneDataContractsTests
         var scenePath = WriteSceneFile(
             """
             {
-              "version": "1.0",
+              "version": "2.0",
               "scene": {
                 "id": "scene-a",
                 "objects": [
                   {
                     "id": "cube-a",
-                    "mesh": "mesh://cube"
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube"
+                      }
+                    ]
                   },
                   {
                     "id": "cube-a",
-                    "mesh": "mesh://cube"
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube"
+                      }
+                    ]
                   }
                 ]
               }
@@ -220,7 +247,7 @@ public sealed class SceneDataContractsTests
     }
 
     [Fact]
-    public void JsonLoader_MissingCameraAndTransforms_FillsDefaults()
+    public void JsonLoader_VersionOneDocument_ReturnsInvalidValue()
     {
         var scenePath = WriteSceneFile(
             """
@@ -241,14 +268,8 @@ public sealed class SceneDataContractsTests
 
         var result = loader.Load(scenePath);
 
-        Assert.True(result.IsSuccess);
-        var scene = Assert.IsType<SceneDescription>(result.Scene);
-        var item = Assert.Single(scene.Objects);
-        Assert.Equal("cube-a", item.ObjectName);
-        Assert.Equal("material://default", item.Material.MaterialId);
-        Assert.Equal(SceneTransformDescription.Identity, item.LocalTransform);
-        Assert.Equal(new Vector3(0.0f, 0.0f, 2.2f), scene.Camera.Position);
-        Assert.Equal(Vector3.Zero, scene.Camera.Target);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidValue, result.Failure!.Kind);
     }
 
     [Fact]
@@ -259,7 +280,7 @@ public sealed class SceneDataContractsTests
         var result = store.Load(GetSampleScenePath());
 
         Assert.True(result.IsSuccess);
-        Assert.Equal("1.0", result.Document!.Version);
+        Assert.Equal("2.0", result.Document!.Version);
         Assert.Equal("sample-scene", result.Document.Scene.Id);
         Assert.Equal(2, result.Document.Scene.Objects.Count);
     }
@@ -279,6 +300,314 @@ public sealed class SceneDataContractsTests
         Assert.Equal(document.Version, loadResult.Document!.Version);
         Assert.Equal(document.Scene.Id, loadResult.Document.Scene.Id);
         Assert.Equal(document.Scene.Objects[0].Transform, loadResult.Document.Scene.Objects[0].Transform);
+    }
+
+    [Fact]
+    public void JsonSceneDocumentStore_Save_WritesComponentArrayWithoutLegacyObjectFields()
+    {
+        var store = new JsonSceneDocumentStore();
+        var scenePath = GetTemporaryScenePath();
+
+        var saveResult = store.Save(scenePath, CreateSampleDocument());
+        var json = File.ReadAllText(scenePath);
+
+        Assert.True(saveResult.IsSuccess);
+        Assert.Contains("\"version\": \"2.0\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"components\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"type\": \"Transform\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"type\": \"MeshRenderer\"", json, StringComparison.Ordinal);
+        using var jsonDocument = JsonDocument.Parse(json);
+        var sceneObject = jsonDocument.RootElement.GetProperty("scene").GetProperty("objects")[0];
+        Assert.False(sceneObject.TryGetProperty("mesh", out _));
+        Assert.False(sceneObject.TryGetProperty("material", out _));
+        Assert.False(sceneObject.TryGetProperty("transform", out _));
+    }
+
+    [Fact]
+    public void JsonLoader_UnknownComponentType_ReturnsInvalidJsonFailure()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Unknown"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidJson, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_ScriptComponents_NormalizesAndPreservesOrder()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Script",
+                        "scriptId": "FirstScript",
+                        "properties": {
+                          "speed": 1.5,
+                          "enabled": true,
+                          "label": "primary"
+                        }
+                      },
+                      {
+                        "type": "Script",
+                        "scriptId": "SecondScript"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        var item = Assert.Single(result.Scene!.Objects);
+        Assert.Equal(
+            new[]
+            {
+                SceneComponentDescriptionTypes.Transform,
+                SceneComponentDescriptionTypes.Script,
+                SceneComponentDescriptionTypes.Script
+            },
+            item.Components.Select(component => component.Type).ToArray());
+        Assert.Equal(new[] { "FirstScript", "SecondScript" }, item.ScriptComponents.Select(component => component.ScriptId).ToArray());
+        Assert.Equal(1.5d, item.ScriptComponents[0].Properties["speed"].Number);
+        Assert.True(item.ScriptComponents[0].Properties["enabled"].Boolean);
+        Assert.Equal("primary", item.ScriptComponents[0].Properties["label"].Text);
+        Assert.Empty(item.ScriptComponents[1].Properties);
+    }
+
+    [Fact]
+    public void JsonLoader_BlankScriptId_ReturnsMissingRequiredField()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Script",
+                        "scriptId": "   "
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.MissingRequiredField, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_UnsupportedScriptPropertyType_ReturnsInvalidJsonFailure()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Script",
+                        "scriptId": "RotateSelf",
+                        "properties": {
+                          "unsupported": {
+                            "x": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidJson, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonSceneDocumentStore_SaveAndLoad_PreservesScriptComponentsAndProperties()
+    {
+        var store = new JsonSceneDocumentStore();
+        var scenePath = GetTemporaryScenePath();
+        var document = CreateScriptDocument();
+
+        var saveResult = store.Save(scenePath, document);
+        var loadResult = store.Load(scenePath);
+
+        Assert.True(saveResult.IsSuccess);
+        Assert.True(loadResult.IsSuccess);
+        var components = loadResult.Document!.Scene.Objects[0].Components;
+        Assert.Equal(SceneFileComponentTypes.Script, components[1].Type);
+        Assert.Equal(SceneFileComponentTypes.Script, components[2].Type);
+        var firstScript = Assert.IsType<SceneFileScriptComponentDefinition>(components[1]);
+        var secondScript = Assert.IsType<SceneFileScriptComponentDefinition>(components[2]);
+        Assert.Equal("FirstScript", firstScript.ScriptId);
+        Assert.Equal("SecondScript", secondScript.ScriptId);
+        Assert.Equal(1.5d, firstScript.Properties["speed"].Number);
+        Assert.True(firstScript.Properties["enabled"].Boolean);
+        Assert.Equal("primary", firstScript.Properties["label"].Text);
+    }
+
+    [Fact]
+    public void JsonLoader_DuplicateComponentType_ReturnsInvalidValueFailure()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidValue, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_TransformOnlyObject_NormalizesWithoutMeshRenderer()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "empty-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.True(result.IsSuccess);
+        var item = Assert.Single(result.Scene!.Objects);
+        Assert.NotNull(item.TransformComponent);
+        Assert.Null(item.MeshRendererComponent);
+        Assert.Equal(SceneTransformDescription.Identity, item.LocalTransform);
+    }
+
+    [Fact]
+    public void JsonLoader_MissingTransform_ReturnsMissingRequiredField()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.MissingRequiredField, result.Failure!.Kind);
     }
 
     [Fact]
@@ -339,7 +668,7 @@ public sealed class SceneDataContractsTests
     public void SceneFileDocumentNormalizer_DefaultValues_MatchLoaderDefaults()
     {
         var document = new SceneFileDocument(
-            "1.0",
+            "2.0",
             new SceneFileDefinition(
                 "scene-a",
                 "",
@@ -545,7 +874,7 @@ public sealed class SceneDataContractsTests
     private static SceneFileDocument CreateSampleDocument()
     {
         return new SceneFileDocument(
-            "1.0",
+            "2.0",
             new SceneFileDefinition(
                 "sample-scene",
                 "Sample Scene",
@@ -575,8 +904,43 @@ public sealed class SceneDataContractsTests
 
         for (var index = 0; index < expected.Objects.Count; index += 1)
         {
-            Assert.Equal(expected.Objects[index], actual.Objects[index]);
+            Assert.Equal(expected.Objects[index].ObjectId, actual.Objects[index].ObjectId);
+            Assert.Equal(expected.Objects[index].ObjectName, actual.Objects[index].ObjectName);
+            Assert.Equal(expected.Objects[index].LocalTransform, actual.Objects[index].LocalTransform);
+            Assert.Equal(expected.Objects[index].MeshRendererComponent, actual.Objects[index].MeshRendererComponent);
+            Assert.Equal(
+                expected.Objects[index].ScriptComponents.Select(component => component.ScriptId).ToArray(),
+                actual.Objects[index].ScriptComponents.Select(component => component.ScriptId).ToArray());
         }
+    }
+
+    private static SceneFileDocument CreateScriptDocument()
+    {
+        return new SceneFileDocument(
+            "2.0",
+            new SceneFileDefinition(
+                "script-scene",
+                "Script Scene",
+                Camera: null,
+                new[]
+                {
+                    new SceneFileObjectDefinition(
+                        "cube",
+                        "Cube",
+                        new SceneFileComponentDefinition[]
+                        {
+                            new SceneFileTransformComponentDefinition(new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One)),
+                            new SceneFileScriptComponentDefinition(
+                                "FirstScript",
+                                new Dictionary<string, SceneFileScriptPropertyValue>
+                                {
+                                    ["speed"] = SceneFileScriptPropertyValue.FromNumber(1.5d),
+                                    ["enabled"] = SceneFileScriptPropertyValue.FromBoolean(true),
+                                    ["label"] = SceneFileScriptPropertyValue.FromString("primary")
+                                }),
+                            new SceneFileScriptComponentDefinition("SecondScript", null)
+                        })
+                }));
     }
 
     private sealed class StubSceneDescriptionLoader : ISceneDescriptionLoader

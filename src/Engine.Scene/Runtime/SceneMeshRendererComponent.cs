@@ -20,4 +20,10 @@ internal sealed class SceneMeshRendererComponent
         ArgumentNullException.ThrowIfNull(objectDescription);
         return new SceneMeshRendererComponent(objectDescription.Mesh, objectDescription.Material);
     }
+
+    public static SceneMeshRendererComponent FromDescription(SceneMeshRendererComponentDescription meshRendererDescription)
+    {
+        ArgumentNullException.ThrowIfNull(meshRendererDescription);
+        return new SceneMeshRendererComponent(meshRendererDescription.Mesh, meshRendererDescription.Material);
+    }
 }

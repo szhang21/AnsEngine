@@ -71,12 +71,33 @@ public sealed class EditorAppController
 
     public bool UpdateObjectResources(string objectId, string mesh, string? material)
     {
-        return CaptureResult(Session.UpdateObjectResources(objectId, mesh, material));
+        return UpdateObjectMeshRendererComponent(objectId, mesh, material);
+    }
+
+    public bool UpdateObjectMeshRendererComponent(string objectId, string mesh, string? material)
+    {
+        return CaptureResult(
+            Session.UpdateObjectMeshRendererComponent(
+                objectId,
+                new SceneFileMeshRendererComponentDefinition(mesh, material)));
     }
 
     public bool UpdateObjectTransform(string objectId, SceneFileTransformDefinition transform)
     {
-        return CaptureResult(Session.UpdateObjectTransform(objectId, transform));
+        return UpdateObjectTransformComponent(objectId, transform);
+    }
+
+    public bool UpdateObjectTransformComponent(string objectId, SceneFileTransformDefinition transform)
+    {
+        return CaptureResult(
+            Session.UpdateObjectTransformComponent(
+                objectId,
+                new SceneFileTransformComponentDefinition(transform)));
+    }
+
+    public bool RemoveObjectMeshRendererComponent(string objectId)
+    {
+        return CaptureResult(Session.RemoveObjectMeshRendererComponent(objectId));
     }
 
     public bool AddObject(SceneFileObjectDefinition objectDefinition)

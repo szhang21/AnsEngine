@@ -6,6 +6,7 @@ namespace Engine.SceneData;
 public static class SceneFileDocumentNormalizer
 {
     private const string kDefaultMaterialId = "material://default";
+    private const string kRequiredVersion = "2.0";
     private const float kDefaultFieldOfViewRadians = 1.0471976f;
     private static readonly SceneCameraDescription sDefaultCamera = new(
         new Vector3(0.0f, 0.0f, 2.2f),
@@ -21,6 +22,14 @@ public static class SceneFileDocumentNormalizer
             return Failure(
                 SceneDescriptionLoadFailureKind.MissingRequiredField,
                 "Scene document version is required.",
+                sceneFilePath);
+        }
+
+        if (!string.Equals(document.Version, kRequiredVersion, StringComparison.Ordinal))
+        {
+            return Failure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene document version must be '{kRequiredVersion}'.",
                 sceneFilePath);
         }
 
@@ -99,64 +108,81 @@ public static class SceneFileDocumentNormalizer
                 sceneFilePath);
         }
 
-        if (string.IsNullOrWhiteSpace(objectDefinition.Mesh))
+        if (objectDefinition.Components is null || objectDefinition.Components.Count == 0)
         {
             return Failure(
                 SceneDescriptionLoadFailureKind.MissingRequiredField,
-                $"Scene object '{objectDefinition.Id}' is missing required field 'mesh'.",
+                $"Scene object '{objectDefinition.Id}' is missing required field 'components'.",
                 sceneFilePath);
         }
 
-        if (!IsSceneReferenceId(objectDefinition.Mesh))
+        var transformComponent = GetSingleComponent<SceneFileTransformComponentDefinition>(
+            objectDefinition,
+            SceneFileComponentTypes.Transform,
+            sceneFilePath);
+        if (!transformComponent.IsSuccess)
+        {
+            return SceneDescriptionLoadResult.FailureResult(transformComponent.Failure!);
+        }
+
+        if (transformComponent.Component is null)
         {
             return Failure(
-                SceneDescriptionLoadFailureKind.InvalidReference,
-                $"Scene object '{objectDefinition.Id}' has invalid mesh reference format.",
+                SceneDescriptionLoadFailureKind.MissingRequiredField,
+                $"Scene object '{objectDefinition.Id}' is missing required component 'Transform'.",
                 sceneFilePath);
         }
 
-        SceneMeshRef mesh;
-        try
+        var meshRendererComponent = GetSingleComponent<SceneFileMeshRendererComponentDefinition>(
+            objectDefinition,
+            SceneFileComponentTypes.MeshRenderer,
+            sceneFilePath);
+        if (!meshRendererComponent.IsSuccess)
         {
-            mesh = new SceneMeshRef(objectDefinition.Mesh);
-        }
-        catch (ArgumentException ex)
-        {
-            return Failure(
-                SceneDescriptionLoadFailureKind.InvalidReference,
-                $"Scene object '{objectDefinition.Id}' has invalid mesh reference: {ex.Message}",
-                sceneFilePath);
+            return SceneDescriptionLoadResult.FailureResult(meshRendererComponent.Failure!);
         }
 
-        var materialId = string.IsNullOrWhiteSpace(objectDefinition.Material)
-            ? kDefaultMaterialId
-            : objectDefinition.Material;
-
-        if (!IsSceneReferenceId(materialId))
-        {
-            return Failure(
-                SceneDescriptionLoadFailureKind.InvalidReference,
-                $"Scene object '{objectDefinition.Id}' has invalid material reference format.",
-                sceneFilePath);
-        }
-
-        SceneMaterialRef material;
-        try
-        {
-            material = new SceneMaterialRef(materialId);
-        }
-        catch (ArgumentException ex)
-        {
-            return Failure(
-                SceneDescriptionLoadFailureKind.InvalidReference,
-                $"Scene object '{objectDefinition.Id}' has invalid material reference: {ex.Message}",
-                sceneFilePath);
-        }
-
-        var transformResult = NormalizeTransform(objectDefinition.Transform, sceneFilePath, objectDefinition.Id);
+        var transformResult = NormalizeTransform(transformComponent.Component.ToTransformDefinition(), sceneFilePath, objectDefinition.Id);
         if (!transformResult.IsSuccess)
         {
             return transformResult;
+        }
+
+        SceneMeshRendererComponentDescription? normalizedMeshRenderer = null;
+        if (meshRendererComponent.Component is not null)
+        {
+            var meshRendererResult = NormalizeMeshRenderer(meshRendererComponent.Component, sceneFilePath, objectDefinition.Id);
+            if (!meshRendererResult.IsSuccess)
+            {
+                return meshRendererResult.Result;
+            }
+
+            normalizedMeshRenderer = meshRendererResult.Component!;
+        }
+
+        var components = new List<SceneComponentDescription>();
+        foreach (var component in objectDefinition.Components)
+        {
+            switch (component)
+            {
+                case SceneFileTransformComponentDefinition:
+                    components.Add(new SceneTransformComponentDescription(transformResult.Scene!.Objects[0].LocalTransform));
+                    break;
+
+                case SceneFileMeshRendererComponentDefinition when meshRendererComponent.Component is not null:
+                    components.Add(normalizedMeshRenderer!);
+                    break;
+
+                case SceneFileScriptComponentDefinition scriptComponent:
+                    var scriptResult = NormalizeScript(scriptComponent, sceneFilePath, objectDefinition.Id);
+                    if (!scriptResult.IsSuccess)
+                    {
+                        return scriptResult.Result;
+                    }
+
+                    components.Add(scriptResult.Component!);
+                    break;
+            }
         }
 
         return SceneDescriptionLoadResult.Success(
@@ -169,10 +195,166 @@ public static class SceneFileDocumentNormalizer
                     new SceneObjectDescription(
                         objectDefinition.Id,
                         string.IsNullOrWhiteSpace(objectDefinition.Name) ? objectDefinition.Id : objectDefinition.Name,
-                        mesh,
-                        material,
-                        transformResult.Scene!.Objects[0].LocalTransform)
+                        components)
                 }));
+    }
+
+    private sealed record MeshRendererResult(
+        SceneMeshRendererComponentDescription? Component,
+        SceneDescriptionLoadResult Result)
+    {
+        public bool IsSuccess => Result.IsSuccess;
+    }
+
+    private sealed record ScriptResult(
+        SceneScriptComponentDescription? Component,
+        SceneDescriptionLoadResult Result)
+    {
+        public bool IsSuccess => Result.IsSuccess;
+    }
+
+    private static MeshRendererResult NormalizeMeshRenderer(
+        SceneFileMeshRendererComponentDefinition meshRenderer,
+        string sceneFilePath,
+        string objectId)
+    {
+        if (string.IsNullOrWhiteSpace(meshRenderer.Mesh))
+        {
+            return MeshRendererFailure(
+                SceneDescriptionLoadFailureKind.MissingRequiredField,
+                $"Scene object '{objectId}' is missing required field 'mesh'.",
+                sceneFilePath);
+        }
+
+        if (!IsSceneReferenceId(meshRenderer.Mesh))
+        {
+            return MeshRendererFailure(
+                SceneDescriptionLoadFailureKind.InvalidReference,
+                $"Scene object '{objectId}' has invalid mesh reference format.",
+                sceneFilePath);
+        }
+
+        SceneMeshRef mesh;
+        try
+        {
+            mesh = new SceneMeshRef(meshRenderer.Mesh);
+        }
+        catch (ArgumentException ex)
+        {
+            return MeshRendererFailure(
+                SceneDescriptionLoadFailureKind.InvalidReference,
+                $"Scene object '{objectId}' has invalid mesh reference: {ex.Message}",
+                sceneFilePath);
+        }
+
+        var materialId = string.IsNullOrWhiteSpace(meshRenderer.Material)
+            ? kDefaultMaterialId
+            : meshRenderer.Material;
+
+        if (!IsSceneReferenceId(materialId))
+        {
+            return MeshRendererFailure(
+                SceneDescriptionLoadFailureKind.InvalidReference,
+                $"Scene object '{objectId}' has invalid material reference format.",
+                sceneFilePath);
+        }
+
+        SceneMaterialRef material;
+        try
+        {
+            material = new SceneMaterialRef(materialId);
+        }
+        catch (ArgumentException ex)
+        {
+            return MeshRendererFailure(
+                SceneDescriptionLoadFailureKind.InvalidReference,
+                $"Scene object '{objectId}' has invalid material reference: {ex.Message}",
+                sceneFilePath);
+        }
+
+        return new MeshRendererResult(
+            new SceneMeshRendererComponentDescription(mesh, material),
+            SceneDescriptionLoadResult.Success(
+                new SceneDescription("mesh-renderer-normalization", "mesh-renderer-normalization", sDefaultCamera, Array.Empty<SceneObjectDescription>())));
+    }
+
+    private static MeshRendererResult MeshRendererFailure(
+        SceneDescriptionLoadFailureKind kind,
+        string message,
+        string path)
+    {
+        return new MeshRendererResult(null, Failure(kind, message, path));
+    }
+
+    private static ScriptResult NormalizeScript(
+        SceneFileScriptComponentDefinition script,
+        string sceneFilePath,
+        string objectId)
+    {
+        if (string.IsNullOrWhiteSpace(script.ScriptId))
+        {
+            return ScriptFailure(
+                SceneDescriptionLoadFailureKind.MissingRequiredField,
+                $"Scene object '{objectId}' has Script component with missing required field 'scriptId'.",
+                sceneFilePath);
+        }
+
+        var properties = new Dictionary<string, SceneScriptPropertyValue>(StringComparer.Ordinal);
+        foreach (var property in script.Properties)
+        {
+            if (string.IsNullOrWhiteSpace(property.Key))
+            {
+                return ScriptFailure(
+                    SceneDescriptionLoadFailureKind.InvalidValue,
+                    $"Scene object '{objectId}' Script '{script.ScriptId}' has an empty property name.",
+                    sceneFilePath);
+            }
+
+            var value = property.Value;
+            if (value.IsNumber)
+            {
+                if (!value.Number.HasValue || !double.IsFinite(value.Number.Value))
+                {
+                    return ScriptFailure(
+                        SceneDescriptionLoadFailureKind.InvalidValue,
+                        $"Scene object '{objectId}' Script '{script.ScriptId}' property '{property.Key}' must be a finite number.",
+                        sceneFilePath);
+                }
+
+                properties[property.Key] = SceneScriptPropertyValue.FromNumber(value.Number.Value);
+                continue;
+            }
+
+            if (value.IsBoolean)
+            {
+                properties[property.Key] = SceneScriptPropertyValue.FromBoolean(value.Boolean!.Value);
+                continue;
+            }
+
+            if (value.IsString)
+            {
+                properties[property.Key] = SceneScriptPropertyValue.FromString(value.Text ?? string.Empty);
+                continue;
+            }
+
+            return ScriptFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' Script '{script.ScriptId}' property '{property.Key}' has unsupported value type.",
+                sceneFilePath);
+        }
+
+        return new ScriptResult(
+            new SceneScriptComponentDescription(script.ScriptId, properties),
+            SceneDescriptionLoadResult.Success(
+                new SceneDescription("script-normalization", "script-normalization", sDefaultCamera, Array.Empty<SceneObjectDescription>())));
+    }
+
+    private static ScriptResult ScriptFailure(
+        SceneDescriptionLoadFailureKind kind,
+        string message,
+        string path)
+    {
+        return new ScriptResult(null, Failure(kind, message, path));
     }
 
     private static SceneDescriptionLoadResult NormalizeTransform(
@@ -206,6 +388,52 @@ public static class SceneFileDocumentNormalizer
                         new SceneMaterialRef(kDefaultMaterialId),
                         new SceneTransformDescription(position, rotation, scale))
                 }));
+    }
+
+    private sealed record ComponentResult<TComponent>(TComponent? Component, SceneDescriptionLoadFailure? Failure)
+        where TComponent : SceneFileComponentDefinition
+    {
+        public bool IsSuccess => Failure is null;
+    }
+
+    private static ComponentResult<TComponent> GetSingleComponent<TComponent>(
+        SceneFileObjectDefinition objectDefinition,
+        string componentType,
+        string sceneFilePath)
+        where TComponent : SceneFileComponentDefinition
+    {
+        SceneFileComponentDefinition? found = null;
+        foreach (var component in objectDefinition.Components)
+        {
+            if (!IsSupportedComponentType(component.Type))
+            {
+                return new ComponentResult<TComponent>(
+                    null,
+                    new SceneDescriptionLoadFailure(
+                        SceneDescriptionLoadFailureKind.InvalidValue,
+                        $"Scene object '{objectDefinition.Id}' has unknown component type '{component.Type}'.",
+                        sceneFilePath));
+            }
+
+            if (!string.Equals(component.Type, componentType, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (found is not null)
+            {
+                return new ComponentResult<TComponent>(
+                    null,
+                    new SceneDescriptionLoadFailure(
+                        SceneDescriptionLoadFailureKind.InvalidValue,
+                        $"Scene object '{objectDefinition.Id}' has duplicate component type '{componentType}'.",
+                        sceneFilePath));
+            }
+
+            found = component;
+        }
+
+        return new ComponentResult<TComponent>((TComponent?)found, null);
     }
 
     private static SceneDescriptionLoadResult NormalizeCamera(
@@ -271,5 +499,12 @@ public static class SceneFileDocumentNormalizer
     {
         var separatorIndex = value.IndexOf("://", StringComparison.Ordinal);
         return separatorIndex > 0 && separatorIndex < value.Length - 3;
+    }
+
+    private static bool IsSupportedComponentType(string type)
+    {
+        return string.Equals(type, SceneFileComponentTypes.Transform, StringComparison.Ordinal) ||
+               string.Equals(type, SceneFileComponentTypes.MeshRenderer, StringComparison.Ordinal) ||
+               string.Equals(type, SceneFileComponentTypes.Script, StringComparison.Ordinal);
     }
 }

@@ -12,6 +12,7 @@ public sealed class SceneBoundaryTests
         var projectFile = File.ReadAllText(FindRepositoryFile("src", "Engine.Scene", "Engine.Scene.csproj"));
 
         Assert.DoesNotContain("Engine.Render", projectFile);
+        Assert.DoesNotContain("Engine.Scripting", projectFile);
         Assert.DoesNotContain("Engine.Asset", projectFile);
         Assert.DoesNotContain("Engine.App", projectFile);
         Assert.DoesNotContain("Engine.Editor", projectFile);
@@ -31,6 +32,7 @@ public sealed class SceneBoundaryTests
                 .Select(File.ReadAllText));
 
         Assert.DoesNotContain("Engine.Platform", sourceText);
+        Assert.DoesNotContain("Engine.Scripting", sourceText);
         Assert.DoesNotContain("Engine.Render", sourceText);
         Assert.DoesNotContain("Engine.App", sourceText);
     }

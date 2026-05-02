@@ -37,6 +37,11 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         return mRuntimeScene.FindObject(objectId);
     }
 
+    public SceneScriptObjectBindResult BindScriptObject(string objectId)
+    {
+        return mRuntimeScene.BindScriptObject(objectId);
+    }
+
     public void AddRootNode()
     {
         _ = mRuntimeInfo.EngineName;

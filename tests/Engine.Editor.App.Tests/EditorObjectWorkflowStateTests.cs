@@ -17,10 +17,10 @@ public sealed class EditorObjectWorkflowStateTests
         Assert.True(controller.Session.IsDirty);
         Assert.Equal("object-001", controller.Session.SelectedObjectId);
         var selectedObject = controller.Session.SelectedObject!;
-        Assert.Equal("mesh://cube", selectedObject.Mesh.MeshId);
-        Assert.Equal("material://default", selectedObject.Material.MaterialId);
-        Assert.Equal(System.Numerics.Vector3.Zero, selectedObject.LocalTransform.Position);
-        Assert.Equal(System.Numerics.Vector3.One, selectedObject.LocalTransform.Scale);
+        Assert.Equal("mesh://cube", selectedObject.MeshRendererComponent!.Mesh.MeshId);
+        Assert.Equal("material://default", selectedObject.MeshRendererComponent.Material.MaterialId);
+        Assert.Equal(System.Numerics.Vector3.Zero, selectedObject.TransformComponent!.Transform.Position);
+        Assert.Equal(System.Numerics.Vector3.One, selectedObject.TransformComponent.Transform.Scale);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class EditorObjectWorkflowStateTests
             scenePath,
             """
             {
-              "version": "1.0",
+              "version": "2.0",
               "scene": {
                 "id": "editor-app-test-scene",
                 "name": "Editor App Test Scene",
@@ -113,8 +113,16 @@ public sealed class EditorObjectWorkflowStateTests
                   {
                     "id": "cube-main",
                     "name": "Cube Main",
-                    "mesh": "mesh://cube",
-                    "material": "material://highlight"
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "MeshRenderer",
+                        "mesh": "mesh://cube",
+                        "material": "material://highlight"
+                      }
+                    ]
                   }
                 ]
               }

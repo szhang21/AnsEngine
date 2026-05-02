@@ -17,9 +17,12 @@ public sealed class EditorDefaultObjectFactory
         return new SceneFileObjectDefinition(
             objectId,
             objectId,
-            kDefaultMesh,
-            kDefaultMaterial,
-            new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One));
+            new SceneFileComponentDefinition[]
+            {
+                new SceneFileTransformComponentDefinition(
+                    new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One)),
+                new SceneFileMeshRendererComponentDefinition(kDefaultMesh, kDefaultMaterial)
+            });
     }
 
     private static string CreateNextObjectId(IReadOnlyList<EditorHierarchyItemSnapshot> existingObjects)
