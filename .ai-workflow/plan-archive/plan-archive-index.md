@@ -12,6 +12,18 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M17-2026-05-02`
+  Status: `Active`
+  LastUpdated: `2026-05-02 13:36`
+  MilestoneSummary: `M17 进行中（Scripting Foundation，Engine.Scripting 模块、Script component schema、Scene bridge 与 RotateSelf sample）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M17-2026-05-02.md`
+
+- PlanId: `PLAN-M16-2026-05-02`
+  Status: `Closed`
+  LastUpdated: `2026-05-02 13:38`
+  MilestoneSummary: `M16 完成（Component Serialization Bridge，Scene JSON 2.0 component array schema、runtime bridge 与 Editor component groups 收口）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M16-2026-05-02.md`
+
 - PlanId: `PLAN-M15-2026-05-01`
   Status: `Closed`
   LastUpdated: `2026-05-02 02:43`

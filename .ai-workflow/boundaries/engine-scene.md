@@ -81,6 +81,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：新增 Scene script self-transform bridge：`SceneGraphService.BindScriptObject` 返回绑定到单个 runtime object 的 `SceneScriptObjectHandle`，只暴露 object id/name 与自身 local transform get/set；移除 M15 默认旋转 smoke behavior。
+  - 变更原因：支撑 `TASK-SCENE-019`，让 M17 scripting runtime 后续可通过窄 Scene bridge 修改绑定对象自身 Transform，同时保持 `Engine.Scene` 不引用 `Engine.Scripting`。
+  - 风险与回滚方案：当前不实现 script registry/runtime 或 App 执行，只提供 Scene 侧访问桥；若后续需要脚本绑定顺序或 runtime 调度，应在 `Engine.Scripting`/`Engine.App` 侧接线，不把 `Engine.Scripting` 依赖引入 Scene。
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：`RuntimeScene.LoadFromDescription(...)` 改为消费 SceneData normalized component descriptions 构建 runtime transform/mesh renderer components；Transform-only object 会进入 runtime snapshot 且 `HasMeshRenderer=false`，但不会进入 render frame。
+  - 变更原因：支撑 `TASK-SCENE-018`，把 M16 component descriptions 桥接到 Scene runtime object/component model，同时保持 Render 只消费 `SceneRenderFrame`。
+  - 风险与回滚方案：bridge 不读取 JSON/file DTO，不改变 M15 update 选择规则；若后续组件类型扩展，应继续在 Scene 内部做 normalized description 到 runtime component 的映射，不让 Render 感知 schema。
 - 2026-05-01
   - 变更人：Execution-Agent
   - 变更内容：`RuntimeSceneSnapshot` 新增只读诊断字段 `UpdateFrameCount` 与 `AccumulatedUpdateSeconds`，并补充 Scene/App/Render 边界测试，确认 update context 与 runtime scene/object/component 类型不泄露到 Render，App 仍通过 runtime abstraction 驱动 update。

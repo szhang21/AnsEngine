@@ -89,6 +89,21 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：新增 repeatable `Script` component file model 与 normalized `SceneScriptComponentDescription`；`Script` 支持 `scriptId` 与 number/bool/string properties，多个 Script component 按文件顺序保留。
+  - 变更原因：支撑 `TASK-SDATA-008`，让 M17 scripting foundation 进入正式 scene data schema，同时保持 SceneData 不依赖 `Engine.Scripting` runtime 类型。
+  - 风险与回滚方案：SceneData 只验证 schema 和基础类型，不查 registry 或脚本业务属性；若后续需要脚本注册校验，应在 Scripting/Scene/App binding 层处理，不把 runtime 依赖引入 SceneData。
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneObjectDescription` 迁移为 normalized component descriptions，新增 `SceneTransformComponentDescription` 与 `SceneMeshRendererComponentDescription`；normalizer 收口 Transform 必需、MeshRenderer 可选、重复/未知组件失败、默认材质回退与 Transform-only object 语义。
+  - 变更原因：支撑 `TASK-SDATA-007`，把 M16 文件层 component schema 收敛为稳定 normalized model，供后续 Scene runtime bridge 和 Editor component API 消费。
+  - 风险与回滚方案：旧扁平 `Mesh/Material/LocalTransform` 仅作为短期只读投影保留；后续卡应改为读取 component descriptions，不把 runtime component 类型引入 SceneData。
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：场景文件 schema 迁移到 `version: "2.0"` component array；新增 `SceneFileComponentDefinition`、`Transform`/`MeshRenderer` 文件组件 DTO 与 JSON type-based 读写，默认 app/sample scene 也同步迁移为 component schema。
+  - 变更原因：支撑 `TASK-SDATA-006`，为 M16 component serialization bridge 建立文件层地基，并明确旧 `1.0` 扁平对象格式不再兼容。
+  - 风险与回滚方案：短期保留旧扁平属性的 `JsonIgnore` 投影以维持下游编译表面，但 JSON 主路径只写 `components`；后续 normalized/editor 卡继续迁移主 API，不回退 `1.0` 双轨兼容。
 - 2026-04-28
   - 变更人：Execution-Agent
   - 变更内容：新增 `ISceneDocumentStore`、`JsonSceneDocumentStore` 与文档级读写结果类型，支持 `SceneFileDocument` 的 JSON 读取、保存和显式读写失败语义；运行时 `ISceneDescriptionLoader` 保持为规范化加载入口。

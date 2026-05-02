@@ -10,7 +10,7 @@
 
 ## 2) 目标与范围
 
-- 模块目标：为 M13 GUI 编辑器提供可直接消费的无界面编辑器核心，负责场景编辑会话、dirty/selection 状态、编辑命令编排、保存与 reload 验证。
+- 模块目标：为 M13/M16 GUI 编辑器提供可直接消费的无界面编辑器核心，负责场景编辑会话、component-based editing、dirty/selection 状态、编辑命令编排、保存与 reload 验证。
 - 适用范围：打开中的场景 session、当前路径、当前文档快照、规范化场景快照、显式编辑结果、显式失败语义、保存与另存为工作流。
 - 非适用范围：GUI、窗口、输入事件、鼠标拾取、渲染高亮、OpenGL、运行时场景对象、Undo/Redo、资源浏览器、asset existence 校验、App 默认启动路径改造。
 
@@ -53,7 +53,7 @@
 
 - `SceneEditorSession`
   - 用途：承载打开中的场景编辑会话与显式工作流入口
-  - 输入/输出：查询 `HasDocument`、`SceneFilePath`、`IsDirty`、`SelectedObjectId`、`Document`、`Scene`、`Objects`、`SelectedObject`；操作 `Open`、`Close`、`SelectObject`、`ClearSelection`、`AddObject`、`RemoveObject`、`RemoveSelectedObject`、`UpdateObjectId`、`UpdateObjectName`、`UpdateObjectResources`、`UpdateObjectTransform`、`Save`、`SaveAs`、`ReloadValidate`
+  - 输入/输出：查询 `HasDocument`、`SceneFilePath`、`IsDirty`、`SelectedObjectId`、`Document`、`Scene`、`Objects`、`SelectedObject`；操作 `Open`、`Close`、`SelectObject`、`ClearSelection`、`AddObject`、`RemoveObject`、`RemoveSelectedObject`、`UpdateObjectId`、`UpdateObjectName`、`UpdateObjectTransformComponent`、`UpdateObjectMeshRendererComponent`、`RemoveObjectMeshRendererComponent`、`Save`、`SaveAs`、`ReloadValidate`
   - 错误语义：所有失败通过显式 `SceneEditorSessionResult` / `SceneEditorFailure` 表达，不以 `bool/null` 作为主语义
   - 生命周期约束：单 session 持有当前文档、当前规范化场景与逻辑选中态，不持有 GUI 或运行时渲染资源
 
@@ -89,6 +89,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneEditorSession` headless core 新增 component-based editing 入口：默认 `AddObject(string, string)` 创建 Transform + MeshRenderer，Transform/MeshRenderer 通过组件方法更新，MeshRenderer 可移除以保留 Transform-only object；旧扁平 `UpdateObjectResources` / `UpdateObjectTransform` 仅作为短期兼容桥接。
+  - 变更原因：支撑 `TASK-EDITOR-005`，让 M16 headless editor core 可打开、选择、保存 Transform-only object，并避免保存/reload 自动补 optional MeshRenderer。
+  - 风险与回滚方案：当前不修改 `Engine.Editor.App` GUI/测试夹具；下游 GUI 仍需在后续任务迁移旧 `version: "1.0"` 测试数据与 Inspector component 分组。若 component API 语义需要调整，应保持 Editor 无 App/Render/Platform/Asset 依赖，并由 SceneData normalizer 继续负责 schema 校验。
 - 2026-04-30
   - 变更人：Execution-Agent
   - 变更内容：`SceneEditorSession` 新增 `Save` 与 `SaveAs`，保存成功需完成写盘后 reload/normalize 验证，另存为成功后切换当前路径并清 dirty。

@@ -17,7 +17,8 @@
 
 ## Todo
 
-- （空）
+- `TASK-APP-011` M17 App scripting runtime integration and RotateSelf sample
+- `TASK-QA-018` M17 Scripting Foundation gate review and archive
 
 ## InProgress
 
@@ -29,9 +30,18 @@
 
 ## Review
 
-- （空）
+- `TASK-SCRIPT-001` M17 Engine.Scripting module and script lifecycle foundation（Build/Test/Smoke/Boundary 通过，待人工复验）
+- `TASK-SDATA-008` M17 SceneData Script component schema and validation（Build/Test/Smoke/Boundary 通过，待人工复验）
+- `TASK-SCENE-019` M17 Scene script access bridge（Build/Test/Smoke/Boundary 通过，待人工复验）
 
 ## Done
+
+- `TASK-QA-017` M16 Component Serialization Bridge 门禁复验与归档（人工验收通过，已归档）
+- `TASK-EAPP-008` M16 Inspector component groups integration（人工验收通过，已归档）
+- `TASK-EDITOR-005` M16 Editor component API migration（人工验收通过，已归档）
+- `TASK-SCENE-018` M16 Scene runtime component bridge（人工验收通过，已归档）
+- `TASK-SDATA-007` M16 normalized component descriptions and validation（人工验收通过，已归档）
+- `TASK-SDATA-006` M16 SceneData component file schema（人工验收通过，已归档）
 
 - `TASK-QA-016` M15 Runtime Update Pipeline 门禁复验与归档（人工验收通过，已归档）
 - `TASK-SCENE-017` M15 Runtime snapshot 诊断与边界测试（人工验收通过，已归档）

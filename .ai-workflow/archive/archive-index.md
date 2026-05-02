@@ -48,6 +48,210 @@
 
 ### 当前记录
 
+- TaskId: `TASK-SCENE-019`
+  Title: `M17 Scene script access bridge`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-02 15:00`
+  Status: `Review`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added narrow self-transform script bridge bound to one runtime object
+    - Removed M15 default rotation smoke behavior from runtime update
+    - Kept `Engine.Scene` free of `Engine.Scripting` dependency
+  FilesChanged:
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/Runtime/SceneScriptObjectHandle.cs`
+    - `src/Engine.Scene/Runtime/SceneScriptObjectBindFailure.cs`
+    - `src/Engine.Scene/Runtime/SceneScriptObjectBindFailureKind.cs`
+    - `src/Engine.Scene/Runtime/SceneScriptObjectBindResult.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `tests/Engine.Scene.Tests/SceneBoundaryTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-019.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Engine.Scene.Tests 52 条通过；Engine.Scripting.Tests 10 条通过）
+    - Smoke: pass（self-transform bridge 修改可被 snapshot/render frame 观察；默认 update 不再旋转）
+    - Perf: pass（无逐帧 JSON、任意对象查询或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-019.md`
+
+- TaskId: `TASK-SDATA-008`
+  Title: `M17 SceneData Script component schema and validation`
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-05-02 14:09`
+  Status: `Review`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added repeatable `Script` component schema with `scriptId` and number/bool/string properties
+    - Added normalized `SceneScriptComponentDescription` and preserved Script component order
+    - Updated default sample scene with `RotateSelf` declaration without runtime binding
+  FilesChanged:
+    - `src/Engine.SceneData/FileModel/SceneFileComponentDefinition.cs`
+    - `src/Engine.SceneData/FileModel/SceneFileScriptPropertyValue.cs`
+    - `src/Engine.SceneData/Descriptions/SceneComponentDescription.cs`
+    - `src/Engine.SceneData/Descriptions/SceneObjectDescription.cs`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `src/Engine.App/SampleScenes/default.scene.json`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/tasks/task-sdata-008.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Engine.SceneData.Tests 37 条通过）
+    - Smoke: pass（Script serialize/deserialize、order preservation、failure paths、sample declaration 覆盖）
+    - Perf: pass（无 registry 查询、反射绑定、逐帧 JSON 或跨模块 runtime 查询）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SDATA-008.md`
+
+- TaskId: `TASK-SCRIPT-001`
+  Title: `M17 Engine.Scripting module and script lifecycle foundation`
+  Priority: `P0`
+  PrimaryModule: `Engine.Scripting`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-Scripting`
+  ClosedAt: `2026-05-02 14:04`
+  Status: `Review`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `Engine.Scripting` module and tests to the solution
+    - Implemented built-in script registry, context/property model, lifecycle runtime, and explicit diagnostic failures
+    - Added narrow self-transform access surface without external DLL/source compilation/hot reload support
+  FilesChanged:
+    - `src/Engine.Scripting/**`
+    - `tests/Engine.Scripting.Tests/**`
+    - `AnsEngine.sln`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/tasks/task-script-001.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Engine.Scripting.Tests 10 条通过）
+    - Smoke: pass（register/create/lifecycle/failure/self-transform mutation 覆盖）
+    - Perf: pass（无逐帧程序集扫描、源码编译、全场景查询或 JSON 解析）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-001.md`
+
+- TaskId: `TASK-EAPP-008`
+  Title: `M16 Inspector component groups integration`
+  Priority: `P1`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-05-02 12:43`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Inspector migrated to `Object` / `Transform` / `MeshRenderer` component groups
+    - GUI submissions route through component session APIs and preserve Transform-only objects
+    - Editor.App tests/fixtures migrated to M16 `version: "2.0"` component arrays
+  FilesChanged:
+    - `src/Engine.Editor.App/EditorInspectorSnapshot.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
+    - `src/Engine.Editor.App/EditorInspectorInputState.cs`
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `src/Engine.Editor.App/EditorAppController.cs`
+    - `src/Engine.Editor.App/EditorDefaultObjectFactory.cs`
+    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorInspectorInputStateTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorObjectWorkflowStateTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorFileWorkflowStateTests.cs`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-008.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Engine.Editor.App.Tests 33 条通过）
+    - Smoke: pass（auto-exit Editor.App run 退出码 0；Transform-only Inspector 空状态与不自动补 MeshRenderer 已覆盖）
+    - Perf: pass（无逐帧文件写入或 sample scene reload polling）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EAPP-008.md`
+
+- TaskId: `TASK-EDITOR-005`
+  Title: `M16 Editor component API migration`
+  Priority: `P1`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-05-02 12:37`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneEditorSession` headless edit path migrated to component operations for Transform and MeshRenderer
+    - Transform-only objects can open/select/save without auto-adding MeshRenderer
+    - Default add-object factory creates Transform + MeshRenderer; GUI Inspector migration deferred to `TASK-EAPP-008`
+  FilesChanged:
+    - `src/Engine.Editor/Session/SceneEditorSession.cs`
+    - `tests/Engine.Editor.Tests/SceneEditorSessionTests.cs`
+    - `.ai-workflow/boundaries/engine-editor.md`
+    - `.ai-workflow/tasks/task-editor-005.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Engine.Editor.Tests 30 条通过）
+    - Smoke: pass（Transform-only object 可打开、选择、保存且不自动补 MeshRenderer；新增对象默认可见）
+    - Perf: pass（无逐帧 IO 或 GUI 依赖渗入）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EDITOR-005.md`
+
+- TaskId: `TASK-SCENE-018`
+  Title: `M16 Scene runtime component bridge`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-02 11:48`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `RuntimeScene.LoadFromDescription(...)` 从 normalized component descriptions 构建 runtime Transform/MeshRenderer components
+    - Transform-only object 进入 runtime snapshot，`HasMeshRenderer=false`，且不进入 render items
+    - M15 默认旋转仍只选择首个同时具备 Transform 与 MeshRenderer 的可渲染 object
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/Runtime/SceneTransformComponent.cs`
+    - `src/Engine.Scene/Runtime/SceneMeshRendererComponent.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-018.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Scene.Tests 48 条通过；Render.Tests 18 条通过；App.Tests 9 条通过）
+    - Smoke: pass（Transform-only snapshot/render filtering/update behavior 均有覆盖）
+    - Perf: pass（无逐帧 JSON/file IO、对象重建或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-018.md`
+
+- TaskId: `TASK-QA-017`
+  Title: `M16 Component Serialization Bridge 门禁复验与归档`
+  Priority: `P3`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-02 15:00`
+  Status: `Done`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - M16 全量 Build/Test 与 SceneData/Scene/Editor/Editor.App/App/Render 回归通过
+    - 确认 `2.0` component array schema、normalized component model、runtime bridge、Editor headless component API 与 Inspector component groups 全链路打通
+    - Transform-only object 可加载/编辑/保存但不渲染，且未越界到脚本/物理/动画/Prefab/Play Mode
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-editor.md`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-qa-017.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-017.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-SDATA-006`、`TASK-SDATA-007`、`TASK-SCENE-018`、`TASK-EDITOR-005`、`TASK-EAPP-008` 的构建通过证据）
+    - Test: pass（沿用 SceneData/Scene/Editor/Editor.App/App/Render 相关测试通过证据）
+    - Smoke: pass（综合 `2.0` sample scene 运行、Transform-only object load/edit/save but not render、Inspector component groups、headless app smoke 与 Editor.App auto-exit 证据）
+    - Perf: pass（无新增逐帧 JSON 解析、双重 normalize、自动补组件轮询或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-017.md`
+
 - TaskId: `TASK-SCENE-013`
   Title: `M14 RuntimeScene 到 SceneRenderFrame 输出`
   Priority: `P2`
@@ -2083,6 +2287,70 @@
     - Smoke: pass（snapshot 可观察 update 统计；Render 不感知 update context/runtime scene 类型）
     - Perf: pass（snapshot 诊断不引入 scene rebuild、文件 IO 或 render side effect）
   SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-017.md`
+
+- TaskId: `TASK-SDATA-007`
+  Title: M16 normalized component descriptions and validation
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-05-02 11:44`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - `SceneObjectDescription` 迁移为 normalized component descriptions
+    - Transform 必需，MeshRenderer 可选
+    - duplicate/unknown component fail，material 空白默认 `material://default`
+  FilesChanged:
+    - `src/Engine.SceneData/Descriptions/SceneComponentDescription.cs`
+    - `src/Engine.SceneData/Descriptions/SceneObjectDescription.cs`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/tasks/task-sdata-007.md`
+    - `.ai-workflow/archive/2026-05/TASK-SDATA-007.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj --no-restore --nologo -v minimal`，33 条通过）
+    - Smoke: pass（Transform-only normalize 成功；缺 Transform 失败；默认材质回退）
+    - Perf: pass（无逐帧解析或跨模块回调）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SDATA-007.md`
+
+- TaskId: `TASK-SDATA-006`
+  Title: M16 SceneData component file schema
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-05-02 11:40`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Scene JSON 文件层迁移到 `version: "2.0"` component array schema
+    - 支持固定 `Transform` / `MeshRenderer` Pascal `type` 读写
+    - 旧 `version: "1.0"` 扁平对象格式加载失败
+  FilesChanged:
+    - `src/Engine.SceneData/FileModel/SceneFileComponentDefinition.cs`
+    - `src/Engine.SceneData/FileModel/SceneFileObjectDefinition.cs`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `tests/Engine.SceneData.Tests/SampleScenes/sample.scene.json`
+    - `src/Engine.App/SampleScenes/default.scene.json`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/tasks/task-sdata-006.md`
+    - `.ai-workflow/archive/2026-05/TASK-SDATA-006.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --no-restore --nologo -v minimal`）
+    - Test: pass（`dotnet test tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj --no-restore --nologo -v minimal`，31 条通过）
+    - Smoke: pass（sample scenes 为 `2.0` + `components`，保存不写旧 object-level 字段）
+    - Perf: pass（无逐帧 JSON 解析）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SDATA-006.md`
 
 - TaskId: `TASK-QA-016`
   Title: M15 Runtime Update Pipeline 门禁复验与归档

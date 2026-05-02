@@ -11,7 +11,7 @@
 ## 2) 目标与范围
 
 - 模块目标：提供独立可执行的 GUI 编辑器宿主，将用户输入编排到 `Engine.Editor.SceneEditorSession`。
-- 适用范围：窗口主循环、GUI 宿主、工具栏、Hierarchy、Inspector、状态栏、路径解析、用户操作到 editor session 的编排。
+- 适用范围：窗口主循环、GUI 宿主、工具栏、Hierarchy、component-group Inspector、状态栏、路径解析、用户操作到 editor session 的编排。
 - 非适用范围：底层 JSON 编辑规则、SceneData normalizer 规则、运行时游戏入口、Render 主路径、Gizmo、Undo/Redo、资源浏览器、Prefab、热重载或 Play Mode。
 
 ## 3) 职责（Responsibilities）
@@ -19,7 +19,7 @@
 - 负责创建并运行编辑器窗口。
 - 负责装配 `SceneEditorSession` 并默认打开源码目录 sample scene。
 - 负责承载 GUI 依赖，包括 OpenTK 与 ImGui.NET。
-- 负责把 GUI 操作转发给 `SceneEditorSession`，并展示路径、dirty、selection 与 last error。
+- 负责把 GUI 操作转发给 `SceneEditorSession`，并展示路径、dirty、selection、component groups 与 last error。
 
 ## 4) 非职责（Non-Responsibilities）
 
@@ -87,6 +87,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：Inspector 迁移为 `Object` / `Transform` / `MeshRenderer` component groups，GUI snapshot 和输入缓冲按组件组织；Transform-only object 显示明确 no-`MeshRenderer` 状态，提交时不自动补 MeshRenderer；默认 Add Object 仍创建 Transform + MeshRenderer。
+  - 变更原因：支撑 `TASK-EAPP-008`，完成 M16 GUI 侧 component schema 展示与编辑链路，修复旧扁平 Inspector 与 `version: "1.0"` 测试夹具滞后问题。
+  - 风险与回滚方案：当前不新增 MeshRenderer 组件添加按钮，仅显示合法缺省并避免自动修复；若后续需要从 GUI 显式添加/移除组件，应另立卡扩展，并继续通过 `SceneEditorSession` component API。
 - 2026-05-01
   - 变更人：Execution-Agent
   - 变更内容：将 Editor GUI 收敛为固定停靠布局，Toolbar 顶部、Hierarchy 左侧、Workspace 中央留白、Inspector 右侧、Status Bar 底部，并将布局尺寸写入可测试 GUI snapshot。
