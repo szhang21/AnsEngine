@@ -2,7 +2,7 @@ using Engine.Contracts;
 
 namespace Engine.Scripting;
 
-public interface IScriptSelfTransform
+public interface IScriptTransformComponent
 {
     SceneTransform LocalTransform { get; }
 

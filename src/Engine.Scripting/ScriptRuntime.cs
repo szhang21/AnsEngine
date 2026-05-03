@@ -34,7 +34,7 @@ public sealed class ScriptRuntime
             var context = new ScriptContext(
                 binding.ObjectId,
                 binding.ObjectName,
-                binding.SelfTransform,
+                binding.Self,
                 binding.Properties,
                 0.0d,
                 0.0d);

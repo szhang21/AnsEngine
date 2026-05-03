@@ -289,12 +289,12 @@ public sealed class ApplicationHost : IApplication
                 }
 
                 bindings.Add(
-                    new ScriptBindingDescription(
-                        sceneObject.ObjectId,
-                        sceneObject.ObjectName,
-                        new SceneScriptSelfTransform(bindObjectResult.Handle!),
-                        scriptComponent.ScriptId,
-                        ConvertProperties(scriptComponent.Properties)));
+                        new ScriptBindingDescription(
+                            sceneObject.ObjectId,
+                            sceneObject.ObjectName,
+                            new SceneScriptSelfObject(bindObjectResult.Handle!),
+                            scriptComponent.ScriptId,
+                            ConvertProperties(scriptComponent.Properties)));
             }
         }
 
@@ -341,11 +341,21 @@ public sealed class ApplicationHost : IApplication
     }
 }
 
-internal sealed class SceneScriptSelfTransform : IScriptSelfTransform
+internal sealed class SceneScriptSelfObject : IScriptSelfObject
+{
+    public SceneScriptSelfObject(SceneScriptObjectHandle handle)
+    {
+        Transform = new SceneScriptTransformComponent(handle);
+    }
+
+    public IScriptTransformComponent Transform { get; }
+}
+
+internal sealed class SceneScriptTransformComponent : IScriptTransformComponent
 {
     private readonly SceneScriptObjectHandle mHandle;
 
-    public SceneScriptSelfTransform(SceneScriptObjectHandle handle)
+    public SceneScriptTransformComponent(SceneScriptObjectHandle handle)
     {
         mHandle = handle ?? throw new ArgumentNullException(nameof(handle));
     }
@@ -372,8 +382,8 @@ public sealed class RotateSelfScript : IScriptBehavior
     {
         var speed = ReadSpeed(context);
         var rotationDelta = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)(context.DeltaSeconds * speed));
-        var transform = context.SelfTransform.LocalTransform;
-        context.SelfTransform.SetLocalTransform(transform with
+        var transform = context.Self.Transform.LocalTransform;
+        context.Self.Transform.SetLocalTransform(transform with
         {
             Rotation = Quaternion.Normalize(rotationDelta * transform.Rotation)
         });

@@ -5,7 +5,7 @@ public sealed class ScriptContext
     public ScriptContext(
         string objectId,
         string objectName,
-        IScriptSelfTransform selfTransform,
+        IScriptSelfObject self,
         IReadOnlyDictionary<string, ScriptPropertyValue> properties,
         double deltaSeconds,
         double totalSeconds)
@@ -14,7 +14,7 @@ public sealed class ScriptContext
             ? throw new ArgumentException("Script object id is required.", nameof(objectId))
             : objectId;
         ObjectName = objectName ?? string.Empty;
-        SelfTransform = selfTransform ?? throw new ArgumentNullException(nameof(selfTransform));
+        Self = self ?? throw new ArgumentNullException(nameof(self));
         Properties = properties ?? throw new ArgumentNullException(nameof(properties));
         DeltaSeconds = deltaSeconds;
         TotalSeconds = totalSeconds;
@@ -24,7 +24,7 @@ public sealed class ScriptContext
 
     public string ObjectName { get; }
 
-    public IScriptSelfTransform SelfTransform { get; }
+    public IScriptSelfObject Self { get; }
 
     public IReadOnlyDictionary<string, ScriptPropertyValue> Properties { get; }
 
@@ -34,6 +34,6 @@ public sealed class ScriptContext
 
     public ScriptContext WithTiming(double deltaSeconds, double totalSeconds)
     {
-        return new ScriptContext(ObjectId, ObjectName, SelfTransform, Properties, deltaSeconds, totalSeconds);
+        return new ScriptContext(ObjectId, ObjectName, Self, Properties, deltaSeconds, totalSeconds);
     }
 }

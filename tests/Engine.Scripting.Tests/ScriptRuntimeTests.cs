@@ -101,19 +101,19 @@ public sealed class ScriptRuntimeTests
     }
 
     [Fact]
-    public void Update_ScriptCanChangeOnlyProvidedSelfTransform()
+    public void Update_ScriptCanChangeOnlyProvidedSelfObjectTransform()
     {
         var script = new RotateSelfScript();
-        var transform = new TestTransform();
+        var self = new TestSelfObject();
         var runtime = CreateRuntime("rotate-self", script);
-        Assert.True(runtime.Bind(CreateBindings("rotate-self", selfTransform: transform)).IsSuccess);
+        Assert.True(runtime.Bind(CreateBindings("rotate-self", self: self)).IsSuccess);
 
         var result = runtime.Update(1.0d, 1.0d);
 
         Assert.True(result.IsSuccess, result.Failure?.Message);
         Assert.Equal(
             Quaternion.Normalize(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.5f)),
-            transform.LocalTransform.Rotation);
+            self.Transform.LocalTransform.Rotation);
     }
 
     private static ScriptRuntime CreateRuntime(string scriptId, IScriptBehavior script)
@@ -123,17 +123,31 @@ public sealed class ScriptRuntimeTests
         return new ScriptRuntime(registry);
     }
 
+    [Fact]
+    public void EngineScripting_ProjectDoesNotReferenceScene()
+    {
+        var projectFile = File.ReadAllText(FindRepositoryFile("src", "Engine.Scripting", "Engine.Scripting.csproj"));
+        var sourceText = string.Join(
+            '\n',
+            Directory.GetFiles(FindRepositoryDirectory("src", "Engine.Scripting"), "*.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .Select(File.ReadAllText));
+
+        Assert.DoesNotContain("Engine.Scene", projectFile);
+        Assert.DoesNotContain("Engine.Scene", sourceText);
+    }
+
     private static IReadOnlyList<ScriptBindingDescription> CreateBindings(
         string scriptId,
         IReadOnlyDictionary<string, ScriptPropertyValue>? properties = null,
-        IScriptSelfTransform? selfTransform = null)
+        IScriptSelfObject? self = null)
     {
         return new[]
         {
             new ScriptBindingDescription(
                 "cube-main",
                 "Cube Main",
-                selfTransform ?? new TestTransform(),
+                self ?? new TestSelfObject(),
                 scriptId,
                 properties ?? new Dictionary<string, ScriptPropertyValue>
                 {
@@ -202,15 +216,22 @@ public sealed class ScriptRuntimeTests
         public void Update(ScriptContext context)
         {
             var rotationDelta = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)context.DeltaSeconds * MathF.PI * 0.5f);
-            var transform = context.SelfTransform.LocalTransform;
-            context.SelfTransform.SetLocalTransform(transform with
+            var transform = context.Self.Transform.LocalTransform;
+            context.Self.Transform.SetLocalTransform(transform with
             {
                 Rotation = Quaternion.Normalize(rotationDelta * transform.Rotation)
             });
         }
     }
 
-    private sealed class TestTransform : IScriptSelfTransform
+    private sealed class TestSelfObject : IScriptSelfObject
+    {
+        public TestTransformComponent Transform { get; } = new();
+
+        IScriptTransformComponent IScriptSelfObject.Transform => Transform;
+    }
+
+    private sealed class TestTransformComponent : IScriptTransformComponent
     {
         public SceneTransform LocalTransform { get; private set; } = SceneTransform.Identity;
 
@@ -218,5 +239,39 @@ public sealed class ScriptRuntimeTests
         {
             LocalTransform = transform;
         }
+    }
+
+    private static string FindRepositoryFile(params string[] relativeSegments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(relativeSegments).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Could not locate repository file.", Path.Combine(relativeSegments));
+    }
+
+    private static string FindRepositoryDirectory(params string[] relativeSegments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(relativeSegments).ToArray());
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException($"Could not locate repository directory '{Path.Combine(relativeSegments)}'.");
     }
 }

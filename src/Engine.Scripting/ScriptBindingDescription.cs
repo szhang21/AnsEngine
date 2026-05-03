@@ -3,6 +3,6 @@ namespace Engine.Scripting;
 public sealed record ScriptBindingDescription(
     string ObjectId,
     string ObjectName,
-    IScriptSelfTransform SelfTransform,
+    IScriptSelfObject Self,
     string ScriptId,
     IReadOnlyDictionary<string, ScriptPropertyValue> Properties);
