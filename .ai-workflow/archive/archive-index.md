@@ -48,6 +48,37 @@
 
 ### 当前记录
 
+- TaskId: `TASK-SCRIPT-002`
+  Title: `M17.F1 Script SelfObject/Transform 解耦收敛`
+  Priority: `P1`
+  PrimaryModule: `Engine.Scripting`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-Scripting`
+  ClosedAt: `2026-05-03 13:41`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Replaced the script access surface with `ScriptContext.Self.Transform`
+    - Removed `Engine.Scripting -> Engine.Scene` project dependency
+    - Kept Scene handle adaptation inside `Engine.App`
+  FilesChanged:
+    - `src/Engine.Scripting/**`
+    - `tests/Engine.Scripting.Tests/ScriptRuntimeTests.cs`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-script-002.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCRIPT-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scripting.Tests/Engine.Scripting.Tests.csproj --no-restore --nologo -v minimal`，11/11 passed；`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，12/12 passed）
+    - Smoke: pass（headless App sample run exited 0；`RotateSelf` render 前更新由 App tests 覆盖）
+    - Perf: pass（无逐帧对象查询、反射组件分发、额外脚本绑定轮询或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-002.md`
+
 - TaskId: `TASK-APP-011`
   Title: `M17 App scripting runtime integration and RotateSelf sample`
   Priority: `P1`
@@ -55,7 +86,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
   Owner: `Exec-App`
   ClosedAt: `2026-05-02 17:41`
-  Status: `Review`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Composed `ScriptRegistry` / `ScriptRuntime` in `Engine.App` and registered built-in `RotateSelf`
@@ -84,7 +116,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
   Owner: `Exec-Scene`
   ClosedAt: `2026-05-02 15:00`
-  Status: `Review`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added narrow self-transform script bridge bound to one runtime object
@@ -115,7 +148,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
   Owner: `Exec-SceneData`
   ClosedAt: `2026-05-02 14:09`
-  Status: `Review`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added repeatable `Script` component schema with `scriptId` and number/bool/string properties
@@ -145,7 +179,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
   Owner: `Exec-Scripting`
   ClosedAt: `2026-05-02 14:04`
-  Status: `Review`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added `Engine.Scripting` module and tests to the solution
@@ -163,6 +198,32 @@
     - Smoke: pass（register/create/lifecycle/failure/self-transform mutation 覆盖）
     - Perf: pass（无逐帧程序集扫描、源码编译、全场景查询或 JSON 解析）
   SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-001.md`
+
+- TaskId: `TASK-QA-018`
+  Title: `M17 Scripting Foundation gate review and archive`
+  Priority: `P3`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-03 13:45`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Rechecked the full M17 scripting foundation path across Scripting, SceneData, Scene, App, and the M17.F1 API convergence follow-up
+    - Confirmed the runtime path from `Script` component declaration to `RotateSelf` execution is closed without scope creep
+    - Completed archive closeout after human acceptance
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-018.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-018.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-SCRIPT-001`、`TASK-SDATA-008`、`TASK-SCENE-019`、`TASK-APP-011`、`TASK-SCRIPT-002` 的构建通过证据）
+    - Test: pass（沿用 Scripting/SceneData/Scene/App 相关测试通过证据，并含 `TASK-SCRIPT-002` 回归）
+    - Smoke: pass（`RotateSelf` 主路径、unknown script clean fail、Editor preserve 范围均已覆盖）
+    - Perf: pass（无新增逐帧程序集加载、源码编译、热重载轮询、任意对象查询或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-018.md`
 
 - TaskId: `TASK-EAPP-008`
   Title: `M16 Inspector component groups integration`

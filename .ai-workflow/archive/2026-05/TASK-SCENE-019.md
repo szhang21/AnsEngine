@@ -7,8 +7,8 @@
 - BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
 - Owner: `Exec-Scene`
 - ClosedAt: `2026-05-02 15:00`
-- Status: `Review`
-- HumanSignoff: `pending`
+- Status: `Done`
+- HumanSignoff: `pass`
 - ModuleAttributionCheck: `pass`
 
 ## Summary

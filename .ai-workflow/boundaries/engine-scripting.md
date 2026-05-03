@@ -10,8 +10,8 @@
 
 ## 2) 目标与范围
 
-- 模块目标：为引擎提供最小可验证的内置 C# script runtime，负责 script 注册、绑定、生命周期调度和受限的 Scene runtime 自身对象访问。
-- 适用范围：script registry、script runtime、script instance lifecycle、script property binding、self-transform access bridge 消费。
+- 模块目标：为引擎提供最小可验证的内置 C# script runtime，负责 script 注册、绑定、生命周期调度和受限的自身对象访问抽象。
+- 适用范围：script registry、script runtime、script instance lifecycle、script property binding、self-object/transform 访问抽象消费。
 - 非适用范围：外部 DLL 加载、源码编译、热重载、sandbox、安全隔离、Editor Script UI、跨对象查询、渲染实现细节。
 
 ## 3) 职责（Responsibilities）
@@ -19,7 +19,7 @@
 - 负责注册内置 `scriptId -> factory` 映射并拒绝重复注册。
 - 负责按 scene 中的 Script component 顺序创建、绑定、初始化和逐帧更新 script instance。
 - 负责把 `scriptId + properties` 绑定为脚本可消费的上下文与显式失败结果。
-- 负责通过窄 Scene bridge 访问绑定对象自身 Transform。
+- 负责通过宿主提供的 self-object 抽象访问绑定对象自身 Transform。
 
 ## 4) 非职责（Non-Responsibilities）
 
@@ -32,7 +32,6 @@
 ## 5) 允许依赖（Allowed Dependencies）
 
 - 可直接依赖模块：
-  - `Engine.Scene`
   - `Engine.Core`
   - `Engine.Contracts`
 - 可使用基础库/第三方：
@@ -41,6 +40,7 @@
 ## 6) 禁止依赖（Forbidden Dependencies）
 
 - 禁止直接依赖模块：
+  - `Engine.Scene`
   - `Engine.Render`
   - `Engine.Editor`
   - `Engine.Editor.App`
@@ -70,6 +70,12 @@
   - 错误语义：missing script、bad property、script exception 均 fail fast
   - 生命周期约束：随 app runtime 创建与释放
 
+- `IScriptSelfObject` / `IScriptTransformComponent`
+  - 用途：定义 script 可消费的自身对象与 Transform 访问面
+  - 输入/输出：通过 `Self.Transform` 读取/写入自身对象 local transform
+  - 错误语义：不提供跨对象查询或任意组件访问
+  - 生命周期约束：由宿主在绑定 Script component 时提供
+
 ## 8) 数据与状态边界
 
 - 模块内部可变状态：registry 条目、已绑定的 script instances、绑定顺序和每实例上下文。
@@ -90,6 +96,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-03
+  - 变更人：Execution-Agent
+  - 变更内容：将脚本访问面从 `IScriptSelfTransform` 收敛为 `IScriptSelfObject` / `IScriptTransformComponent`，并移除 `Engine.Scripting` 对 `Engine.Scene` 的项目级依赖；`Engine.Scripting` 只保留对 `Engine.Contracts` 中 `SceneTransform` 的契约消费。
+  - 变更原因：支撑 `TASK-SCRIPT-002`，让 Transform 继续归属 Scene 原生 runtime component，同时让 Scripting 仅依赖抽象 self-object 访问面。
+  - 风险与回滚方案：若后续需要更多组件访问，必须另立任务设计组件查询边界；不得通过重新引入 `Engine.Scripting -> Engine.Scene` 依赖绕过 App/Scene 边界适配。
 - 2026-05-02
   - 变更人：Execution-Agent
   - 变更内容：落地 `Engine.Scripting` 与 `Engine.Scripting.Tests` 工程，新增 `IScriptBehavior`、`ScriptContext`、`ScriptRegistry`、`ScriptRuntime`、显式 binding/update failure 结果与窄 `IScriptSelfTransform` 自身 Transform 访问面。

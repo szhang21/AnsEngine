@@ -42,6 +42,7 @@ Engine.Scripting
 - CanRunParallel: `false`
 - DependsOn:
   - `TASK-SCRIPT-001`
+  - `TASK-SCRIPT-002`
   - `TASK-SDATA-008`
   - `TASK-SCENE-019`
   - `TASK-APP-011`
@@ -257,22 +258,33 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-018.md`
+- ClosedAt: `2026-05-03 13:45`
 - Summary:
+  - 2026-05-03: Completed M17 final gate review after upstream cards reached Review and human acceptance was provided.
+  - 2026-05-03: Rechecked scripting runtime lifecycle, SceneData Script schema, Scene self-transform bridge, App `RotateSelf` integration, and Editor preserve scope against M17 plan constraints.
+  - 2026-05-03: Consolidated cross-module build/test/smoke evidence and confirmed no out-of-scope expansion into external DLL loading, source compilation, hot reload, Play Mode, physics, or animation.
 - FilesChanged:
+  - `.ai-workflow/tasks/task-qa-018.md`
+  - `.ai-workflow/archive/2026-05/TASK-QA-018.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build: `pass`（沿用 `TASK-SCRIPT-001`、`TASK-SDATA-008`、`TASK-SCENE-019`、`TASK-APP-011`、`TASK-SCRIPT-002` 的构建通过证据）
+  - Test: `pass`（沿用 Scripting/SceneData/Scene/App 相关测试通过证据；`TASK-SCRIPT-002` 额外覆盖 Scripting/App 回归）
+  - Smoke: `pass`（`RotateSelf` 在 render 前更新；unknown script clean fail；Editor 对 Script component 维持 preserve 范围）
+  - Perf: `pass`（无新增逐帧程序集加载、源码编译、热重载轮询、任意对象查询或 render side effect）
+- ModuleAttributionCheck: pass

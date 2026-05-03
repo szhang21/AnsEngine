@@ -7,8 +7,8 @@
 - BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
 - Owner: `Exec-Scripting`
 - ClosedAt: `2026-05-02 14:04`
-- Status: `Review`
-- HumanSignoff: `pending`
+- Status: `Done`
+- HumanSignoff: `pass`
 - ModuleAttributionCheck: `pass`
 
 ## Summary

@@ -83,6 +83,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-03
+  - 变更人：Execution-Agent
+  - 变更内容：App scripting adapter 从单一 `SceneScriptSelfTransform` 调整为 `SceneScriptSelfObject` + `SceneScriptTransformComponent`，由组合根把 `SceneScriptObjectHandle` 包装为 `Engine.Scripting` 的 self-object/transform 抽象。
+  - 变更原因：支撑 `TASK-SCRIPT-002`，移除 `Engine.Scripting` 对 `Engine.Scene` 的直接依赖，同时保持 App 负责 Scene 与 Scripting 的边界桥接。
+  - 风险与回滚方案：若后续脚本访问面扩展到更多组件，应继续在 App/Scene 明确桥接，不把 Scene runtime 内部集合泄露给 Scripting。
 - 2026-05-02
   - 变更人：Execution-Agent
   - 变更内容：允许 `Engine.App` 直接依赖 `Engine.Scripting`，组合根新增 `ScriptRegistry` / `ScriptRuntime` 装配与内置 `RotateSelf` 注册；`ApplicationHost.Run()` 在 scene load 后绑定并 initialize Script components，并在每帧 `SceneRuntime.Update` 后、`RenderFrame` 前执行 script update。
