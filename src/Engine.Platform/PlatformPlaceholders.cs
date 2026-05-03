@@ -2,10 +2,11 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Engine.Platform;
 
-public sealed class NullWindowService : IWindowService
+public sealed class NullWindowService : IWindowService, IKeyboardStateProvider
 {
     private readonly NativeWindow? mNativeWindow;
     private readonly bool mUsesNativeWindow;
@@ -78,6 +79,18 @@ public sealed class NullWindowService : IWindowService
         mNativeWindow!.Context.SwapBuffers();
     }
 
+    public bool IsKeyDown(EngineKey key)
+    {
+        ThrowIfDisposed();
+
+        if (!mUsesNativeWindow)
+        {
+            return false;
+        }
+
+        return mNativeWindow!.KeyboardState.IsKeyDown(MapKey(key));
+    }
+
     public void Dispose()
     {
         Dispose(disposing: true);
@@ -112,13 +125,25 @@ public sealed class NullWindowService : IWindowService
             throw new ObjectDisposedException(nameof(NullWindowService));
         }
     }
+
+    private static Keys MapKey(EngineKey key)
+    {
+        return key switch
+        {
+            EngineKey.W => Keys.W,
+            EngineKey.A => Keys.A,
+            EngineKey.S => Keys.S,
+            EngineKey.D => Keys.D,
+            _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unsupported engine key.")
+        };
+    }
 }
 
 public sealed class NullInputService : IInputService
 {
     public InputSnapshot GetSnapshot()
     {
-        return new InputSnapshot(AnyInputDetected: false);
+        return InputSnapshot.Empty;
     }
 }
 

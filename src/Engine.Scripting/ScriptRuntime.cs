@@ -59,9 +59,14 @@ public sealed class ScriptRuntime
 
     public ScriptUpdateResult Update(double deltaSeconds, double totalSeconds)
     {
+        return Update(deltaSeconds, totalSeconds, ScriptInputSnapshot.Empty);
+    }
+
+    public ScriptUpdateResult Update(double deltaSeconds, double totalSeconds, ScriptInputSnapshot input)
+    {
         foreach (var script in mScripts)
         {
-            var context = script.Context.WithTiming(deltaSeconds, totalSeconds);
+            var context = script.Context.WithFrame(deltaSeconds, totalSeconds, input);
             var updateFailure = Invoke(script, (behavior, _) => behavior.Update(context));
             if (updateFailure is not null)
             {

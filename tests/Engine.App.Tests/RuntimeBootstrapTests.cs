@@ -161,6 +161,128 @@ public sealed class RuntimeBootstrapTests
     }
 
     [Fact]
+    public void ApplicationHost_Run_MoveOnInputNoInputDoesNotMoveBeforeRender()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var sceneRuntime = CreateSceneRuntime(sceneGraph);
+        var renderer = new CapturingRenderer(sceneGraph);
+        var windowService = new AutoCloseWindowService();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader(
+                MoveOnInputScript.kScriptId,
+                new Dictionary<string, SceneScriptPropertyValue>
+                {
+                    ["speedUnitsPerSecond"] = SceneScriptPropertyValue.FromNumber(2.0d)
+                }),
+            "script.scene.json",
+            new StubInputService(InputSnapshot.Empty),
+            new FixedTimeService(new TimeSnapshot(1.0, 1.0, 1.0)),
+            CreateMoveOnInputRuntime());
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        AssertVectorNearlyEqual(Vector3.Zero, renderer.FirstRenderedPosition!.Value);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_MoveOnInputSingleKeyMovesInWorldDirectionBeforeRender()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var sceneRuntime = CreateSceneRuntime(sceneGraph);
+        var renderer = new CapturingRenderer(sceneGraph);
+        var windowService = new AutoCloseWindowService();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader(
+                MoveOnInputScript.kScriptId,
+                new Dictionary<string, SceneScriptPropertyValue>
+                {
+                    ["speedUnitsPerSecond"] = SceneScriptPropertyValue.FromNumber(2.0d)
+                }),
+            "script.scene.json",
+            new StubInputService(InputSnapshot.FromKeys(EngineKey.W)),
+            new FixedTimeService(new TimeSnapshot(0.5, 0.5, 2.0)),
+            CreateMoveOnInputRuntime());
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        AssertVectorNearlyEqual(new Vector3(0.0f, 0.0f, -1.0f), renderer.FirstRenderedPosition!.Value);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_MoveOnInputDiagonalMovementIsNormalizedAndPreservesRotationScale()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var sceneRuntime = CreateSceneRuntime(sceneGraph);
+        var renderer = new CapturingRenderer(sceneGraph);
+        var windowService = new AutoCloseWindowService();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader(
+                MoveOnInputScript.kScriptId,
+                new Dictionary<string, SceneScriptPropertyValue>
+                {
+                    ["speedUnitsPerSecond"] = SceneScriptPropertyValue.FromNumber(1.0d)
+                }),
+            "script.scene.json",
+            new StubInputService(InputSnapshot.FromKeys(EngineKey.W, EngineKey.D)),
+            new FixedTimeService(new TimeSnapshot(1.0, 1.0, 1.0)),
+            CreateMoveOnInputRuntime());
+
+        var exitCode = app.Run();
+
+        var diagonal = MathF.Sqrt(0.5f);
+        Assert.Equal(0, exitCode);
+        AssertVectorNearlyEqual(new Vector3(diagonal, 0.0f, -diagonal), renderer.FirstRenderedPosition!.Value);
+        AssertQuaternionNearlyEqual(Quaternion.Identity, renderer.FirstRenderedRotation!.Value);
+        AssertVectorNearlyEqual(Vector3.One, renderer.FirstRenderedScale!.Value);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_ConvertsPlatformInputToScriptingInputBeforeRender()
+    {
+        var callLog = new List<string>();
+        var script = new LoggingInputScript(callLog);
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register("LogInput", () => script));
+        var app = new ApplicationHost(
+            new AutoCloseWindowService(callLog),
+            new CountingRenderer(callLog),
+            CreateSceneRuntime(new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"))),
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), new AutoCloseWindowService()),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader("LogInput", new Dictionary<string, SceneScriptPropertyValue>()),
+            "script.scene.json",
+            new StubInputService(InputSnapshot.FromKeys(EngineKey.D), callLog),
+            new StubTimeService(new TimeSnapshot(0.25, 1.25, 4.0), callLog),
+            new ScriptRuntime(registry));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.NotNull(script.LastInput);
+        Assert.True(script.LastInput.Value.IsKeyDown(ScriptKey.D));
+        Assert.False(script.LastInput.Value.IsKeyDown(ScriptKey.W));
+        Assert.True(callLog.IndexOf("SceneUpdate") < callLog.IndexOf("ScriptUpdate"));
+        Assert.True(callLog.IndexOf("ScriptUpdate") < callLog.IndexOf("RenderFrame"));
+    }
+
+    [Fact]
     public void ApplicationHost_Run_UnknownScriptIdFailsCleanlyBeforeRender()
     {
         var windowService = new TrackingWindowService();
@@ -327,6 +449,35 @@ public sealed class RuntimeBootstrapTests
         }
     }
 
+    [Fact]
+    public void CreateInputService_NativePath_UsesNativeWindowInputService()
+    {
+        var method = typeof(RuntimeBootstrap).GetMethod("CreateInputService", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var inputService = Assert.IsType<NativeWindowInputService>(
+            method!.Invoke(null, new object[] { true, new TestKeyboardStateProvider(EngineKey.A) }));
+
+        var snapshot = inputService.GetSnapshot();
+
+        Assert.True(snapshot.IsKeyDown(EngineKey.A));
+        Assert.False(snapshot.IsKeyDown(EngineKey.W));
+    }
+
+    [Fact]
+    public void CreateInputService_HeadlessPath_UsesNullInputService()
+    {
+        var method = typeof(RuntimeBootstrap).GetMethod("CreateInputService", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var inputService = Assert.IsType<NullInputService>(
+            method!.Invoke(null, new object[] { false, new TestKeyboardStateProvider(EngineKey.W) }));
+
+        var snapshot = inputService.GetSnapshot();
+
+        Assert.Equal(InputSnapshot.Empty, snapshot);
+    }
+
     private sealed class TestWindowService : IWindowService
     {
         public WindowConfig Configuration { get; } = new(1280, 720, "AnsEngine-Tests");
@@ -338,12 +489,34 @@ public sealed class RuntimeBootstrapTests
         public void Dispose() { }
     }
 
+    private sealed class TestKeyboardStateProvider : IKeyboardStateProvider
+    {
+        private readonly HashSet<EngineKey> mPressedKeys;
+
+        public TestKeyboardStateProvider(params EngineKey[] pressedKeys)
+        {
+            mPressedKeys = new HashSet<EngineKey>(pressedKeys);
+        }
+
+        public bool IsKeyDown(EngineKey key)
+        {
+            return mPressedKeys.Contains(key);
+        }
+    }
+
     private static void AssertQuaternionNearlyEqual(Quaternion expected, Quaternion actual)
     {
         Assert.Equal(expected.X, actual.X, 5);
         Assert.Equal(expected.Y, actual.Y, 5);
         Assert.Equal(expected.Z, actual.Z, 5);
         Assert.Equal(expected.W, actual.W, 5);
+    }
+
+    private static void AssertVectorNearlyEqual(Vector3 expected, Vector3 actual)
+    {
+        Assert.Equal(expected.X, actual.X, 5);
+        Assert.Equal(expected.Y, actual.Y, 5);
+        Assert.Equal(expected.Z, actual.Z, 5);
     }
 
     private static ISceneRuntime CreateSceneRuntime(SceneGraphService sceneGraph)
@@ -358,6 +531,13 @@ public sealed class RuntimeBootstrapTests
     {
         var registry = new ScriptRegistry();
         Assert.Null(registry.Register(RotateSelfScript.kScriptId, static () => new RotateSelfScript()));
+        return new ScriptRuntime(registry);
+    }
+
+    private static ScriptRuntime CreateMoveOnInputRuntime()
+    {
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register(MoveOnInputScript.kScriptId, static () => new MoveOnInputScript()));
         return new ScriptRuntime(registry);
     }
 
@@ -458,6 +638,10 @@ public sealed class RuntimeBootstrapTests
 
         public Quaternion? FirstRenderedRotation { get; private set; }
 
+        public Vector3? FirstRenderedPosition { get; private set; }
+
+        public Vector3? FirstRenderedScale { get; private set; }
+
         public void Initialize()
         {
         }
@@ -465,7 +649,10 @@ public sealed class RuntimeBootstrapTests
         public void RenderFrame()
         {
             RenderCalls += 1;
-            FirstRenderedRotation ??= Assert.Single(mProvider.BuildRenderFrame().Items).Transform.Rotation;
+            var transform = Assert.Single(mProvider.BuildRenderFrame().Items).Transform;
+            FirstRenderedPosition ??= transform.Position;
+            FirstRenderedRotation ??= transform.Rotation;
+            FirstRenderedScale ??= transform.Scale;
         }
 
         public void Shutdown()
@@ -539,9 +726,9 @@ public sealed class RuntimeBootstrapTests
     private sealed class StubInputService : IInputService
     {
         private readonly InputSnapshot mSnapshot;
-        private readonly List<string> mCallLog;
+        private readonly List<string>? mCallLog;
 
-        public StubInputService(InputSnapshot snapshot, List<string> callLog)
+        public StubInputService(InputSnapshot snapshot, List<string>? callLog = null)
         {
             mSnapshot = snapshot;
             mCallLog = callLog;
@@ -549,7 +736,7 @@ public sealed class RuntimeBootstrapTests
 
         public InputSnapshot GetSnapshot()
         {
-            mCallLog.Add("Input");
+            mCallLog?.Add("Input");
             return mSnapshot;
         }
     }
@@ -616,10 +803,14 @@ public sealed class RuntimeBootstrapTests
     private sealed class ScriptSceneDescriptionLoader : ISceneDescriptionLoader
     {
         private readonly string mScriptId;
+        private readonly IReadOnlyDictionary<string, SceneScriptPropertyValue>? mProperties;
 
-        public ScriptSceneDescriptionLoader(string scriptId)
+        public ScriptSceneDescriptionLoader(
+            string scriptId,
+            IReadOnlyDictionary<string, SceneScriptPropertyValue>? properties = null)
         {
             mScriptId = scriptId;
+            mProperties = properties;
         }
 
         public SceneDescriptionLoadResult Load(string sceneFilePath)
@@ -642,7 +833,7 @@ public sealed class RuntimeBootstrapTests
                                     new SceneMaterialRef("material://default")),
                                 new SceneScriptComponentDescription(
                                     mScriptId,
-                                    new Dictionary<string, SceneScriptPropertyValue>
+                                    mProperties ?? new Dictionary<string, SceneScriptPropertyValue>
                                     {
                                         ["speedRadiansPerSecond"] = SceneScriptPropertyValue.FromNumber(1.0d)
                                     })
@@ -660,6 +851,28 @@ public sealed class RuntimeBootstrapTests
         public void Update(ScriptContext context)
         {
             throw new InvalidOperationException("update failed");
+        }
+    }
+
+    private sealed class LoggingInputScript : IScriptBehavior
+    {
+        private readonly List<string> mCallLog;
+
+        public LoggingInputScript(List<string> callLog)
+        {
+            mCallLog = callLog;
+        }
+
+        public ScriptInputSnapshot? LastInput { get; private set; }
+
+        public void Initialize(ScriptContext context)
+        {
+        }
+
+        public void Update(ScriptContext context)
+        {
+            LastInput = context.Input;
+            mCallLog.Add("ScriptUpdate");
         }
     }
 

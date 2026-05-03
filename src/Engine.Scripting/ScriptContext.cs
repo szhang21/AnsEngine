@@ -9,6 +9,18 @@ public sealed class ScriptContext
         IReadOnlyDictionary<string, ScriptPropertyValue> properties,
         double deltaSeconds,
         double totalSeconds)
+        : this(objectId, objectName, self, properties, deltaSeconds, totalSeconds, ScriptInputSnapshot.Empty)
+    {
+    }
+
+    public ScriptContext(
+        string objectId,
+        string objectName,
+        IScriptSelfObject self,
+        IReadOnlyDictionary<string, ScriptPropertyValue> properties,
+        double deltaSeconds,
+        double totalSeconds,
+        ScriptInputSnapshot input)
     {
         ObjectId = string.IsNullOrWhiteSpace(objectId)
             ? throw new ArgumentException("Script object id is required.", nameof(objectId))
@@ -18,6 +30,7 @@ public sealed class ScriptContext
         Properties = properties ?? throw new ArgumentNullException(nameof(properties));
         DeltaSeconds = deltaSeconds;
         TotalSeconds = totalSeconds;
+        Input = input;
     }
 
     public string ObjectId { get; }
@@ -32,8 +45,15 @@ public sealed class ScriptContext
 
     public double TotalSeconds { get; }
 
+    public ScriptInputSnapshot Input { get; }
+
     public ScriptContext WithTiming(double deltaSeconds, double totalSeconds)
     {
-        return new ScriptContext(ObjectId, ObjectName, Self, Properties, deltaSeconds, totalSeconds);
+        return WithFrame(deltaSeconds, totalSeconds, ScriptInputSnapshot.Empty);
+    }
+
+    public ScriptContext WithFrame(double deltaSeconds, double totalSeconds, ScriptInputSnapshot input)
+    {
+        return new ScriptContext(ObjectId, ObjectName, Self, Properties, deltaSeconds, totalSeconds, input);
     }
 }

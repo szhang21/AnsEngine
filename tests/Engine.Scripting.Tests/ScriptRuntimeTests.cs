@@ -36,6 +36,52 @@ public sealed class ScriptRuntimeTests
         Assert.Equal(2, script.UpdateCount);
         Assert.Equal(0.5d, script.LastContext!.DeltaSeconds);
         Assert.Equal(0.75d, script.LastContext.TotalSeconds);
+        Assert.Equal(ScriptInputSnapshot.Empty, script.LastContext.Input);
+    }
+
+    [Fact]
+    public void Update_WithFrameInput_PassesInputToBoundScript()
+    {
+        var script = new CountingScript();
+        var runtime = CreateRuntime("test.script", script);
+        Assert.True(runtime.Bind(CreateBindings("test.script")).IsSuccess);
+
+        var input = ScriptInputSnapshot.FromKeys(ScriptKey.W, ScriptKey.D);
+        var result = runtime.Update(0.25d, 0.25d, input);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        Assert.Equal(input, script.LastContext!.Input);
+        Assert.True(script.LastContext.Input.AnyInputDetected);
+        Assert.True(script.LastContext.Input.IsKeyDown(ScriptKey.W));
+        Assert.True(script.LastContext.Input.IsKeyDown(ScriptKey.D));
+        Assert.False(script.LastContext.Input.IsKeyDown(ScriptKey.A));
+        Assert.False(script.LastContext.Input.IsKeyDown(ScriptKey.S));
+    }
+
+    [Fact]
+    public void Update_WithFrameInput_PassesSameInputToEveryScriptInBindingOrder()
+    {
+        var firstScript = new CountingScript();
+        var secondScript = new CountingScript();
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register("first.script", () => firstScript));
+        Assert.Null(registry.Register("second.script", () => secondScript));
+        var runtime = new ScriptRuntime(registry);
+        var bindings = new[]
+        {
+            CreateBinding("first.script", "cube-a"),
+            CreateBinding("second.script", "cube-b")
+        };
+        Assert.True(runtime.Bind(bindings).IsSuccess);
+
+        var input = ScriptInputSnapshot.FromKeys(ScriptKey.A, ScriptKey.S);
+        var result = runtime.Update(0.5d, 1.0d, input);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        Assert.Equal(input, firstScript.LastContext!.Input);
+        Assert.Equal(input, secondScript.LastContext!.Input);
+        Assert.Equal(1, firstScript.UpdateCount);
+        Assert.Equal(1, secondScript.UpdateCount);
     }
 
     [Fact]
@@ -116,6 +162,80 @@ public sealed class ScriptRuntimeTests
             self.Transform.LocalTransform.Rotation);
     }
 
+    [Fact]
+    public void ScriptInputSnapshot_EmptyAndNonEmptyStates_AreStable()
+    {
+        var empty = ScriptInputSnapshot.Empty;
+        var input = ScriptInputSnapshot.FromKeys(ScriptKey.W, ScriptKey.A);
+
+        Assert.False(empty.AnyInputDetected);
+        Assert.False(empty.IsKeyDown(ScriptKey.W));
+        Assert.True(input.AnyInputDetected);
+        Assert.True(input.IsKeyDown(ScriptKey.W));
+        Assert.True(input.IsKeyDown(ScriptKey.A));
+        Assert.False(input.IsKeyDown(ScriptKey.S));
+        Assert.False(input.IsKeyDown(ScriptKey.D));
+    }
+
+    [Fact]
+    public void ScriptPropertyReader_RequiredValues_ReturnsTypedProperties()
+    {
+        var context = CreateContext(
+            new Dictionary<string, ScriptPropertyValue>
+            {
+                ["speed"] = ScriptPropertyValue.FromNumber(2.5d),
+                ["enabled"] = ScriptPropertyValue.FromBoolean(true),
+                ["label"] = ScriptPropertyValue.FromString("main")
+            });
+
+        Assert.Equal(2.5d, ScriptPropertyReader.RequireNumber(context, "speed"));
+        Assert.True(ScriptPropertyReader.RequireBoolean(context, "enabled"));
+        Assert.Equal("main", ScriptPropertyReader.RequireString(context, "label"));
+    }
+
+    [Fact]
+    public void ScriptPropertyReader_MissingOrWrongType_ThrowsStableFailure()
+    {
+        var context = CreateContext(
+            new Dictionary<string, ScriptPropertyValue>
+            {
+                ["speed"] = ScriptPropertyValue.FromString("fast"),
+                ["enabled"] = ScriptPropertyValue.FromNumber(1.0d),
+                ["label"] = ScriptPropertyValue.FromBoolean(true)
+            });
+
+        var missing = Assert.Throws<InvalidOperationException>(() => ScriptPropertyReader.RequireNumber(context, "missing"));
+        var badNumber = Assert.Throws<InvalidOperationException>(() => ScriptPropertyReader.RequireNumber(context, "speed"));
+        var badBoolean = Assert.Throws<InvalidOperationException>(() => ScriptPropertyReader.RequireBoolean(context, "enabled"));
+        var badString = Assert.Throws<InvalidOperationException>(() => ScriptPropertyReader.RequireString(context, "label"));
+
+        Assert.Contains("missing required property 'missing'", missing.Message);
+        Assert.Contains("requires finite numeric property 'speed'", badNumber.Message);
+        Assert.Contains("requires boolean property 'enabled'", badBoolean.Message);
+        Assert.Contains("requires string property 'label'", badString.Message);
+    }
+
+    [Fact]
+    public void Bind_NonFiniteProperty_ReturnsDeterministicInvalidPropertyBeforeInitialize()
+    {
+        var script = new CountingScript();
+        var runtime = CreateRuntime("test.script", script);
+        var bindings = CreateBindings(
+            "test.script",
+            new Dictionary<string, ScriptPropertyValue>
+            {
+                ["speed"] = ScriptPropertyValue.FromNumber(double.PositiveInfinity)
+            });
+
+        var result = runtime.Bind(bindings);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ScriptFailureKind.InvalidProperty, result.Failure!.Kind);
+        Assert.Equal("speed", result.Failure.PropertyName);
+        Assert.Equal(0, script.InitializeCount);
+        Assert.Equal(0, runtime.BoundScriptCount);
+    }
+
     private static ScriptRuntime CreateRuntime(string scriptId, IScriptBehavior script)
     {
         var registry = new ScriptRegistry();
@@ -144,18 +264,39 @@ public sealed class ScriptRuntimeTests
     {
         return new[]
         {
-            new ScriptBindingDescription(
-                "cube-main",
-                "Cube Main",
-                self ?? new TestSelfObject(),
-                scriptId,
-                properties ?? new Dictionary<string, ScriptPropertyValue>
-                {
-                    ["speed"] = ScriptPropertyValue.FromNumber(1.0d),
-                    ["enabled"] = ScriptPropertyValue.FromBoolean(true),
-                    ["label"] = ScriptPropertyValue.FromString("main")
-                })
+            CreateBinding(scriptId, "cube-main", properties, self)
         };
+    }
+
+    private static ScriptBindingDescription CreateBinding(
+        string scriptId,
+        string objectId,
+        IReadOnlyDictionary<string, ScriptPropertyValue>? properties = null,
+        IScriptSelfObject? self = null)
+    {
+        return new ScriptBindingDescription(
+            objectId,
+            objectId,
+            self ?? new TestSelfObject(),
+            scriptId,
+            properties ?? new Dictionary<string, ScriptPropertyValue>
+            {
+                ["speed"] = ScriptPropertyValue.FromNumber(1.0d),
+                ["enabled"] = ScriptPropertyValue.FromBoolean(true),
+                ["label"] = ScriptPropertyValue.FromString("main")
+            });
+    }
+
+    private static ScriptContext CreateContext(IReadOnlyDictionary<string, ScriptPropertyValue> properties)
+    {
+        return new ScriptContext(
+            "cube-main",
+            "Cube Main",
+            new TestSelfObject(),
+            properties,
+            0.0d,
+            0.0d,
+            ScriptInputSnapshot.Empty);
     }
 
     private sealed class CountingScript : IScriptBehavior
@@ -217,6 +358,7 @@ public sealed class ScriptRuntimeTests
         {
             var rotationDelta = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)context.DeltaSeconds * MathF.PI * 0.5f);
             var transform = context.Self.Transform.LocalTransform;
+            _ = ScriptPropertyReader.RequireNumber(context, "speed");
             context.Self.Transform.SetLocalTransform(transform with
             {
                 Rotation = Quaternion.Normalize(rotationDelta * transform.Rotation)

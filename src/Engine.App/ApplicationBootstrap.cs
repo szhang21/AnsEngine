@@ -24,7 +24,7 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var runtimeInfo = new EngineRuntimeInfo("AnsEngine", "0.1.0");
         var useNativeWindow = ResolveUseNativeWindow();
         var windowService = new NullWindowService(new WindowConfig(1280, 720, "AnsEngine"), useNativeWindow);
-        var inputService = new NullInputService();
+        var inputService = CreateInputService(useNativeWindow, windowService);
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
         var sceneGraph = new SceneGraphService(runtimeInfo);
         ISceneRuntime sceneRuntime = new SceneRuntimeAdapter(sceneGraph);
@@ -52,12 +52,20 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
     {
         var registry = new ScriptRegistry();
         var failure = registry.Register(RotateSelfScript.kScriptId, static () => new RotateSelfScript());
+        failure ??= registry.Register(MoveOnInputScript.kScriptId, static () => new MoveOnInputScript());
         if (failure is not null)
         {
             throw new InvalidOperationException(failure.Message);
         }
 
         return new ScriptRuntime(registry);
+    }
+
+    private static IInputService CreateInputService(bool useNativeWindow, IKeyboardStateProvider keyboardStateProvider)
+    {
+        return useNativeWindow
+            ? new NativeWindowInputService(keyboardStateProvider)
+            : new NullInputService();
     }
 
     private static IRenderer CreateRenderer(
@@ -235,7 +243,7 @@ public sealed class ApplicationHost : IApplication
                 var input = mInputService.GetSnapshot();
                 var time = mTimeService.Current;
                 mSceneRuntime.Update(time, input);
-                var scriptUpdateResult = mScriptRuntime.Update(time.DeltaSeconds, time.TotalSeconds);
+                var scriptUpdateResult = mScriptRuntime.Update(time.DeltaSeconds, time.TotalSeconds, ConvertInput(input));
                 if (!scriptUpdateResult.IsSuccess)
                 {
                     Console.Error.WriteLine($"Script update failed: {scriptUpdateResult.Failure?.Kind} - {scriptUpdateResult.Failure?.Message}");
@@ -299,6 +307,32 @@ public sealed class ApplicationHost : IApplication
         }
 
         return mScriptRuntime.Bind(bindings);
+    }
+
+    private static ScriptInputSnapshot ConvertInput(InputSnapshot input)
+    {
+        var keys = new List<ScriptKey>(4);
+        if (input.IsKeyDown(EngineKey.W))
+        {
+            keys.Add(ScriptKey.W);
+        }
+
+        if (input.IsKeyDown(EngineKey.A))
+        {
+            keys.Add(ScriptKey.A);
+        }
+
+        if (input.IsKeyDown(EngineKey.S))
+        {
+            keys.Add(ScriptKey.S);
+        }
+
+        if (input.IsKeyDown(EngineKey.D))
+        {
+            keys.Add(ScriptKey.D);
+        }
+
+        return keys.Count == 0 ? ScriptInputSnapshot.Empty : ScriptInputSnapshot.FromKeys(keys.ToArray());
     }
 
     private static IReadOnlyDictionary<string, ScriptPropertyValue> ConvertProperties(
@@ -391,12 +425,59 @@ public sealed class RotateSelfScript : IScriptBehavior
 
     private static double ReadSpeed(ScriptContext context)
     {
-        if (!context.Properties.TryGetValue(kSpeedRadiansPerSecondPropertyName, out var value) || !value.IsNumber)
+        return ScriptPropertyReader.RequireNumber(context, kSpeedRadiansPerSecondPropertyName);
+    }
+}
+
+public sealed class MoveOnInputScript : IScriptBehavior
+{
+    public const string kScriptId = "MoveOnInput";
+    private const string kSpeedUnitsPerSecondPropertyName = "speedUnitsPerSecond";
+
+    public void Initialize(ScriptContext context)
+    {
+        _ = ReadSpeed(context);
+    }
+
+    public void Update(ScriptContext context)
+    {
+        var direction = Vector3.Zero;
+        if (context.Input.IsKeyDown(ScriptKey.W))
         {
-            throw new InvalidOperationException(
-                $"Script '{kScriptId}' requires numeric property '{kSpeedRadiansPerSecondPropertyName}'.");
+            direction += new Vector3(0.0f, 0.0f, -1.0f);
         }
 
-        return value.Number!.Value;
+        if (context.Input.IsKeyDown(ScriptKey.S))
+        {
+            direction += new Vector3(0.0f, 0.0f, 1.0f);
+        }
+
+        if (context.Input.IsKeyDown(ScriptKey.A))
+        {
+            direction += new Vector3(-1.0f, 0.0f, 0.0f);
+        }
+
+        if (context.Input.IsKeyDown(ScriptKey.D))
+        {
+            direction += new Vector3(1.0f, 0.0f, 0.0f);
+        }
+
+        if (direction == Vector3.Zero)
+        {
+            return;
+        }
+
+        direction = Vector3.Normalize(direction);
+        var speed = ReadSpeed(context);
+        var transform = context.Self.Transform.LocalTransform;
+        context.Self.Transform.SetLocalTransform(transform with
+        {
+            Position = transform.Position + (direction * (float)(speed * context.DeltaSeconds))
+        });
+    }
+
+    private static double ReadSpeed(ScriptContext context)
+    {
+        return ScriptPropertyReader.RequireNumber(context, kSpeedUnitsPerSecondPropertyName);
     }
 }

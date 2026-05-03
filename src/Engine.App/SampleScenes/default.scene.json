@@ -51,6 +51,13 @@
             "properties": {
               "speedRadiansPerSecond": 1.5707964
             }
+          },
+          {
+            "type": "Script",
+            "scriptId": "MoveOnInput",
+            "properties": {
+              "speedUnitsPerSecond": 1
+            }
           }
         ]
       },
