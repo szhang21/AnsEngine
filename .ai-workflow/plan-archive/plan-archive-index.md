@@ -13,9 +13,9 @@
 ## 当前记录
 
 - PlanId: `PLAN-M17-2026-05-02`
-  Status: `Active`
-  LastUpdated: `2026-05-02 13:36`
-  MilestoneSummary: `M17 进行中（Scripting Foundation，Engine.Scripting 模块、Script component schema、Scene bridge 与 RotateSelf sample）`
+  Status: `Closed`
+  LastUpdated: `2026-05-03 13:45`
+  MilestoneSummary: `M17 完成（Scripting Foundation，Engine.Scripting 模块、Script component schema、Scene bridge、RotateSelf sample 与 SelfObject/Transform 解耦收口）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M17-2026-05-02.md`
 
 - PlanId: `PLAN-M16-2026-05-02`
