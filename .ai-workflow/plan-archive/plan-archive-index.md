@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M19-2026-05-03`
+  Status: `Active`
+  LastUpdated: `2026-05-03 18:40`
+  MilestoneSummary: `M19 进行中（Physics Foundation，Engine.Physics 模块、SceneData RigidBody/BoxCollider schema、PhysicsWorld fixed step、snapshot 与 AABB/ground query）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M19-2026-05-03.md`
+
 - PlanId: `PLAN-M18-2026-05-03`
   Status: `Closed`
   LastUpdated: `2026-05-03 18:13`

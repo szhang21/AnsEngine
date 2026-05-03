@@ -17,7 +17,10 @@
 
 ## Todo
 
-- （空）
+- `TASK-PHYS-001` M19 Engine.Physics module and boundary foundation
+- `TASK-SDATA-009` M19 SceneData RigidBody and BoxCollider component schema
+- `TASK-PHYS-002` M19 PhysicsWorld load, fixed step, snapshot and AABB queries
+- `TASK-QA-020` M19 Physics Foundation gate review and archive
 
 ## InProgress
 
