@@ -85,6 +85,16 @@
 
 - 2026-05-03
   - 变更人：Execution-Agent
+  - 变更内容：`RuntimeBootstrap.Build()` 按 `ANS_ENGINE_USE_NATIVE_WINDOW` 装配输入服务：native window path 使用 `NativeWindowInputService`，headless path 继续使用 `NullInputService`。
+  - 变更原因：支撑 `TASK-PLAT-003`，补齐 M18 真实窗口运行路径的 W/A/S/D 输入采集接线，让默认 scene 中的 `MoveOnInput` 可接收 Platform 真实输入，同时保持 App 只负责组合根分流与 Platform-to-Scripting 转换。
+  - 风险与回滚方案：若 native window smoke 在无图形环境不可验证，保留 headless 空输入路径作为 CI 稳定路径；若未来扩展输入系统，应继续由 Platform 封装底层输入、App 只做运行模式装配与类型转换。
+- 2026-05-03
+  - 变更人：Execution-Agent
+  - 变更内容：App 主循环新增 `InputSnapshot -> ScriptInputSnapshot` 转换并传入 `ScriptRuntime.Update(...)`；组合根注册内置 `MoveOnInput`；默认样例场景新增 `MoveOnInput` Script component；`Engine.App` 项目设置 `UseAppHost=false` 以避免当前 macOS 环境 apphost code signing 阻塞验收。
+  - 变更原因：支撑 `TASK-APP-012`，打通 M18 `W/A/S/D -> script -> Transform.Position` 的最小交互主链路，同时保持 Platform/Scripting 输入转换唯一归属 App。
+  - 风险与回滚方案：若未来恢复 native apphost，应先解决本机 code signing 环境问题；若扩展输入系统，继续在 App 层完成 Platform 到 Scripting 的边界转换，不把 Platform 类型泄露进 Scripting。
+- 2026-05-03
+  - 变更人：Execution-Agent
   - 变更内容：App scripting adapter 从单一 `SceneScriptSelfTransform` 调整为 `SceneScriptSelfObject` + `SceneScriptTransformComponent`，由组合根把 `SceneScriptObjectHandle` 包装为 `Engine.Scripting` 的 self-object/transform 抽象。
   - 变更原因：支撑 `TASK-SCRIPT-002`，移除 `Engine.Scripting` 对 `Engine.Scene` 的直接依赖，同时保持 App 负责 Scene 与 Scripting 的边界桥接。
   - 风险与回滚方案：若后续脚本访问面扩展到更多组件，应继续在 App/Scene 明确桥接，不把 Scene runtime 内部集合泄露给 Scripting。

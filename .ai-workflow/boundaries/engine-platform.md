@@ -85,6 +85,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-03
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `IKeyboardStateProvider` 与 `NativeWindowInputService`，由 `NullWindowService` 在 native window 路径内部读取 OpenTK `KeyboardState` 并映射为 `EngineKey` / `InputSnapshot`；补充 `InputSnapshot.FromKeyStates(...)` 以支持无集合分配的每帧 key-state 快照构造。
+  - 变更原因：支撑 `TASK-PLAT-003`，让 native runtime path 能采集真实 W/A/S/D 输入，同时继续禁止 OpenTK `Keys` / `KeyboardState` 泄露到 App/Scripting。
+  - 风险与回滚方案：当前只覆盖 W/A/S/D，不引入 mouse/gamepad/action mapping；若 native input 在特定窗口环境异常，可回退 App 装配到 `NullInputService` 并保留 Platform snapshot contract。
+- 2026-05-03
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `EngineKey` 与只读 `InputSnapshot` key-state 快照，支持 W/A/S/D、empty/single/multiple key、`IsKeyDown(...)` 与从 pressed-key 状态派生的 `AnyInputDetected`；`NullInputService` 返回 empty input。
+  - 变更原因：支撑 `TASK-PLAT-002`，为 M18 scripting interaction MVP 提供 Platform 层稳定输入快照地基，同时不向 App/Scripting 泄露 OpenTK 输入枚举。
+  - 风险与回滚方案：当前不接 native key polling、不扩展 mouse/gamepad/action mapping；若后续接原生输入，应继续把 OpenTK 类型封装在 Platform 内部并输出 `InputSnapshot`。
 - 2026-04-04
   - 变更人：初始化
   - 变更内容：创建 `Engine.Platform` 初版边界合同

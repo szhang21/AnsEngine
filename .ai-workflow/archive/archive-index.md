@@ -48,6 +48,155 @@
 
 ### 当前记录
 
+- TaskId: `TASK-PLAT-003`
+  Title: `M18.F1 Native WASD input polling for runtime app`
+  Priority: `P1`
+  PrimaryModule: `Engine.Platform`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-platform.md`
+  Owner: `Exec-Platform`
+  ClosedAt: `2026-05-03 18:09`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added Platform-owned native W/A/S/D input service backed by `IKeyboardStateProvider`
+    - Mapped OpenTK keyboard state inside Platform without leaking OpenTK types to App/Scripting
+    - Wired App native mode to native input and preserved headless `NullInputService`
+  FilesChanged:
+    - `src/Engine.Platform/PlatformContracts.cs`
+    - `src/Engine.Platform/PlatformPlaceholders.cs`
+    - `src/Engine.Platform/NativeWindowInputService.cs`
+    - `tests/Engine.Platform.Tests/InputSnapshotTests.cs`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-platform.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-plat-003.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-PLAT-003.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（Platform 10/10；App 18/18）
+    - Smoke: pass（headless sample run exited 0；native window auto-exit sample run exited 0；真实 W/A/S/D 响应已由 Human 复验签收）
+    - Perf: pass（每帧直接读取 W/A/S/D bool state 并构造小型只读 snapshot，无集合分配或新 gameplay side path）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PLAT-003.md`
+
+- TaskId: `TASK-APP-012`
+  Title: `M18 App input-to-scripting integration and MoveOnInput`
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-03 14:53`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Converted Platform `InputSnapshot` W/A/S/D to Scripting `ScriptInputSnapshot`
+    - Registered and implemented built-in `MoveOnInput`
+    - Validated no input, single key, normalized diagonal movement, update-before-render, and fail-fast behavior
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/SampleScenes/default.scene.json`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-012.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-012.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，16/16 passed）
+    - Smoke: pass（headless App sample run exited 0）
+    - Perf: pass（每帧一次 input conversion，无物理/碰撞模拟、Platform 类型泄露或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-012.md`
+
+- TaskId: `TASK-SCRIPT-003`
+  Title: `M18 Scripting input context and property helper`
+  Priority: `P0`
+  PrimaryModule: `Engine.Scripting`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-Scripting`
+  ClosedAt: `2026-05-03 14:30`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added scripting-owned `ScriptKey` / `ScriptInputSnapshot`
+    - Added `ScriptContext.Input` and input-bearing `ScriptRuntime.Update(...)`
+    - Added required primitive property helpers
+  FilesChanged:
+    - `src/Engine.Scripting/**`
+    - `tests/Engine.Scripting.Tests/ScriptRuntimeTests.cs`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/tasks/task-script-003.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCRIPT-003.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scripting.Tests/Engine.Scripting.Tests.csproj --no-restore --nologo -v minimal`，17/17 passed）
+    - Smoke: pass（`ScriptRuntime.Update(..., ScriptInputSnapshot)` 将同一帧输入传给所有绑定脚本；empty input 兼容路径仍通过）
+    - Perf: pass（无平台转换、反射属性扫描、JSON 解析或全局可变输入状态）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-003.md`
+
+- TaskId: `TASK-PLAT-002`
+  Title: `M18 Platform key-state input snapshot foundation`
+  Priority: `P0`
+  PrimaryModule: `Engine.Platform`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-platform.md`
+  Owner: `Exec-Platform`
+  ClosedAt: `2026-05-03 14:27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `EngineKey` for W/A/S/D
+    - Added readonly `InputSnapshot` key-state semantics with `IsKeyDown(...)`
+    - Added Platform tests and boundary checks
+  FilesChanged:
+    - `src/Engine.Platform/**`
+    - `tests/Engine.Platform.Tests/**`
+    - `.ai-workflow/boundaries/engine-platform.md`
+    - `.ai-workflow/tasks/task-plat-002.md`
+    - `.ai-workflow/archive/2026-05/TASK-PLAT-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet restore tests/Engine.Platform.Tests/Engine.Platform.Tests.csproj --nologo -v minimal` 后 `dotnet test tests/Engine.Platform.Tests/Engine.Platform.Tests.csproj --no-restore --nologo -v minimal`，7/7 passed）
+    - Smoke: pass（`NullInputService` 返回 empty input；`InputSnapshot.FromKeys(...)` 可表达 W/A/S/D 与多键组合）
+    - Perf: pass（小型只读 key-state value snapshot，无逐帧可变集合复制）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PLAT-002.md`
+
+- TaskId: `TASK-QA-019`
+  Title: `M18 Interaction scripting gate review and archive`
+  Priority: `P3`
+  PrimaryModule: `QA`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-platform.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-03 15:00`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Rechecked the full M18 interaction scripting path across Platform, Scripting, and App
+    - Confirmed the input-to-script-to-transform-to-snapshot/render chain is closed without scope creep
+    - Completed archive closeout after human acceptance and user-owned QA signoff
+  FilesChanged:
+    - `.ai-workflow/tasks/task-qa-019.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-019.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（沿用 `TASK-PLAT-002`、`TASK-SCRIPT-003`、`TASK-APP-012` 的构建通过证据）
+    - Test: pass（沿用 Platform/Scripting/App 相关测试通过证据）
+    - Smoke: pass（`MoveOnInput` 主路径、无输入/单键/斜向归一化、headless sample run 与 fail-fast 语义均已覆盖）
+    - Perf: pass（无新增逐帧程序集加载、源码编译、热重载轮询、动作映射层、物理/动画 side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-019.md`
+
 - TaskId: `TASK-SCRIPT-002`
   Title: `M17.F1 Script SelfObject/Transform 解耦收敛`
   Priority: `P1`

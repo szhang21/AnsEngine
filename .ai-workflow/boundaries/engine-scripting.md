@@ -98,6 +98,11 @@
 
 - 2026-05-03
   - 变更人：Execution-Agent
+  - 变更内容：新增 scripting-owned `ScriptKey` / `ScriptInputSnapshot` 输入快照、`ScriptContext.Input` 与 `ScriptContext.WithFrame(...)`，扩展 `ScriptRuntime.Update(...)` 以传递同一帧输入，并新增 `ScriptPropertyReader` 统一 required number/bool/string property 读取。
+  - 变更原因：支撑 `TASK-SCRIPT-003`，为 M18 interaction scripting MVP 提供脚本侧输入消费面与稳定 property helper，同时保持 `Engine.Scripting` 不依赖 `Engine.Platform`。
+  - 风险与回滚方案：当前只支持 W/A/S/D 和 required primitive properties；未来若扩展 action mapping、mouse/gamepad 或复杂 property graph，必须另立任务并保持 Platform 到 Scripting 的转换在 App 层完成。
+- 2026-05-03
+  - 变更人：Execution-Agent
   - 变更内容：将脚本访问面从 `IScriptSelfTransform` 收敛为 `IScriptSelfObject` / `IScriptTransformComponent`，并移除 `Engine.Scripting` 对 `Engine.Scene` 的项目级依赖；`Engine.Scripting` 只保留对 `Engine.Contracts` 中 `SceneTransform` 的契约消费。
   - 变更原因：支撑 `TASK-SCRIPT-002`，让 Transform 继续归属 Scene 原生 runtime component，同时让 Scripting 仅依赖抽象 self-object 访问面。
   - 风险与回滚方案：若后续需要更多组件访问，必须另立任务设计组件查询边界；不得通过重新引入 `Engine.Scripting -> Engine.Scene` 依赖绕过 App/Scene 边界适配。

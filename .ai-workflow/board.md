@@ -33,6 +33,12 @@
 
 ## Done
 
+- `TASK-PLAT-003` M18.F1 Native WASD input polling for runtime app（人工验收通过，已归档）
+- `TASK-QA-019` M18 Interaction scripting gate review and archive（人工验收通过，已归档）
+- `TASK-APP-012` M18 App input-to-scripting integration and MoveOnInput（人工验收通过，已归档）
+- `TASK-SCRIPT-003` M18 Scripting input context and property helper（人工验收通过，已归档）
+- `TASK-PLAT-002` M18 Platform key-state input snapshot foundation（人工验收通过，已归档）
+
 - `TASK-QA-018` M17 Scripting Foundation gate review and archive（人工验收通过，已归档）
 - `TASK-SCRIPT-002` M17.F1 Script SelfObject/Transform 解耦收敛（人工验收通过，已归档）
 - `TASK-APP-011` M17 App scripting runtime integration and RotateSelf sample（人工验收通过，已归档）
