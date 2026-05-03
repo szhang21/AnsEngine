@@ -7,6 +7,7 @@ using Engine.Render;
 using Engine.Scene;
 using Engine.SceneData;
 using Engine.SceneData.Abstractions;
+using Engine.Scripting;
 using System.Reflection;
 using System.Numerics;
 using Xunit;
@@ -118,15 +119,99 @@ public sealed class RuntimeBootstrapTests
     {
         var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
         sceneGraph.AddRootNode();
-        var adapterType = typeof(RuntimeBootstrap).Assembly.GetType("Engine.App.SceneRuntimeAdapter");
-        Assert.NotNull(adapterType);
-        var sceneRuntime = Assert.IsAssignableFrom<ISceneRuntime>(
-            Activator.CreateInstance(adapterType!, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new object[] { sceneGraph }, null));
+        var sceneRuntime = CreateSceneRuntime(sceneGraph);
 
         sceneRuntime.Update(new TimeSnapshot(0.25, 1.5, 4.0), new InputSnapshot(true));
 
-        var rotation = Assert.Single(sceneGraph.BuildRenderFrame().Items).Transform.Rotation;
-        AssertQuaternionNearlyEqual(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.125f), rotation);
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+        var renderItem = Assert.Single(sceneGraph.BuildRenderFrame().Items);
+        Assert.Equal(1, snapshot.UpdateFrameCount);
+        Assert.Equal(0.25d, snapshot.AccumulatedUpdateSeconds);
+        AssertQuaternionNearlyEqual(Quaternion.Identity, renderItem.Transform.Rotation);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_RotateSelfSceneUpdatesScriptBeforeRender()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var sceneRuntime = CreateSceneRuntime(sceneGraph);
+        var renderer = new CapturingRenderer(sceneGraph);
+        var windowService = new AutoCloseWindowService();
+        var scriptRuntime = CreateRotateSelfRuntime();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader("RotateSelf"),
+            "script.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.5, 0.5, 2.0)),
+            scriptRuntime);
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(1, renderer.RenderCalls);
+        Assert.NotNull(renderer.FirstRenderedRotation);
+        AssertQuaternionNearlyEqual(
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.5f),
+            renderer.FirstRenderedRotation!.Value);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_UnknownScriptIdFailsCleanlyBeforeRender()
+    {
+        var windowService = new TrackingWindowService();
+        var renderer = new CountingRenderer();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            CreateSceneRuntime(new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"))),
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader("MissingScript"),
+            "script.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0.016, 60)),
+            CreateRotateSelfRuntime());
+
+        var exitCode = app.Run();
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal(1, renderer.InitializeCalls);
+        Assert.Equal(0, renderer.RenderCalls);
+        Assert.Equal(1, renderer.ShutdownCalls);
+        Assert.Equal(1, windowService.DisposeCalls);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_ScriptUpdateExceptionFailsCleanlyBeforeRender()
+    {
+        var windowService = new TrackingWindowService();
+        var renderer = new CountingRenderer();
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register("ThrowOnUpdate", static () => new ThrowingUpdateScript()));
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            CreateSceneRuntime(new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"))),
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new ScriptSceneDescriptionLoader("ThrowOnUpdate"),
+            "script.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0.016, 60)),
+            new ScriptRuntime(registry));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal(1, renderer.InitializeCalls);
+        Assert.Equal(0, renderer.RenderCalls);
+        Assert.Equal(1, renderer.ShutdownCalls);
+        Assert.Equal(1, windowService.DisposeCalls);
     }
 
     [Fact]
@@ -261,6 +346,21 @@ public sealed class RuntimeBootstrapTests
         Assert.Equal(expected.W, actual.W, 5);
     }
 
+    private static ISceneRuntime CreateSceneRuntime(SceneGraphService sceneGraph)
+    {
+        var adapterType = typeof(RuntimeBootstrap).Assembly.GetType("Engine.App.SceneRuntimeAdapter");
+        Assert.NotNull(adapterType);
+        return Assert.IsAssignableFrom<ISceneRuntime>(
+            Activator.CreateInstance(adapterType!, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new object[] { sceneGraph }, null));
+    }
+
+    private static ScriptRuntime CreateRotateSelfRuntime()
+    {
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register(RotateSelfScript.kScriptId, static () => new RotateSelfScript()));
+        return new ScriptRuntime(registry);
+    }
+
     private sealed class AutoCloseWindowService : IWindowService
     {
         private readonly List<string>? mCallLog;
@@ -345,6 +445,34 @@ public sealed class RuntimeBootstrapTests
         }
     }
 
+    private sealed class CapturingRenderer : IRenderer
+    {
+        private readonly ContractsProvider mProvider;
+
+        public CapturingRenderer(ContractsProvider provider)
+        {
+            mProvider = provider;
+        }
+
+        public int RenderCalls { get; private set; }
+
+        public Quaternion? FirstRenderedRotation { get; private set; }
+
+        public void Initialize()
+        {
+        }
+
+        public void RenderFrame()
+        {
+            RenderCalls += 1;
+            FirstRenderedRotation ??= Assert.Single(mProvider.BuildRenderFrame().Items).Transform.Rotation;
+        }
+
+        public void Shutdown()
+        {
+        }
+    }
+
     private sealed class TrackingWindowService : IWindowService
     {
         public WindowConfig Configuration { get; } = new(1280, 720, "AnsEngine-Tests");
@@ -392,6 +520,11 @@ public sealed class RuntimeBootstrapTests
         {
             InitializeCalled = true;
             SceneDescription = sceneDescription;
+        }
+
+        public SceneScriptObjectBindResult BindScriptObject(string objectId)
+        {
+            throw new NotSupportedException("Spy scene runtime does not support script binding.");
         }
 
         public void Update(TimeSnapshot time, InputSnapshot input)
@@ -477,6 +610,56 @@ public sealed class RuntimeBootstrapTests
                             new SceneMaterialRef("material://default"),
                             SceneTransformDescription.Identity)
                     }));
+        }
+    }
+
+    private sealed class ScriptSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        private readonly string mScriptId;
+
+        public ScriptSceneDescriptionLoader(string scriptId)
+        {
+            mScriptId = scriptId;
+        }
+
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(
+                new SceneDescription(
+                    "script-scene",
+                    sceneFilePath,
+                    new SceneCameraDescription(new Vector3(0.0f, 0.25f, 2.2f), Vector3.Zero, 1.0471976f),
+                    new[]
+                    {
+                        new SceneObjectDescription(
+                            "cube-main",
+                            "Cube Main",
+                            new SceneComponentDescription[]
+                            {
+                                new SceneTransformComponentDescription(SceneTransformDescription.Identity),
+                                new SceneMeshRendererComponentDescription(
+                                    new SceneMeshRef("mesh://cube"),
+                                    new SceneMaterialRef("material://default")),
+                                new SceneScriptComponentDescription(
+                                    mScriptId,
+                                    new Dictionary<string, SceneScriptPropertyValue>
+                                    {
+                                        ["speedRadiansPerSecond"] = SceneScriptPropertyValue.FromNumber(1.0d)
+                                    })
+                            })
+                    }));
+        }
+    }
+
+    private sealed class ThrowingUpdateScript : IScriptBehavior
+    {
+        public void Initialize(ScriptContext context)
+        {
+        }
+
+        public void Update(ScriptContext context)
+        {
+            throw new InvalidOperationException("update failed");
         }
     }
 

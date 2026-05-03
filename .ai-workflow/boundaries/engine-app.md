@@ -35,6 +35,7 @@
   - `Engine.Platform`
   - `Engine.Scene`
   - `Engine.SceneData`
+  - `Engine.Scripting`
   - `Engine.Asset`
   - `Engine.Render`
 - 可使用基础库/第三方：
@@ -82,6 +83,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-02
+  - 变更人：Execution-Agent
+  - 变更内容：允许 `Engine.App` 直接依赖 `Engine.Scripting`，组合根新增 `ScriptRegistry` / `ScriptRuntime` 装配与内置 `RotateSelf` 注册；`ApplicationHost.Run()` 在 scene load 后绑定并 initialize Script components，并在每帧 `SceneRuntime.Update` 后、`RenderFrame` 前执行 script update。
+  - 变更原因：支撑 `TASK-APP-011`，打通 M17 App scripting runtime integration and RotateSelf sample 主链路，同时保持脚本绑定与 update 编排归属 App。
+  - 风险与回滚方案：若后续脚本加载扩展到外部程序集、源码编译或热重载，必须另开任务更新边界；如需回滚，本次变更可退回到 App 不注册 `ScriptRuntime`，但不得把 scripting runtime 反向塞入 `Engine.Scene`。
 - 2026-05-01
   - 变更人：Execution-Agent
   - 变更内容：`ISceneRuntime` 新增显式 update 入口，`ApplicationHost.Run()` 每帧按 ProcessEvents -> Input -> Time -> SceneRuntime.Update -> RenderFrame -> Present 顺序执行；`SceneRuntimeAdapter` 负责把 `TimeSnapshot` / `InputSnapshot` 翻译成 `SceneUpdateContext` 后转发给 `SceneGraphService.UpdateRuntime(...)`。

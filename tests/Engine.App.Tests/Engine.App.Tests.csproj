@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\src\Engine.App\Engine.App.csproj" />
     <ProjectReference Include="..\..\src\Engine.Contracts\Engine.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Engine.Render\Engine.Render.csproj" />
+    <ProjectReference Include="..\..\src\Engine.Scripting\Engine.Scripting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

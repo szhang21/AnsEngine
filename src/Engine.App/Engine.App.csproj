@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Engine.Render\Engine.Render.csproj" />
     <ProjectReference Include="..\Engine.Scene\Engine.Scene.csproj" />
     <ProjectReference Include="..\Engine.SceneData\Engine.SceneData.csproj" />
+    <ProjectReference Include="..\Engine.Scripting\Engine.Scripting.csproj" />
     <ProjectReference Include="..\Engine.Asset\Engine.Asset.csproj" />
   </ItemGroup>
 

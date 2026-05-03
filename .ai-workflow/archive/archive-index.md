@@ -48,6 +48,35 @@
 
 ### 当前记录
 
+- TaskId: `TASK-APP-011`
+  Title: `M17 App scripting runtime integration and RotateSelf sample`
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-02 17:41`
+  Status: `Review`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Composed `ScriptRegistry` / `ScriptRuntime` in `Engine.App` and registered built-in `RotateSelf`
+    - Bound Script components after scene initialization and ran script update before render
+    - Added App tests for valid script flow, unknown script id failure, script exception failure, and default rotation removal
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `tests/Engine.App.Tests/Engine.App.Tests.csproj`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-011.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与本机 `LIB` 路径 warning）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，12/12 passed）
+    - Smoke: pass（headless 默认 sample scene 运行退出码 0，`RotateSelf` 主路径由 App 测试验证 render 前更新）
+    - Perf: pass（无逐帧程序集加载、源码编译、热重载轮询、重复脚本绑定或 render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-011.md`
+
 - TaskId: `TASK-SCENE-019`
   Title: `M17 Scene script access bridge`
   Priority: `P1`

@@ -17,7 +17,6 @@
 
 ## Todo
 
-- `TASK-APP-011` M17 App scripting runtime integration and RotateSelf sample
 - `TASK-QA-018` M17 Scripting Foundation gate review and archive
 
 ## InProgress
@@ -30,6 +29,7 @@
 
 ## Review
 
+- `TASK-APP-011` M17 App scripting runtime integration and RotateSelf sample（Build/Test/Smoke/Boundary 通过，待人工复验）
 - `TASK-SCRIPT-001` M17 Engine.Scripting module and script lifecycle foundation（Build/Test/Smoke/Boundary 通过，待人工复验）
 - `TASK-SDATA-008` M17 SceneData Script component schema and validation（Build/Test/Smoke/Boundary 通过，待人工复验）
 - `TASK-SCENE-019` M17 Scene script access bridge（Build/Test/Smoke/Boundary 通过，待人工复验）

@@ -225,10 +225,10 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Todo
+Review
 
 ## 完成度（Completion）
-`0`
+`95`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
@@ -238,9 +238,24 @@ Todo
 - HumanSignoff: `pending`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-05/TASK-APP-011.md`
+- ClosedAt: `2026-05-02 17:41`
 - Summary:
+  - `Engine.App` now composes `ScriptRegistry` / `ScriptRuntime` and registers built-in `RotateSelf`.
+  - `ApplicationHost.Run()` binds Script components after scene initialization and runs script update before render.
+  - App tests cover valid `RotateSelf`, unknown script id clean failure, script update exception clean failure, and removal of default Scene update rotation.
 - FilesChanged:
+  - `src/Engine.App/ApplicationBootstrap.cs`
+  - `src/Engine.App/Engine.App.csproj`
+  - `src/Engine.App/SceneRuntimeContracts.cs`
+  - `tests/Engine.App.Tests/Engine.App.Tests.csproj`
+  - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/tasks/task-app-011.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: pass | fail
+  - Build: `dotnet build AnsEngine.sln --nologo -v minimal` passed with existing `net7.0` EOL and local `LIB` path warnings.
+  - Test: `dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal` passed, 12/12 tests.
+  - Smoke: `ANS_ENGINE_USE_NATIVE_WINDOW=false; ANS_ENGINE_AUTO_EXIT_SECONDS=0.05; dotnet run --project src/Engine.App/Engine.App.csproj --no-restore --nologo` exited 0 with default sample scene using `RotateSelf`.
+  - Perf: pass; no per-frame assembly loading, source compilation, hot reload polling, repeated script binding, or render side effect introduced.
+- ModuleAttributionCheck: pass
