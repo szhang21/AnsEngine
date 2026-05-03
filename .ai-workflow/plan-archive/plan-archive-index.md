@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M18-2026-05-03`
+  Status: `Closed`
+  LastUpdated: `2026-05-03 18:13`
+  MilestoneSummary: `M18 完成（Scripting Runtime Interaction MVP，Platform W/A/S/D input snapshot、Scripting input context、App input bridge、MoveOnInput sample 与 native WASD polling 收口）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M18-2026-05-03.md`
+
 - PlanId: `PLAN-M17-2026-05-02`
   Status: `Closed`
   LastUpdated: `2026-05-03 13:45`

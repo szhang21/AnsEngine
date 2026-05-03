@@ -1,6 +1,6 @@
 ---
 name: engine-project-vision
-description: AnsEngine 项目长期目标与里程碑规划参照。用于讨论路线图、里程碑、模块优先级、系统边界和长期架构取舍。触发词包括：最终目标、项目目标、路线图、里程碑、规划、M14、M15、脚本系统、物理系统、动画系统、编辑器、runtime、game engine。
+description: AnsEngine 项目长期目标与里程碑规划参照。用于讨论路线图、里程碑、模块优先级、系统边界、长期架构取舍、计划技术设计、真实 runtime/editor 验收。触发词包括：最终目标、项目目标、路线图、里程碑、规划、技术设计、代码模块设计、设计模式、M14、M15、脚本系统、物理系统、动画系统、编辑器、runtime、game engine。
 ---
 
 # AnsEngine 项目愿景
@@ -101,6 +101,23 @@ Editor Viewport、Picking、Gizmo、Undo/Redo 等能力也重要，但应与 run
 - 是否引入了与当前模块边界不匹配的依赖？
 - 是否需要先建立数据模型或生命周期，再做可视化工具？
 - 是否能拆成任务卡，并有明确 Build/Test/Smoke/Boundary 验收？
+- 是否只是建立 contract/schema/test stub，而没有接入真实 runtime/editor 主路径？
+- 如果里程碑名称承诺 Interaction、Runtime、Playable、Editor Integration 等用户可见能力，验收是否覆盖真实触发路径，而不仅是单元测试或桩实现？
+
+## 计划技术设计要求
+
+里程碑计划不能只给方向和任务名，还必须包含足够的代码设计信息，便于 Dispatch/Executor 不自行脑补关键实现。
+
+计划中应明确：
+
+- 模块职责、允许依赖、禁止依赖和依赖方向。
+- 新增或变更的 public API / internal API / DTO / schema。
+- runtime 或 editor 的数据流、生命周期和调用顺序。
+- 关键设计模式或结构取舍，例如 adapter、bridge、composition root、snapshot、registry、factory、fail-fast result。
+- 错误语义、失败回退、诊断证据和 shutdown/dispose 行为。
+- 自动测试与真实主路径验收的区别。
+
+如果计划目标是 foundation，可以接受 contract + tests 为主；如果计划目标是 MVP、interaction、integration 或用户可见能力，则必须定义真实主路径 smoke/manual 验收。stub/headless/unit test 可以作为自动验证，但不能替代已承诺的真实行为。
 
 ## 与其他 Skill 的关系
 

@@ -15,11 +15,13 @@
 
 1. `GoalSummary`：本轮目标与成功标准（可验证）。
 2. `Milestones`：里程碑列表（M1/M2/...），每个里程碑有交付结果与验收口径。
-3. `PriorityOrder`：按 P0/P1/P2/P3 给出优先级顺序与原因。
-4. `Risks`：高/中/低风险及规避策略。
-5. `PlanningDecisions`：需要锁定的关键取舍与默认选择。
-6. `HandoffToDispatch`：给 Dispatch Agent 的拆卡约束（模块边界、范围限制、并行倾向）。
-7. `PlanArchive`：计划归档块（可直接写入归档文件）。
+3. `TechnicalDesign`：代码模块设计、API/DTO/schema 变化、数据流、调用顺序、错误语义与设计模式取舍。
+4. `RuntimeRealityCheck`：说明本轮是否承诺真实 runtime/editor 主路径；若承诺，必须写清真实触发路径与 smoke/manual 验收，不能只写 stub/unit test。
+5. `PriorityOrder`：按 P0/P1/P2/P3 给出优先级顺序与原因。
+6. `Risks`：高/中/低风险及规避策略。
+7. `PlanningDecisions`：需要锁定的关键取舍与默认选择。
+8. `HandoffToDispatch`：给 Dispatch Agent 的拆卡约束（模块边界、范围限制、并行倾向）。
+9. `PlanArchive`：计划归档块（可直接写入归档文件）。
 
 输出要求：
 
@@ -28,11 +30,17 @@
 - 你定义的是“主优先级”（里程碑级），后续 Dispatch 仅允许在里程碑内微调。
 - 如果信息不足，先列 `Assumptions`，但仍必须给出可执行版本计划（不得停在提问阶段）。
 - 必须给出 `计划引用`（唯一 id）与 `归档路径`，默认：`.ai-workflow/plan-archive/<yyyy-mm>/<计划引用>.md`。
+- 技术设计必须具体到 Executor 不需要自行决定核心代码形状；至少写清模块边界、依赖方向、关键类型/API、数据流、生命周期/调用顺序、错误语义、测试主路径。
+- 若计划使用 adapter、bridge、registry、factory、snapshot、composition root、fail-fast result 等模式，必须说明模式用途和所属模块；不得只写模式名。
+- 如果计划目标包含 Interaction、Runtime、Playable、Editor Integration、MVP 等用户可见语义，必须定义真实 runtime/editor 主路径验收；stub、headless fixture、unit test 只能作为自动验证，不能替代真实主路径，除非计划明确降级为 foundation。
+- 若允许降级或 fallback，必须写清降级后该里程碑是否仍算完成；不能留下“接口建好但真实路径未通也算完成”的灰区。
 - `PlanArchive` 至少包含：
   - `计划引用`
   - `创建时间/更新时间`
   - `GoalSummary`
   - `Milestones`（含每个里程碑的完成定义）
+  - `TechnicalDesign`
+  - `RuntimeRealityCheck`
   - `PriorityOrder`
   - `PlanningDecisions`
   - `Risks`
