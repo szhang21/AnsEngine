@@ -48,6 +48,130 @@
 
 ### 当前记录
 
+- TaskId: `TASK-PHYS-001`
+  Title: `M19 Engine.Physics module and boundary foundation`
+  Priority: `P0`
+  PrimaryModule: `Engine.Physics`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
+  Owner: `Exec-Physics`
+  ClosedAt: `2026-05-04 21:26`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added independent `Engine.Physics` and `Engine.Physics.Tests` projects
+    - Added minimal public world / definition / step / snapshot / AABB / query shape
+    - Added boundary tests proving no forbidden Engine/native dependencies
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.Physics/**`
+    - `tests/Engine.Physics.Tests/**`
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/tasks/task-phys-001.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-PHYS-001.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，3/3 passed）
+    - Smoke: pass（Physics project compiles, test project references it, stable public world/step/snapshot/query shape exists）
+    - Perf: pass（no JSON parsing, App loop binding, Transform writeback, OpenTK/OpenGL/ImGui, or render dependency）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PHYS-001.md`
+
+- TaskId: `TASK-SDATA-009`
+  Title: `M19 SceneData RigidBody and BoxCollider component schema`
+  Priority: `P0`
+  PrimaryModule: `Engine.SceneData`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scenedata.md`
+  Owner: `Exec-SceneData`
+  ClosedAt: `2026-05-04 21:26`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `RigidBody` / `BoxCollider` file schema and normalized descriptions
+    - Added validation for body type, mass, box size, center, and default semantics
+    - Added valid/invalid/round-trip/boundary SceneData tests without Physics dependency
+  FilesChanged:
+    - `src/Engine.SceneData/FileModel/SceneFileComponentDefinition.cs`
+    - `src/Engine.SceneData/Descriptions/SceneComponentDescription.cs`
+    - `src/Engine.SceneData/Descriptions/SceneObjectDescription.cs`
+    - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+    - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/tasks/task-sdata-009.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-SDATA-009.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj --no-restore --nologo -v minimal`，44/44 passed）
+    - Smoke: pass（JSON fixture loads into normalized `SceneDescription` with `RigidBody` / `BoxCollider`）
+    - Perf: pass（schema validation only runs during explicit load/save/reload, no runtime physics path）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SDATA-009.md`
+
+- TaskId: `TASK-PHYS-002`
+  Title: `M19 PhysicsWorld load, fixed step, snapshot and AABB queries`
+  Priority: `P1`
+  PrimaryModule: `Engine.Physics`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
+  Owner: `Exec-Physics`
+  ClosedAt: `2026-05-04 21:26`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Implemented `PhysicsWorldDefinition -> PhysicsWorld` load path
+    - Added fixed-step statistics, read-only snapshots, AABB overlap query, and ground query
+    - Added test-only SceneData fixture adapter evidence inside Physics tests
+  FilesChanged:
+    - `src/Engine.Physics/PhysicsWorld.cs`
+    - `src/Engine.Physics/PhysicsQueryResult.cs`
+    - `tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj`
+    - `tests/Engine.Physics.Tests/PhysicsFoundationTests.cs`
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/tasks/task-phys-002.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-PHYS-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，10/10 passed）
+    - Smoke: pass（`PhysicsWorldDefinition -> PhysicsWorld -> Step -> Snapshot/Query` 主路径通过；SceneData fixture 仅经测试侧 adapter 映射）
+    - Perf: pass（no App loop binding, per-frame JSON parsing, Transform writeback, solver, gravity, or render side path）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PHYS-002.md`
+
+- TaskId: `TASK-QA-020`
+  Title: `M19 Physics Foundation gate review and archive`
+  Priority: `P2`
+  PrimaryModule: `Engine.Physics`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-04 21:26`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Rechecked M19 implementation cards, boundaries, and archive evidence
+    - Ran full build/test and boundary review
+    - Confirmed M19 stays foundation-only and is ready for Human archive review
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/boundaries/engine-scenedata.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-qa-020.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-020.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，235/235 passed）
+    - Smoke: pass（`PhysicsWorldDefinition -> PhysicsWorld -> Step -> Snapshot/Query` 主路径通过；realistic SceneData fixture 仅经测试侧 adapter 映射）
+    - Perf: pass（no per-frame JSON parsing, App loop integration, Transform writeback, gravity/solver, or render side path）
+    - CodeQuality: NoNewHighRisk=true, MustFixCount=0, MustFixDisposition=none
+    - DesignQuality: DQ-1=pass, DQ-2=pass, DQ-3=pass, DQ-4=pass
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-020.md`
+
 - TaskId: `TASK-PLAT-003`
   Title: `M18.F1 Native WASD input polling for runtime app`
   Priority: `P1`

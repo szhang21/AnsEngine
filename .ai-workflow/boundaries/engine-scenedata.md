@@ -89,6 +89,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-04
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M19 QA 复验，确认 SceneData `RigidBody` / `BoxCollider` schema、normalization、validation 与 round-trip 测试通过，且 `Engine.SceneData` 仍不依赖 `Engine.Physics`。
+  - 变更原因：支撑 `TASK-QA-020`，为 M19 Physics foundation 归档准备确认 SceneData 只承担数据 schema 与显式校验职责。
+  - 风险与回滚方案：当前未发现 MustFix；后续 production SceneData-to-Physics bridge 需在 M20 或后续 integration 任务中显式建立，不把 runtime Physics 类型倒灌到 SceneData。
+- 2026-05-04
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `RigidBody` 与 `BoxCollider` component file schema 和 normalized descriptions；`RigidBody` 支持 `bodyType: Static|Dynamic` 与可选 `mass`，`BoxCollider` 支持必填正有限 `size` 与可选有限 `center`；normalizer 固定 Static mass 归一为 `0`、Dynamic mass 缺省为 `1`，并补充 valid/invalid/round-trip/boundary 测试。
+  - 变更原因：支撑 `TASK-SDATA-009`，为 M19 Physics foundation 提供真实 SceneData fixture 来源，同时保持 SceneData 只负责 schema、normalization、validation 与 round-trip，不依赖 `Engine.Physics`。
+  - 风险与回滚方案：当前不引入 PhysicsWorld、AABB、solver 或运行时物理语义；若后续需要 production SceneData-to-Physics bridge，应在 App/Scene integration 任务中显式映射，不把 Physics runtime 类型引入 SceneData。
 - 2026-05-02
   - 变更人：Execution-Agent
   - 变更内容：新增 repeatable `Script` component file model 与 normalized `SceneScriptComponentDescription`；`Script` 支持 `scriptId` 与 number/bool/string properties，多个 Script component 按文件顺序保留。

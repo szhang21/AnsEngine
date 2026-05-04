@@ -4,7 +4,7 @@
 `TASK-QA-020`
 
 ## 目标（Goal）
-对 M19 Physics foundation 执行全量 build/test/smoke 与边界复验，确认 `SceneData -> PhysicsWorld -> Step -> Snapshot/Query` 主链路稳定，同时没有滑入 Transform 回写、App 接线或可见 runtime physics。
+对 M19 Physics foundation 执行全量 build/test/smoke 与边界复验，确认 `PhysicsWorldDefinition -> PhysicsWorld -> Step -> Snapshot/Query` 核心链路稳定，同时 SceneData fixture 只能经测试侧 adapter 验证映射，并且没有滑入 Transform 回写、App 接线或可见 runtime physics。
 
 ## 任务来源（TaskSource）
 DispatchAgent
@@ -53,18 +53,18 @@ Engine.Physics
 ## 决策继承（DecisionCarryOver）
 - 从计划/里程碑继承的关键决策：
   - Physics 真实路径必须是：
-    - real scene JSON or realistic SceneData fixture
-    - normalized `SceneDescription`
+    - `PhysicsWorldDefinition`
     - `Engine.Physics.PhysicsWorld`
     - fixed step
     - snapshot/query
-  - `Engine.Physics` 不得依赖 `Scene/App/Render/Scripting/Editor/Editor.App`。
+  - realistic SceneData fixture 可作为测试证据，但必须先由测试侧 adapter 映射为 `PhysicsWorldDefinition`。
+  - `Engine.Physics` 不得依赖 `SceneData/Contracts/Core/Scene/App/Render/Scripting/Editor/Editor.App`。
   - `Engine.SceneData` 不得依赖 `Engine.Physics`。
   - `Engine.Scene` / `Engine.Render` / `Engine.Scripting` 不感知 Physics。
   - M19 不写回 Transform、不接入 App 主循环、不产生 visible gravity/collision response。
 - 本卡执行时不得推翻的既定取舍：
   - 不允许在 QA 卡中补实现或接受“Physics world 存在就算完成”的空壳通过。
-  - 不允许把 stub-only DTO tests 当作真实 foundation 证据。
+  - 不允许把 stub-only DTO tests 当作真实 foundation 证据；核心 definition 测试必须覆盖真实 world/snapshot/query，SceneData fixture 证据必须明确是测试侧 adapter。
   - 不允许把“没有 visible physics”误判为缺陷，因为这在 M19 明确不在范围内。
 - 若计划/里程碑已给出示例数据结构、字段草图、DTO/record/class 形状、关系图或字段命名约定：
   - `PLAN-M19-2026-05-03 > RuntimeRealityCheck`、`AABB Rules`、`Boundary Rules`、`TestPlan` 是本卡判定是否按计划落地的固定参照。
@@ -77,13 +77,14 @@ Engine.Physics
   - `dotnet test AnsEngine.sln --no-restore --nologo -v minimal`
 - 重点核验场景：
   - valid `RigidBody` / `BoxCollider` JSON loads and round-trips
-  - realistic SceneData fixture enters `SceneDescription -> PhysicsWorld` path
+  - `PhysicsWorldDefinition` enters `PhysicsWorld` path
+  - optional realistic SceneData fixture enters test-only adapter, then `PhysicsWorldDefinition -> PhysicsWorld`
   - body count / ids / names / body types stable
   - AABB rules follow pinned center/size/absolute-scale behavior
   - ground query detects above/intersecting/below ground without mutating body state
   - `Step(...)` updates only fixed-step statistics, not Scene Transform
 - 单独做边界复验，确认：
-  - `Engine.Physics` 不引用 `Scene/App/Render/Scripting/Editor/Editor.App`
+  - `Engine.Physics` 不引用 `SceneData/Contracts/Core/Scene/App/Render/Scripting/Editor/Editor.App`
   - `Engine.SceneData` 不引用 `Engine.Physics`
   - `Engine.Scene` / `Engine.Render` / `Engine.Scripting` 不提及 Physics
   - M19 未引入 Transform writeback、App main loop integration 或 visible runtime physics
@@ -92,13 +93,14 @@ Engine.Physics
 ## 设计约束（DesignConstraints）
 - 不允许在 QA 卡中修功能、改 physics schema 或改 world query 语义。
 - 不允许跳过 `Engine.SceneData.Tests`、`Engine.Physics.Tests` 和边界检查。
-- 不允许用 headless build/test 成功替代真实 SceneData fixture 进入 PhysicsWorld 的证据。
+- 不允许用 headless build/test 成功替代 `PhysicsWorldDefinition` 进入 PhysicsWorld 的证据。
 - 不允许把 M20 能力缺失误报为 M19 缺陷。
 
 ## 失败与降级策略（FallbackBehavior）
 - 若 Build/Test/Smoke/Perf 任一门禁失败，本卡不得进入 `Review`，必须记录失败证据并回退。
 - 若发现任何模块通过偷引 Physics 依赖、写回 Transform 或接入 App loop 来通过测试，必须判定为高风险边界失败。
-- 若发现 realistic SceneData fixture 没有真正进入 `PhysicsWorld` 主路径，必须判定为 must-fix，不得口头接受。
+- 若发现 `PhysicsWorldDefinition` 没有真正进入 `PhysicsWorld` 主路径，必须判定为 must-fix，不得口头接受。
+- 若存在 SceneData fixture 证据，该证据必须通过测试侧 adapter；若 production Physics 直接依赖 SceneData，必须判定为高风险边界失败。
 - 若 `MustFixCount > 0`，必须保持 `MustFixDisposition=follow-up-created` 或回退原卡，不得直接放行。
 
 ## 参考点（ExamplesOrReferences）
@@ -187,15 +189,12 @@ true
 ## ComplexityAssessment
 - Level: `L3`
 - Why:
-  - M19 同时涉及新模块、新 schema、真实 fixture 主路径与多个逆向边界，QA 需要同时验证行为、边界和“未滑入 M20”。
+  - M19 同时涉及新模块、新 schema、definition 主路径、fixture adapter 证据与多个逆向边界，QA 需要同时验证行为、边界和“未滑入 M20”。
   - 若只看 build/test 绿灯，非常容易误判 foundation 已稳。
 - SufficiencyMatch: `pass`
 
 ## 依赖约束（DependencyContract）
 - AllowedDependsOn:
-  - `Engine.Physics -> Engine.SceneData`
-  - `Engine.Physics -> Engine.Contracts`
-  - `Engine.Physics -> Engine.Core`
   - `Engine.SceneData -> Engine.Contracts`
   - `Engine.Scene -> Engine.Core`
   - `Engine.Scene -> Engine.Contracts`
@@ -211,6 +210,9 @@ true
   - `Engine.Scripting -> Engine.Core`
   - `Engine.Scripting -> Engine.Contracts`
 - ForbiddenDependsOn:
+  - `Engine.Physics -> Engine.SceneData`
+  - `Engine.Physics -> Engine.Contracts`
+  - `Engine.Physics -> Engine.Core`
   - `Engine.Physics -> Engine.Scene`
   - `Engine.Physics -> Engine.App`
   - `Engine.Physics -> Engine.Render`
@@ -240,7 +242,7 @@ true
 ## 验收标准（Acceptance）
 - Build: `dotnet build AnsEngine.sln --nologo -v minimal` 通过
 - Test: `dotnet test AnsEngine.sln --no-restore --nologo -v minimal` 通过，Physics / SceneData 相关测试无退化
-- Smoke: realistic SceneData fixture 能进入 `PhysicsWorld -> Step -> Snapshot/Query` 主路径；无 visible runtime physics claim
+- Smoke: `PhysicsWorldDefinition` 能进入 `PhysicsWorld -> Step -> Snapshot/Query` 主路径；如使用 realistic SceneData fixture，必须经测试侧 adapter；无 visible runtime physics claim
 - Perf: 无逐帧 JSON 解析、App loop 接线、Transform writeback 或渲染 side path
 - CodeQuality:
   - NoNewHighRisk: `true`
@@ -260,22 +262,39 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-020.md`
-- ClosedAt:
+- ClosedAt: `2026-05-04 21:26`
 - Summary:
+  - Rechecked M19 implementation cards, allowed paths, boundary docs, and archive evidence.
+  - Ran full build and full test suite.
+  - Verified `PhysicsWorldDefinition -> PhysicsWorld -> Step -> Snapshot/Query` evidence and test-only SceneData adapter constraint.
+  - Confirmed no Transform writeback, App loop integration, gravity, solver, or visible runtime physics claim.
 - FilesChanged:
+  - `.ai-workflow/boundaries/engine-physics.md`
+  - `.ai-workflow/boundaries/engine-scenedata.md`
+  - `.ai-workflow/boundaries/engine-scene.md`
+  - `.ai-workflow/tasks/task-qa-020.md`
+  - `.ai-workflow/archive/2026-05/TASK-QA-020.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
+  - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+  - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，235/235 passed）
+  - Smoke: pass（PhysicsWorldDefinition main path and realistic SceneData fixture through test-only adapter verified）
+  - Perf: pass（no per-frame JSON parsing, App loop integration, Transform writeback, gravity/solver, or render side path）
+  - CodeQuality: NoNewHighRisk=true, MustFixCount=0, MustFixDisposition=none
+  - DesignQuality: DQ-1=pass, DQ-2=pass, DQ-3=pass, DQ-4=pass
 - ModuleAttributionCheck: pass

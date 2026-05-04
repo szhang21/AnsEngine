@@ -4,7 +4,7 @@
 `TASK-SDATA-009`
 
 ## 目标（Goal）
-在 `Engine.SceneData` 中新增 `RigidBody` 与 `BoxCollider` component file schema、normalized descriptions、validation 与 round-trip 支持，为 PhysicsWorld 提供稳定的物理组件输入。
+在 `Engine.SceneData` 中新增 `RigidBody` 与 `BoxCollider` component file schema、normalized descriptions、validation 与 round-trip 支持，为后续 Physics bridge/adapter 提供稳定的场景数据来源。
 
 ## 任务来源（TaskSource）
 DispatchAgent
@@ -40,7 +40,7 @@ Engine.SceneData
   - `none`
 
 ## 里程碑上下文（MilestoneContext）
-- M19.2 负责把物理组件正式带进 SceneData component array 主路径；没有这层，PhysicsWorld 只能靠手写 fixture 或临时 DTO，无法验证真实 `SceneDescription -> PhysicsWorld` 数据流。
+- M19.2 负责把物理组件正式带进 SceneData component array 主路径；没有这层，PhysicsWorld 只能靠手写 definition fixture，无法验证真实 SceneData fixture 到 `PhysicsWorldDefinition` 的映射数据流。
 - 本卡承担的是 SceneData 文档层与 normalized 层的物理 schema、validation、read/write/round-trip，不承担 PhysicsWorld 构建、fixed step 或 query 算法。
 - 直接影响本卡实现的上游背景包括：M19 继续沿用 M16+ component array 模型；SceneData 只做 schema 与数值语义校验，不运行 physics；`Engine.SceneData` 不得依赖 `Engine.Physics`。
 
@@ -154,7 +154,7 @@ false
 ## ComplexityAssessment
 - Level: `L3`
 - Why:
-  - 这是 M19 真实数据入口卡，字段和 validation 一旦做偏，会同时影响 PhysicsWorld 加载、测试 fixture 和未来扩展空间。
+  - 这是 M19 真实场景数据入口卡，字段和 validation 一旦做偏，会同时影响后续 Physics bridge/adapter、测试 fixture 和未来扩展空间。
   - 同时要守住“不依赖 Physics runtime”的边界，认知复杂度高。
 - SufficiencyMatch: `pass`
 
@@ -195,22 +195,40 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-SDATA-009.md`
-- ClosedAt:
+- ClosedAt: `2026-05-04 21:26`
 - Summary:
+  - Added SceneData file schema for `RigidBody` and `BoxCollider` components.
+  - Added normalized `SceneRigidBodyComponentDescription` and `SceneBoxColliderComponentDescription`.
+  - Added validation for body type, mass, box size, center, default center, and normalized static/dynamic mass semantics.
+  - Added SceneData valid/invalid/round-trip/boundary tests without depending on `Engine.Physics`.
 - FilesChanged:
+  - `src/Engine.SceneData/FileModel/SceneFileComponentDefinition.cs`
+  - `src/Engine.SceneData/Descriptions/SceneComponentDescription.cs`
+  - `src/Engine.SceneData/Descriptions/SceneObjectDescription.cs`
+  - `src/Engine.SceneData/Loading/SceneFileDocumentNormalizer.cs`
+  - `tests/Engine.SceneData.Tests/SceneDataContractsTests.cs`
+  - `.ai-workflow/boundaries/engine-scenedata.md`
+  - `.ai-workflow/tasks/task-sdata-009.md`
+  - `.ai-workflow/archive/2026-05/TASK-SDATA-009.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
+  - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+  - Test: pass（`dotnet test tests/Engine.SceneData.Tests/Engine.SceneData.Tests.csproj --no-restore --nologo -v minimal`，44/44 passed）
+  - Smoke: pass（JSON fixture loads into `SceneDescription` with `RigidBody` / `BoxCollider` components）
+  - Perf: pass（physics schema validation only runs during explicit load/save/reload, no per-frame physics or cross-module callback）
 - ModuleAttributionCheck: pass

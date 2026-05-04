@@ -81,6 +81,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-04
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M19 QA 边界复验，确认 `Engine.Scene` 未引用 `Engine.Physics`，未新增 physics Transform writeback、fixed-step 调度、gravity、solver 或 runtime visible physics 行为。
+  - 变更原因：支撑 `TASK-QA-020`，确认 M19 停留在 Physics foundation 与 SceneData schema 层，不滑入 M20 Physics Runtime MVP。
+  - 风险与回滚方案：当前未发现 MustFix；未来 Scene Transform writeback 或 physics runtime integration 必须另立 M20 任务并更新 Scene/App/Physics 边界。
 - 2026-05-02
   - 变更人：Execution-Agent
   - 变更内容：新增 Scene script self-transform bridge：`SceneGraphService.BindScriptObject` 返回绑定到单个 runtime object 的 `SceneScriptObjectHandle`，只暴露 object id/name 与自身 local transform get/set；移除 M15 默认旋转 smoke behavior。

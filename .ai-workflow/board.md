@@ -17,10 +17,7 @@
 
 ## Todo
 
-- `TASK-PHYS-001` M19 Engine.Physics module and boundary foundation
-- `TASK-SDATA-009` M19 SceneData RigidBody and BoxCollider component schema
-- `TASK-PHYS-002` M19 PhysicsWorld load, fixed step, snapshot and AABB queries
-- `TASK-QA-020` M19 Physics Foundation gate review and archive
+- （空）
 
 ## InProgress
 
@@ -36,6 +33,10 @@
 
 ## Done
 
+- `TASK-PHYS-001` M19 Engine.Physics module and boundary foundation（人工验收通过，已归档）
+- `TASK-SDATA-009` M19 SceneData RigidBody and BoxCollider component schema（人工验收通过，已归档）
+- `TASK-PHYS-002` M19 PhysicsWorld load, fixed step, snapshot and AABB queries（人工验收通过，已归档）
+- `TASK-QA-020` M19 Physics Foundation gate review and archive（人工验收通过，已归档）
 - `TASK-PLAT-003` M18.F1 Native WASD input polling for runtime app（人工验收通过，已归档）
 - `TASK-QA-019` M18 Interaction scripting gate review and archive（人工验收通过，已归档）
 - `TASK-APP-012` M18 App input-to-scripting integration and MoveOnInput（人工验收通过，已归档）

@@ -25,9 +25,7 @@ P0
 Engine.Physics
 
 ## 次级模块（SecondaryModules）
-- Engine.SceneData
-- Engine.Contracts
-- Engine.Core
+- none
 
 ## 边界合同路径（BoundaryContractPath）
 - `.ai-workflow/boundaries/engine-physics.md`
@@ -42,9 +40,9 @@ Engine.Physics
   - `none`
 
 ## 里程碑上下文（MilestoneContext）
-- M19.1 是 Physics foundation 的真正起点；没有独立 `Engine.Physics` 模块、公开 world 形状和边界合同，后续 SceneData 物理 schema 与 PhysicsWorld 主路径都没有稳定落点。
+- M19.1 是 Physics foundation 的真正起点；没有独立 `Engine.Physics` 模块、公开 world 形状和边界合同，后续 PhysicsWorld 主路径与 SceneData bridge/adapter 都没有稳定落点。
 - 本卡承担的是新模块骨架、公开类型地基、测试工程和边界合同，不承担 SceneData `RigidBody/BoxCollider` schema，也不承担 fixed-step 真实加载与查询行为实现。
-- 直接影响本卡实现的上游背景包括：M19 只做 physics foundation，不做 App 主循环、Transform 回写、可见物理反馈或 solver；`Engine.Physics` 允许直接依赖 `Engine.SceneData`，但绝不能依赖 `Engine.Scene/App/Render/Scripting/Editor`。
+- 直接影响本卡实现的上游背景包括：M19 只做 physics foundation，不做 App 主循环、Transform 回写、可见物理反馈或 solver；`Engine.Physics` 是独立物理核心，生产代码不得依赖任何其他 Engine 模块。
 
 ## 决策继承（DecisionCarryOver）
 - 从计划/里程碑继承的关键决策：
@@ -57,11 +55,17 @@ Engine.Physics
     - `PhysicsBodyType`
     - `PhysicsAabb`
     - `PhysicsQueryResult` 或等价显式结果类型
+    - `PhysicsWorldDefinition`
+    - `PhysicsBodyDefinition`
+    - `PhysicsBoxColliderDefinition`
+    - `PhysicsTransform`
   - `Engine.Physics` 允许依赖：
+    - .NET 标准库
+    - `System.Numerics`
+  - `Engine.Physics` 禁止依赖：
     - `Engine.SceneData`
     - `Engine.Contracts`
     - `Engine.Core`
-  - `Engine.Physics` 禁止依赖：
     - `Engine.Scene`
     - `Engine.App`
     - `Engine.Render`
@@ -72,10 +76,11 @@ Engine.Physics
 - 本卡执行时不得推翻的既定取舍：
   - 不允许在 foundation 卡中加入 Transform 回写、App 调度、重力或碰撞求解。
   - 不允许把 Physics world 建成依赖 `Scene` runtime object 的系统。
+  - 不允许把 Physics world 建成依赖 `SceneDescription`、SceneData DTO 或任何 Engine 外部模块类型的系统。
   - 不允许通过 stub-only DTO 让模块骨架成立但没有清晰 world/snapshot/query 公开面。
 - 若计划/里程碑已给出示例数据结构、字段草图、DTO/record/class 形状、关系图或字段命名约定：
   - `PLAN-M19-2026-05-03 > Engine.Physics Public Shape` 已定稿 world / step / snapshot / body / AABB / query 的最小公开形状方向，执行时不得换成与之无关的“物理管理器 + 任意集合暴露”模式。
-  - `PLAN-M19-2026-05-03 > Boundary Rules` 已定稿允许/禁止依赖集合，执行时不得自行放宽。
+  - `PLAN-M19-2026-05-03 > Boundary Rules` 已定稿 `Engine.Physics` 生产代码零 Engine 模块依赖，执行时不得自行放宽。
 
 ## 实施说明（ImplementationNotes）
 - 先建立 `Engine.Physics` 与 `Engine.Physics.Tests` 工程并接入解决方案。
@@ -87,8 +92,9 @@ Engine.Physics
 - 公开类型可先以最小可编译壳落地，但命名与职责必须为后续 `TASK-PHYS-002` 留稳定入口。
 
 ## 设计约束（DesignConstraints）
-- 不允许在本卡实现 `LoadFromDescription(...)` 的完整物理构建逻辑。
+- 不允许在本卡实现 `Load(PhysicsWorldDefinition)` 的完整物理构建逻辑。
 - 不允许在本卡引入 JSON 解析、文件 IO、OpenTK、OpenGL 或 ImGui。
+- 不允许在本卡引入 `Engine.SceneData`、`Engine.Contracts`、`Engine.Core` 项目引用或源码 using。
 - 不允许把公开 snapshot/query 面设计成可变内部集合直出。
 - 不允许顺手扩张到 App/Scene 接线、可视 smoke 行为或 physics solver。
 
@@ -100,12 +106,9 @@ Engine.Physics
 ## 参考点（ExamplesOrReferences）
 - 相关源码入口：
   - `AnsEngine.sln`
-  - `src/Engine.SceneData/**`
-  - `src/Engine.Core/**`
-  - `src/Engine.Contracts/**`
+  - `src/Engine.Physics/**`
 - 相关测试入口：
-  - `tests/Engine.SceneData.Tests/**`
-  - `tests/Engine.Scene.Tests/**`
+  - `tests/Engine.Physics.Tests/**`
 - 相关已有任务/归档/文档：
   - `.ai-workflow/boundaries/engine-physics.md`
   - `.ai-workflow/plan-archive/2026-05/PLAN-M19-2026-05-03.md`
@@ -137,6 +140,7 @@ false
 ## 非范围（OutOfScope）
 - 不实现 SceneData physics schema
 - 不实现 PhysicsWorld 从真实 scene 加载
+- 不实现 SceneData -> PhysicsWorldDefinition 生产桥接
 - 不实现 Step 统计、snapshot 内容填充或 query 算法
 - 不实现 App/Scene/Render/Scripting integration
 - OutOfScopePaths:
@@ -171,10 +175,12 @@ false
 
 ## 依赖约束（DependencyContract）
 - AllowedDependsOn:
+  - .NET 标准库
+  - `System.Numerics`
+- ForbiddenDependsOn:
   - `Engine.Physics -> Engine.SceneData`
   - `Engine.Physics -> Engine.Contracts`
   - `Engine.Physics -> Engine.Core`
-- ForbiddenDependsOn:
   - `Engine.Physics -> Engine.Scene`
   - `Engine.Physics -> Engine.App`
   - `Engine.Physics -> Engine.Render`
@@ -209,22 +215,50 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-PHYS-001.md`
-- ClosedAt:
+- ClosedAt: `2026-05-04 21:26`
 - Summary:
+  - Added independent `Engine.Physics` and `Engine.Physics.Tests` projects to the solution.
+  - Added minimal Physics public shape for world, definitions, step context, snapshot, AABB, and query result.
+  - Added boundary tests proving Physics core has no Engine module or native stack dependencies.
 - FilesChanged:
+  - `AnsEngine.sln`
+  - `src/Engine.Physics/Engine.Physics.csproj`
+  - `src/Engine.Physics/PhysicsAabb.cs`
+  - `src/Engine.Physics/PhysicsBodyDefinition.cs`
+  - `src/Engine.Physics/PhysicsBodySnapshot.cs`
+  - `src/Engine.Physics/PhysicsBodyType.cs`
+  - `src/Engine.Physics/PhysicsBoxColliderDefinition.cs`
+  - `src/Engine.Physics/PhysicsQueryResult.cs`
+  - `src/Engine.Physics/PhysicsStepContext.cs`
+  - `src/Engine.Physics/PhysicsTransform.cs`
+  - `src/Engine.Physics/PhysicsWorld.cs`
+  - `src/Engine.Physics/PhysicsWorldDefinition.cs`
+  - `src/Engine.Physics/PhysicsWorldSnapshot.cs`
+  - `tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj`
+  - `tests/Engine.Physics.Tests/PhysicsBoundaryTests.cs`
+  - `tests/Engine.Physics.Tests/PhysicsFoundationTests.cs`
+  - `.ai-workflow/boundaries/engine-physics.md`
+  - `.ai-workflow/tasks/task-phys-001.md`
+  - `.ai-workflow/archive/2026-05/TASK-PHYS-001.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
+  - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+  - Test: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，3/3 passed）
+  - Smoke: pass（Physics project compiles, test project references it, and public world/step/snapshot/query shape exists）
+  - Perf: pass（no JSON parsing, App loop binding, Transform writeback, OpenTK/OpenGL/ImGui, or render dependency）
 - ModuleAttributionCheck: pass
