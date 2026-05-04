@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using System.Numerics;
 
 namespace Engine.SceneData;
 
@@ -14,6 +15,22 @@ public sealed record SceneScriptComponentDescription(
     string ScriptId,
     IReadOnlyDictionary<string, SceneScriptPropertyValue> Properties)
     : SceneComponentDescription(SceneComponentDescriptionTypes.Script);
+
+public sealed record SceneRigidBodyComponentDescription(
+    SceneRigidBodyType BodyType,
+    double Mass)
+    : SceneComponentDescription(SceneComponentDescriptionTypes.RigidBody);
+
+public sealed record SceneBoxColliderComponentDescription(
+    Vector3 Size,
+    Vector3 Center)
+    : SceneComponentDescription(SceneComponentDescriptionTypes.BoxCollider);
+
+public enum SceneRigidBodyType
+{
+    Static,
+    Dynamic
+}
 
 public readonly record struct SceneScriptPropertyValue
 {
@@ -57,4 +74,6 @@ public static class SceneComponentDescriptionTypes
     public const string Transform = "Transform";
     public const string MeshRenderer = "MeshRenderer";
     public const string Script = "Script";
+    public const string RigidBody = "RigidBody";
+    public const string BoxCollider = "BoxCollider";
 }

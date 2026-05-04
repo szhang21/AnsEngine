@@ -142,6 +142,24 @@ public static class SceneFileDocumentNormalizer
             return SceneDescriptionLoadResult.FailureResult(meshRendererComponent.Failure!);
         }
 
+        var rigidBodyComponent = GetSingleComponent<SceneFileRigidBodyComponentDefinition>(
+            objectDefinition,
+            SceneFileComponentTypes.RigidBody,
+            sceneFilePath);
+        if (!rigidBodyComponent.IsSuccess)
+        {
+            return SceneDescriptionLoadResult.FailureResult(rigidBodyComponent.Failure!);
+        }
+
+        var boxColliderComponent = GetSingleComponent<SceneFileBoxColliderComponentDefinition>(
+            objectDefinition,
+            SceneFileComponentTypes.BoxCollider,
+            sceneFilePath);
+        if (!boxColliderComponent.IsSuccess)
+        {
+            return SceneDescriptionLoadResult.FailureResult(boxColliderComponent.Failure!);
+        }
+
         var transformResult = NormalizeTransform(transformComponent.Component.ToTransformDefinition(), sceneFilePath, objectDefinition.Id);
         if (!transformResult.IsSuccess)
         {
@@ -158,6 +176,30 @@ public static class SceneFileDocumentNormalizer
             }
 
             normalizedMeshRenderer = meshRendererResult.Component!;
+        }
+
+        SceneRigidBodyComponentDescription? normalizedRigidBody = null;
+        if (rigidBodyComponent.Component is not null)
+        {
+            var rigidBodyResult = NormalizeRigidBody(rigidBodyComponent.Component, sceneFilePath, objectDefinition.Id);
+            if (!rigidBodyResult.IsSuccess)
+            {
+                return rigidBodyResult.Result;
+            }
+
+            normalizedRigidBody = rigidBodyResult.Component!;
+        }
+
+        SceneBoxColliderComponentDescription? normalizedBoxCollider = null;
+        if (boxColliderComponent.Component is not null)
+        {
+            var boxColliderResult = NormalizeBoxCollider(boxColliderComponent.Component, sceneFilePath, objectDefinition.Id);
+            if (!boxColliderResult.IsSuccess)
+            {
+                return boxColliderResult.Result;
+            }
+
+            normalizedBoxCollider = boxColliderResult.Component!;
         }
 
         var components = new List<SceneComponentDescription>();
@@ -181,6 +223,14 @@ public static class SceneFileDocumentNormalizer
                     }
 
                     components.Add(scriptResult.Component!);
+                    break;
+
+                case SceneFileRigidBodyComponentDefinition when rigidBodyComponent.Component is not null:
+                    components.Add(normalizedRigidBody!);
+                    break;
+
+                case SceneFileBoxColliderComponentDefinition when boxColliderComponent.Component is not null:
+                    components.Add(normalizedBoxCollider!);
                     break;
             }
         }
@@ -208,6 +258,20 @@ public static class SceneFileDocumentNormalizer
 
     private sealed record ScriptResult(
         SceneScriptComponentDescription? Component,
+        SceneDescriptionLoadResult Result)
+    {
+        public bool IsSuccess => Result.IsSuccess;
+    }
+
+    private sealed record RigidBodyResult(
+        SceneRigidBodyComponentDescription? Component,
+        SceneDescriptionLoadResult Result)
+    {
+        public bool IsSuccess => Result.IsSuccess;
+    }
+
+    private sealed record BoxColliderResult(
+        SceneBoxColliderComponentDescription? Component,
         SceneDescriptionLoadResult Result)
     {
         public bool IsSuccess => Result.IsSuccess;
@@ -355,6 +419,124 @@ public static class SceneFileDocumentNormalizer
         string path)
     {
         return new ScriptResult(null, Failure(kind, message, path));
+    }
+
+    private static RigidBodyResult NormalizeRigidBody(
+        SceneFileRigidBodyComponentDefinition rigidBody,
+        string sceneFilePath,
+        string objectId)
+    {
+        if (string.IsNullOrWhiteSpace(rigidBody.BodyType))
+        {
+            return RigidBodyFailure(
+                SceneDescriptionLoadFailureKind.MissingRequiredField,
+                $"Scene object '{objectId}' RigidBody component is missing required field 'bodyType'.",
+                sceneFilePath);
+        }
+
+        if (!TryParseRigidBodyType(rigidBody.BodyType, out var bodyType))
+        {
+            return RigidBodyFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' RigidBody component has unsupported bodyType '{rigidBody.BodyType}'.",
+                sceneFilePath);
+        }
+
+        if (rigidBody.Mass is not null && !double.IsFinite(rigidBody.Mass.Value))
+        {
+            return RigidBodyFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' RigidBody component mass must be finite.",
+                sceneFilePath);
+        }
+
+        var mass = bodyType == SceneRigidBodyType.Static
+            ? 0.0d
+            : rigidBody.Mass ?? 1.0d;
+
+        if (bodyType == SceneRigidBodyType.Dynamic && mass <= 0.0d)
+        {
+            return RigidBodyFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' Dynamic RigidBody component mass must be positive.",
+                sceneFilePath);
+        }
+
+        return new RigidBodyResult(
+            new SceneRigidBodyComponentDescription(bodyType, mass),
+            SceneDescriptionLoadResult.Success(
+                new SceneDescription("rigid-body-normalization", "rigid-body-normalization", sDefaultCamera, Array.Empty<SceneObjectDescription>())));
+    }
+
+    private static BoxColliderResult NormalizeBoxCollider(
+        SceneFileBoxColliderComponentDefinition boxCollider,
+        string sceneFilePath,
+        string objectId)
+    {
+        if (boxCollider.Size is null)
+        {
+            return BoxColliderFailure(
+                SceneDescriptionLoadFailureKind.MissingRequiredField,
+                $"Scene object '{objectId}' BoxCollider component is missing required field 'size'.",
+                sceneFilePath);
+        }
+
+        var size = boxCollider.Size.Value;
+        var center = boxCollider.Center ?? Vector3.Zero;
+        if (!IsFinite(size) || size.X <= 0.0f || size.Y <= 0.0f || size.Z <= 0.0f)
+        {
+            return BoxColliderFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' BoxCollider component size must contain positive finite values.",
+                sceneFilePath);
+        }
+
+        if (!IsFinite(center))
+        {
+            return BoxColliderFailure(
+                SceneDescriptionLoadFailureKind.InvalidValue,
+                $"Scene object '{objectId}' BoxCollider component center must contain finite values.",
+                sceneFilePath);
+        }
+
+        return new BoxColliderResult(
+            new SceneBoxColliderComponentDescription(size, center),
+            SceneDescriptionLoadResult.Success(
+                new SceneDescription("box-collider-normalization", "box-collider-normalization", sDefaultCamera, Array.Empty<SceneObjectDescription>())));
+    }
+
+    private static RigidBodyResult RigidBodyFailure(
+        SceneDescriptionLoadFailureKind kind,
+        string message,
+        string path)
+    {
+        return new RigidBodyResult(null, Failure(kind, message, path));
+    }
+
+    private static BoxColliderResult BoxColliderFailure(
+        SceneDescriptionLoadFailureKind kind,
+        string message,
+        string path)
+    {
+        return new BoxColliderResult(null, Failure(kind, message, path));
+    }
+
+    private static bool TryParseRigidBodyType(string bodyType, out SceneRigidBodyType result)
+    {
+        if (string.Equals(bodyType, "Static", StringComparison.Ordinal))
+        {
+            result = SceneRigidBodyType.Static;
+            return true;
+        }
+
+        if (string.Equals(bodyType, "Dynamic", StringComparison.Ordinal))
+        {
+            result = SceneRigidBodyType.Dynamic;
+            return true;
+        }
+
+        result = default;
+        return false;
     }
 
     private static SceneDescriptionLoadResult NormalizeTransform(
@@ -505,6 +687,8 @@ public static class SceneFileDocumentNormalizer
     {
         return string.Equals(type, SceneFileComponentTypes.Transform, StringComparison.Ordinal) ||
                string.Equals(type, SceneFileComponentTypes.MeshRenderer, StringComparison.Ordinal) ||
-               string.Equals(type, SceneFileComponentTypes.Script, StringComparison.Ordinal);
+               string.Equals(type, SceneFileComponentTypes.Script, StringComparison.Ordinal) ||
+               string.Equals(type, SceneFileComponentTypes.RigidBody, StringComparison.Ordinal) ||
+               string.Equals(type, SceneFileComponentTypes.BoxCollider, StringComparison.Ordinal);
     }
 }

@@ -46,6 +46,12 @@ public sealed record SceneObjectDescription
     public IReadOnlyList<SceneScriptComponentDescription> ScriptComponents =>
         Components.OfType<SceneScriptComponentDescription>().ToArray();
 
+    public SceneRigidBodyComponentDescription? RigidBodyComponent =>
+        Components.OfType<SceneRigidBodyComponentDescription>().FirstOrDefault();
+
+    public SceneBoxColliderComponentDescription? BoxColliderComponent =>
+        Components.OfType<SceneBoxColliderComponentDescription>().FirstOrDefault();
+
     public SceneMeshRef Mesh => MeshRendererComponent?.Mesh ?? new SceneMeshRef("mesh://missing");
 
     public SceneMaterialRef Material => MeshRendererComponent?.Material ?? new SceneMaterialRef("material://default");

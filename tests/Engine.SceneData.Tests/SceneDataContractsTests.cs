@@ -91,6 +91,7 @@ public sealed class SceneDataContractsTests
         Assert.Contains("Engine.Contracts", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Scene", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Scripting", referencedAssemblyNames);
+        Assert.DoesNotContain("Engine.Physics", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Asset", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.Render", referencedAssemblyNames);
         Assert.DoesNotContain("Engine.App", referencedAssemblyNames);
@@ -410,6 +411,213 @@ public sealed class SceneDataContractsTests
         Assert.True(item.ScriptComponents[0].Properties["enabled"].Boolean);
         Assert.Equal("primary", item.ScriptComponents[0].Properties["label"].Text);
         Assert.Empty(item.ScriptComponents[1].Properties);
+    }
+
+    [Fact]
+    public void JsonLoader_PhysicsComponents_NormalizesAndPreservesOrder()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "cube-a",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "RigidBody",
+                        "bodyType": "Dynamic",
+                        "mass": 2.5
+                      },
+                      {
+                        "type": "BoxCollider",
+                        "size": { "x": 2, "y": 3, "z": 4 },
+                        "center": { "x": 0.5, "y": 1, "z": -0.5 }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        var item = Assert.Single(result.Scene!.Objects);
+        Assert.Equal(
+            new[]
+            {
+                SceneComponentDescriptionTypes.Transform,
+                SceneComponentDescriptionTypes.RigidBody,
+                SceneComponentDescriptionTypes.BoxCollider
+            },
+            item.Components.Select(component => component.Type).ToArray());
+        Assert.NotNull(item.RigidBodyComponent);
+        Assert.NotNull(item.BoxColliderComponent);
+        Assert.Equal(SceneRigidBodyType.Dynamic, item.RigidBodyComponent!.BodyType);
+        Assert.Equal(2.5d, item.RigidBodyComponent.Mass);
+        Assert.Equal(new Vector3(2.0f, 3.0f, 4.0f), item.BoxColliderComponent!.Size);
+        Assert.Equal(new Vector3(0.5f, 1.0f, -0.5f), item.BoxColliderComponent.Center);
+    }
+
+    [Fact]
+    public void JsonLoader_StaticRigidBodyAndBoxColliderDefaultValues_NormalizesMassAndCenter()
+    {
+        var scenePath = WriteSceneFile(
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "scene-a",
+                "objects": [
+                  {
+                    "id": "floor",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "RigidBody",
+                        "bodyType": "Static",
+                        "mass": 99
+                      },
+                      {
+                        "type": "BoxCollider",
+                        "size": { "x": 8, "y": 0.5, "z": 8 }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        var item = Assert.Single(result.Scene!.Objects);
+        Assert.Equal(SceneRigidBodyType.Static, item.RigidBodyComponent!.BodyType);
+        Assert.Equal(0.0d, item.RigidBodyComponent.Mass);
+        Assert.Equal(Vector3.Zero, item.BoxColliderComponent!.Center);
+    }
+
+    [Fact]
+    public void JsonLoader_InvalidRigidBodyBodyType_ReturnsInvalidValue()
+    {
+        var scenePath = WriteSceneFile(CreatePhysicsSceneJson(
+            """
+            {
+              "type": "RigidBody",
+              "bodyType": "Kinematic"
+            },
+            {
+              "type": "BoxCollider",
+              "size": { "x": 1, "y": 1, "z": 1 }
+            }
+            """));
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidValue, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_InvalidRigidBodyMass_ReturnsInvalidValue()
+    {
+        var scenePath = WriteSceneFile(CreatePhysicsSceneJson(
+            """
+            {
+              "type": "RigidBody",
+              "bodyType": "Dynamic",
+              "mass": 0
+            },
+            {
+              "type": "BoxCollider",
+              "size": { "x": 1, "y": 1, "z": 1 }
+            }
+            """));
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidValue, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_InvalidBoxColliderSize_ReturnsInvalidValue()
+    {
+        var scenePath = WriteSceneFile(CreatePhysicsSceneJson(
+            """
+            {
+              "type": "RigidBody",
+              "bodyType": "Dynamic",
+              "mass": 1
+            },
+            {
+              "type": "BoxCollider",
+              "size": { "x": 1, "y": 0, "z": 1 }
+            }
+            """));
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.InvalidValue, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonLoader_MissingBoxColliderSize_ReturnsMissingRequiredField()
+    {
+        var scenePath = WriteSceneFile(CreatePhysicsSceneJson(
+            """
+            {
+              "type": "RigidBody",
+              "bodyType": "Dynamic",
+              "mass": 1
+            },
+            {
+              "type": "BoxCollider"
+            }
+            """));
+        var loader = new JsonSceneDescriptionLoader();
+
+        var result = loader.Load(scenePath);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneDescriptionLoadFailureKind.MissingRequiredField, result.Failure!.Kind);
+    }
+
+    [Fact]
+    public void JsonSceneDocumentStore_SaveAndLoad_PreservesPhysicsComponents()
+    {
+        var store = new JsonSceneDocumentStore();
+        var scenePath = GetTemporaryScenePath();
+        var document = CreatePhysicsDocument();
+
+        var saveResult = store.Save(scenePath, document);
+        var loadResult = store.Load(scenePath);
+
+        Assert.True(saveResult.IsSuccess);
+        Assert.True(loadResult.IsSuccess);
+        var components = loadResult.Document!.Scene.Objects[0].Components;
+        var rigidBody = Assert.IsType<SceneFileRigidBodyComponentDefinition>(components[1]);
+        var boxCollider = Assert.IsType<SceneFileBoxColliderComponentDefinition>(components[2]);
+        Assert.Equal("Dynamic", rigidBody.BodyType);
+        Assert.Equal(3.0d, rigidBody.Mass);
+        Assert.Equal(new Vector3(2.0f, 3.0f, 4.0f), boxCollider.Size);
+        Assert.Equal(new Vector3(0.25f, 0.5f, 0.75f), boxCollider.Center);
     }
 
     [Fact]
@@ -871,6 +1079,29 @@ public sealed class SceneDataContractsTests
         return directoryPath;
     }
 
+    private static string CreatePhysicsSceneJson(string physicsComponentsJson)
+    {
+        return $$"""
+                {
+                  "version": "2.0",
+                  "scene": {
+                    "id": "physics-scene",
+                    "objects": [
+                      {
+                        "id": "physics-body",
+                        "components": [
+                          {
+                            "type": "Transform"
+                          },
+                          {{physicsComponentsJson}}
+                        ]
+                      }
+                    ]
+                  }
+                }
+                """;
+    }
+
     private static SceneFileDocument CreateSampleDocument()
     {
         return new SceneFileDocument(
@@ -887,6 +1118,30 @@ public sealed class SceneDataContractsTests
                         "mesh://cube",
                         "material://highlight",
                         new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One))
+                }));
+    }
+
+    private static SceneFileDocument CreatePhysicsDocument()
+    {
+        return new SceneFileDocument(
+            "2.0",
+            new SceneFileDefinition(
+                "physics-scene",
+                "Physics Scene",
+                Camera: null,
+                new[]
+                {
+                    new SceneFileObjectDefinition(
+                        "physics-body",
+                        "Physics Body",
+                        new SceneFileComponentDefinition[]
+                        {
+                            new SceneFileTransformComponentDefinition(new SceneFileTransformDefinition(Vector3.Zero, Quaternion.Identity, Vector3.One)),
+                            new SceneFileRigidBodyComponentDefinition("Dynamic", 3.0d),
+                            new SceneFileBoxColliderComponentDefinition(
+                                new Vector3(2.0f, 3.0f, 4.0f),
+                                new Vector3(0.25f, 0.5f, 0.75f))
+                        })
                 }));
     }
 

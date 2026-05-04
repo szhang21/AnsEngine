@@ -45,11 +45,23 @@ public sealed record SceneFileScriptComponentDefinition : SceneFileComponentDefi
     public IReadOnlyDictionary<string, SceneFileScriptPropertyValue> Properties { get; init; }
 }
 
+public sealed record SceneFileRigidBodyComponentDefinition(
+    string BodyType,
+    double? Mass)
+    : SceneFileComponentDefinition(SceneFileComponentTypes.RigidBody);
+
+public sealed record SceneFileBoxColliderComponentDefinition(
+    Vector3? Size,
+    Vector3? Center)
+    : SceneFileComponentDefinition(SceneFileComponentTypes.BoxCollider);
+
 public static class SceneFileComponentTypes
 {
     public const string Transform = "Transform";
     public const string MeshRenderer = "MeshRenderer";
     public const string Script = "Script";
+    public const string RigidBody = "RigidBody";
+    public const string BoxCollider = "BoxCollider";
 }
 
 internal sealed class SceneFileComponentDefinitionJsonConverter : JsonConverter<SceneFileComponentDefinition>
@@ -78,6 +90,12 @@ internal sealed class SceneFileComponentDefinitionJsonConverter : JsonConverter<
             SceneFileComponentTypes.Script => new SceneFileScriptComponentDefinition(
                 ReadString(document.RootElement, "scriptId") ?? string.Empty,
                 ReadScriptProperties(document.RootElement, "properties")),
+            SceneFileComponentTypes.RigidBody => new SceneFileRigidBodyComponentDefinition(
+                ReadString(document.RootElement, "bodyType") ?? string.Empty,
+                ReadOptional<double>(document.RootElement, "mass", options)),
+            SceneFileComponentTypes.BoxCollider => new SceneFileBoxColliderComponentDefinition(
+                ReadOptional<Vector3>(document.RootElement, "size", options),
+                ReadOptional<Vector3>(document.RootElement, "center", options)),
             _ => throw new JsonException($"Unknown scene component type '{type}'.")
         };
     }
@@ -128,6 +146,30 @@ internal sealed class SceneFileComponentDefinitionJsonConverter : JsonConverter<
                 {
                     writer.WritePropertyName("properties");
                     JsonSerializer.Serialize(writer, script.Properties, options);
+                }
+
+                break;
+
+            case SceneFileRigidBodyComponentDefinition rigidBody:
+                writer.WriteString("bodyType", rigidBody.BodyType);
+                if (rigidBody.Mass is not null)
+                {
+                    writer.WriteNumber("mass", rigidBody.Mass.Value);
+                }
+
+                break;
+
+            case SceneFileBoxColliderComponentDefinition boxCollider:
+                if (boxCollider.Size is not null)
+                {
+                    writer.WritePropertyName("size");
+                    JsonSerializer.Serialize(writer, boxCollider.Size.Value, options);
+                }
+
+                if (boxCollider.Center is not null)
+                {
+                    writer.WritePropertyName("center");
+                    JsonSerializer.Serialize(writer, boxCollider.Center.Value, options);
                 }
 
                 break;
