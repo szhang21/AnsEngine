@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M20-2026-05-04`
+  Status: `Closed`
+  LastUpdated: `2026-05-05 00:00`
+  MilestoneSummary: `M20 完成（Physics Runtime Collision MVP，Static Collision + Kinematic Movement，App physics bridge、Scene Transform writeback、script movement resolve 与 render smoke 收口）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M20-2026-05-04.md`
+
 - PlanId: `PLAN-M19-2026-05-03`
   Status: `Active`
   LastUpdated: `2026-05-04 00:00`
