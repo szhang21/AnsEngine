@@ -81,6 +81,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M20 QA 复验，确认 `Engine.Scene` 仅提供通用 `TrySetObjectTransform` 写回能力与 runtime snapshot/render observability，不引用 `Engine.Physics`，也不承载 physics-specific bridge、solver 或 App 调度。
+  - 变更原因：支撑 `TASK-QA-021`，确认 Scene 在 M20 中保持 runtime state owner 和 render input provider 职责，Physics resolve/writeback orchestration 仍归属 App。
+  - 风险与回滚方案：当前无 MustFix；后续如需批量 writeback、层级/world transform 或 editor 可视化，应另立任务，不把 Physics 依赖引入 Scene。
+- 2026-05-04
+  - 变更人：Execution-Agent
+  - 变更内容：新增通用 Scene Transform writeback contract：`SceneGraphService.TrySetObjectTransform` / `RuntimeScene.TrySetObjectTransform` 使用 `Engine.Contracts.SceneTransform` 按 `objectId` 更新现有 runtime Transform，并通过显式结果类型区分 object not found、missing Transform 与 invalid Transform；补充 snapshot/render 可观察性与 Physics 禁止依赖测试。
+  - 变更原因：支撑 `TASK-SCENE-020`，为 M20 App 侧 Physics resolve 后的最终 Transform 写回提供 Scene 通用能力，同时保持 `Engine.Scene` 不引用 `Engine.Physics`。
+  - 风险与回滚方案：当前 API 只更新已有 Transform，不创建对象、不做 physics-specific bridge、不引入 world transform solver；若后续写回行为异常，可回退 `RuntimeScene.TrySetObjectTransform` 内部实现并保留显式失败契约。
 - 2026-05-04
   - 变更人：Execution-Agent
   - 变更内容：完成 M19 QA 边界复验，确认 `Engine.Scene` 未引用 `Engine.Physics`，未新增 physics Transform writeback、fixed-step 调度、gravity、solver 或 runtime visible physics 行为。

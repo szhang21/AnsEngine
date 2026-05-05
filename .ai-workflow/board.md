@@ -29,7 +29,11 @@
 
 ## Review
 
-- （空）
+- `TASK-SCENE-020` M20 Scene Transform writeback contract（Executor 验收通过，待人工签收）
+- `TASK-APP-020` M20 App Physics production bridge（Executor 验收通过，待人工签收）
+- `TASK-PHYS-003` M20 Physics kinematic collision resolve（Executor 验收通过，待人工签收）
+- `TASK-APP-021` M20 Runtime physics order and writeback integration（Executor 验收通过，待人工签收）
+- `TASK-QA-021` M20 Physics Runtime Collision MVP gate review and archive（Executor 验收通过，M20 可归档，待人工签收）
 
 ## Done
 

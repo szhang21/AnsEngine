@@ -10,15 +10,16 @@
 
 ## 2) 目标与范围
 
-- 模块目标：为引擎提供最小可验证的独立 physics core foundation，负责从 physics-owned definitions 构建 physics world、执行固定步进统计并输出只读 snapshot / query 结果。
-- 适用范围：physics world、physics-owned body/collider definitions、fixed-step statistics、AABB 计算、overlap / ground query、显式失败语义。
-- 非适用范围：Transform 回写、App 主循环调度、可见物理反馈、重力/碰撞求解、力/冲量/摩擦/反弹、Editor physics UI。
+- 模块目标：为引擎提供最小可验证的独立 physics core foundation，负责从 physics-owned definitions 构建 physics world、执行固定步进统计、输出只读 snapshot / query 结果，并提供 kinematic desired transform 的 static AABB 约束结果。
+- 适用范围：physics world、physics-owned body/collider definitions、fixed-step statistics、AABB 计算、overlap / ground query、kinematic move resolve、显式失败语义。
+- 非适用范围：Transform 回写、App 主循环调度、可见物理反馈、重力、dynamic solver、力/冲量/摩擦/反弹、Editor physics UI。
 
 ## 3) 职责（Responsibilities）
 
 - 负责从 `PhysicsWorldDefinition` 中消费 body/collider/transform definitions 并构建 physics world。
 - 负责执行固定步进记账与 world snapshot 生成。
 - 负责输出 AABB、overlap query、ground query 等只读查询结果。
+- 负责对 Dynamic body 的 kinematic desired transform 执行 X -> Y -> Z 单轴保守 static AABB 约束，并返回 resolved transform。
 - 负责对 malformed physics input 提供可诊断的显式失败结果或被测试钉死的稳定异常语义。
 
 ## 4) 非职责（Non-Responsibilities）
@@ -59,9 +60,9 @@
 
 - `PhysicsWorld`
   - 用途：承载 physics bodies/colliders 状态并提供 load / step / snapshot / query 入口
-  - 输入/输出：输入 `PhysicsWorldDefinition` 与 `PhysicsStepContext`，输出 world state、snapshot 与 query result
+  - 输入/输出：输入 `PhysicsWorldDefinition`、`PhysicsStepContext` 与 kinematic desired transform，输出 world state、snapshot、query result 与 resolved transform
   - 错误语义：malformed physics input 必须可诊断
-  - 生命周期约束：`Load -> Step* -> Snapshot/Query`
+  - 生命周期约束：`Load -> Step* -> Snapshot/Query/ResolveKinematicMove`
 
 - `PhysicsStepContext`
   - 用途：描述固定步进输入
@@ -95,6 +96,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M20 QA 复验，确认 `Engine.Physics` 生产代码仍无 ProjectReference/PackageReference，源码未引用 Scene/App/Render/Scripting/SceneData/Core/Contracts/Editor 等 Engine 模块；kinematic resolve 仅返回 resolved transform/result，不直接写回 Scene。
+  - 变更原因：支撑 `TASK-QA-021`，确认 M20 Runtime Collision MVP 没有滑入 Engine 反向依赖、Dynamic gravity、velocity、force、impulse、solver、CCD、Editor UI 或渲染 side path。
+  - 风险与回滚方案：当前无 MustFix；后续真实 dynamic simulation、solver 或更多 collider 类型必须另立任务并保持 Physics 独立输入/输出边界。
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `PhysicsWorld.ResolveKinematicMove(...)` 与 `PhysicsKinematicMoveResult`，按 X -> Y -> Z 单轴保守策略从 current transform 尝试 desired 位移；仅 static AABB 可阻挡 Dynamic body，命中时返回 first blocking body id，不移动 world snapshot。
+  - 变更原因：支撑 `TASK-PHYS-003`，为 M20 Runtime Collision MVP 提供 Physics core 内的 deterministic kinematic collision resolve，同时保持 Physics 不依赖 Scene/App/SceneData/Contracts/Core。
+  - 风险与回滚方案：当前不实现 gravity、velocity、force、impulse、solver、sweep、MTV、摩擦或反弹；若后续需要更真实物理行为，应在 M21+ 另立 solver/CCD 任务，不在本 MVP 中静默扩张。
 - 2026-05-04
   - 变更人：Execution-Agent
   - 变更内容：完成 M19 Physics foundation QA 复验，确认全量 build/test 通过，`PhysicsWorldDefinition -> PhysicsWorld -> Step -> Snapshot/Query` 主路径有测试证据，SceneData fixture 仅通过 `tests/Engine.Physics.Tests/**` 中的 test-only adapter 映射，生产 `Engine.Physics` 保持零 Engine 模块依赖。

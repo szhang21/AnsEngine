@@ -19,6 +19,7 @@
 - 负责核心模块创建与依赖装配。
 - 负责系统启动顺序与关闭顺序管理。
 - 负责主循环阶段编排（输入/更新/渲染）。
+- 负责 runtime physics orchestration：从 Scene 读取候选 Transform、调用 Physics resolve、将 resolved Transform 写回 Scene。
 - 负责应用级配置加载与运行模式切换。
 
 ## 4) 非职责（Non-Responsibilities）
@@ -36,6 +37,7 @@
   - `Engine.Scene`
   - `Engine.SceneData`
   - `Engine.Scripting`
+  - `Engine.Physics`（仅由 App 作为 composition root 持有 production bridge / world initialization / runtime orchestration）
   - `Engine.Asset`
   - `Engine.Render`
 - 可使用基础库/第三方：
@@ -83,6 +85,21 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M20 QA 复验，确认 App 作为唯一 production bridge / runtime orchestrator 持有 `Engine.Physics` 依赖；全量 build/test/headless smoke 通过，`SceneData load -> App bridge -> Script update -> Physics resolve/writeback -> Render` 主链路有测试与 smoke 证据。
+  - 变更原因：支撑 `TASK-QA-021`，确认 M20 Physics Runtime Collision MVP 可归档准备，且 App 没有引入逐帧 world 重建、Scene 内部集合直连、Dynamic gravity/solver 或 Editor UI。
+  - 风险与回滚方案：当前无 MustFix；后续若扩展 dynamic simulation、Play Mode 或 Editor physics UI，必须另立 M21+ 任务并重新更新 App/Physics/Editor 边界。
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：允许 `Engine.App -> Engine.Physics` 依赖；新增 App-owned production bridge，将 `SceneDescription` 中具备 Transform + RigidBody + BoxCollider 的对象映射为 `PhysicsWorldDefinition`，并在 `ApplicationHost.Run()` 初始化阶段创建 `PhysicsWorld`。
+  - 变更原因：支撑 `TASK-APP-020`，把 M19 test-only SceneData adapter 升级为生产主路径，同时保持 `Engine.Physics` 零 Engine 模块依赖，bridge 归属 App composition root。
+  - 风险与回滚方案：当前仅做初始化桥接，不做逐帧 resolve、Scene writeback、gravity 或 solver；若后续初始化失败，可回退 `ScenePhysicsWorldDefinitionBridge` 与 App 初始化接线，不影响 SceneData schema 或 Physics core public shape。
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：新增 App-owned `RuntimePhysicsOrchestrator`，主循环在 `ScriptRuntime.Update(...)` 后、`RenderFrame()` 前执行 `PhysicsWorld.ResolveKinematicMove(...)` 并通过 `ISceneRuntime.TrySetObjectTransform(...)` 写回 Scene；`ISceneRuntime` 显式暴露 runtime snapshot 与 transform writeback bridge。
+  - 变更原因：支撑 `TASK-APP-021`，落实 `SceneRuntime.Update -> ScriptRuntime.Update -> Physics resolve/writeback -> Render` 顺序，让 Render 观察到 Physics 约束后的最终 Transform。
+  - 风险与回滚方案：当前不做逐帧重建 world、gravity、solver、Editor UI 或 Scene/Physics 互相直连；若 writeback/resolve 异常，App 以 deterministic failure 停止本帧运行并报告。
 - 2026-05-03
   - 变更人：Execution-Agent
   - 变更内容：`RuntimeBootstrap.Build()` 按 `ANS_ENGINE_USE_NATIVE_WINDOW` 装配输入服务：native window path 使用 `NativeWindowInputService`，headless path 继续使用 `NullInputService`。

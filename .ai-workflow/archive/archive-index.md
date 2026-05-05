@@ -48,6 +48,164 @@
 
 ### 当前记录
 
+- TaskId: `TASK-QA-021`
+  Title: `M20 Physics Runtime Collision MVP gate review and archive`
+  Priority: `P2`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-05 00:37`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Rechecked M20 implementation cards, boundaries, and archive evidence
+    - Ran full build/test, headless smoke, and boundary review
+    - Confirmed M20 runtime collision MVP is ready for Human archive review
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/tasks/task-qa-021.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-021.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，254/254 passed）
+    - Smoke: pass（headless App run exit 0；默认 scene 走 script movement -> physics resolve -> scene writeback -> render）
+    - Boundary: pass（Scene/Render/Scripting/SceneData do not reference Physics；Physics has no forbidden Engine refs；App is only production bridge）
+    - Perf: pass（no per-frame world rebuild, SceneData remap, internal Scene collection access, or render side path）
+    - CodeQuality: NoNewHighRisk=true, MustFixCount=0, MustFixDisposition=none
+    - DesignQuality: DQ-1=pass, DQ-2=pass, DQ-3=pass, DQ-4=pass
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-021.md`
+
+- TaskId: `TASK-APP-021`
+  Title: `M20 Runtime physics order and writeback integration`
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-05 00:34`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added App runtime physics orchestrator for candidate transform resolve/writeback
+    - Wired ScriptRuntime.Update -> Physics resolve/writeback -> Render ordering
+    - Covered collider blocking, physics-free preservation, and writeback failure visibility
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/RuntimePhysicsOrchestrator.cs`
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-021.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-021.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，27/27 passed）
+    - Smoke: pass（headless App run exit 0；默认 scene 走 script movement -> physics resolve -> scene writeback -> render）
+    - Perf: pass（no per-frame world rebuild, SceneData remap, internal Scene collection access, or render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-021.md`
+
+- TaskId: `TASK-PHYS-003`
+  Title: `M20 Physics kinematic collision resolve`
+  Priority: `P1`
+  PrimaryModule: `Engine.Physics`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
+  Owner: `Exec-Physics`
+  ClosedAt: `2026-05-05 00:13`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added explicit kinematic move result from desired to resolved transform
+    - Implemented fixed X -> Y -> Z single-axis conservative static AABB resolve
+    - Covered no-hit, hit, partial-axis block, invalid input, and Physics boundary tests
+  FilesChanged:
+    - `src/Engine.Physics/PhysicsWorld.cs`
+    - `tests/Engine.Physics.Tests/PhysicsFoundationTests.cs`
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/tasks/task-phys-003.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-PHYS-003.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，15/15 passed）
+    - Smoke: pass（no-hit returns desired；move into static is blocked；partial axis block preserves unblocked axes）
+    - Perf: pass（no solver, CCD, render side path, or Engine module dependency）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PHYS-003.md`
+
+- TaskId: `TASK-APP-020`
+  Title: `M20 App Physics production bridge`
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-05 00:08`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added App-owned production bridge from `SceneDescription` to `PhysicsWorldDefinition`
+    - Initialized `PhysicsWorld` from real SceneData load path during App startup
+    - Covered mapping, filtering, no-mutation, deterministic init failure, and real JSON smoke
+  FilesChanged:
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/ScenePhysicsWorldDefinitionBridge.cs`
+    - `src/Engine.App/SampleScenes/default.scene.json`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-020.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-020.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，24/24 passed）
+    - Smoke: pass（headless `dotnet run --project src/Engine.App/Engine.App.csproj --nologo` exit 0；真实默认 scene JSON 经 App bridge 初始化 PhysicsWorld）
+    - Perf: pass（bridge only runs during initialization; no per-frame SceneData remapping or Physics reverse dependency）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-020.md`
+
+- TaskId: `TASK-SCENE-020`
+  Title: `M20 Scene Transform writeback contract`
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-04 23:55`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added generic Scene transform writeback API using `Engine.Contracts.SceneTransform`
+    - Added explicit failures for object not found, missing Transform, and invalid Transform
+    - Verified runtime snapshot and render frame observe final Transform after writeback
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `src/Engine.Scene/Runtime/SceneTransformWriteFailureKind.cs`
+    - `src/Engine.Scene/Runtime/SceneTransformWriteFailure.cs`
+    - `src/Engine.Scene/Runtime/SceneTransformWriteResult.cs`
+    - `src/Engine.Scene/SceneGraphService.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `tests/Engine.Scene.Tests/SceneBoundaryTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-020.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-020.md`
+    - `.ai-workflow/archive/archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，57/57 passed）
+    - Smoke: pass（writeback 后 runtime snapshot 与 render frame 均观察到最终 Transform；缺失对象/Transform 显式失败）
+    - Perf: pass（no per-frame scan, cross-module callback, Physics dependency, or render side effect）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-020.md`
+
 - TaskId: `TASK-PHYS-001`
   Title: `M19 Engine.Physics module and boundary foundation`
   Priority: `P0`
