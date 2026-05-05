@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ClosedAt: `2026-05-05 00:08`
 
 ## Summary
@@ -67,7 +67,7 @@
 
 ## ArchiveReadiness
 
-- `TASK-APP-020` is ready for Human review/signoff.
+- `TASK-APP-020` has passed Human review/signoff and is ready for final archive closeout.
 - `TASK-PHYS-003` may now add Physics kinematic resolve without moving App bridge logic into Physics.
 
 ## Risk

@@ -321,6 +321,138 @@ public sealed class SceneEditorSessionTests
     }
 
     [Fact]
+    public void UpdateObjectScriptComponent_AddsUpdatesRemovesAndPreservesProperties()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+        var script = new SceneFileScriptComponentDefinition(
+            "MoveOnInput",
+            new Dictionary<string, SceneFileScriptPropertyValue>
+            {
+                ["speed"] = SceneFileScriptPropertyValue.FromNumber(3.5d),
+                ["enabled"] = SceneFileScriptPropertyValue.FromBoolean(true),
+                ["label"] = SceneFileScriptPropertyValue.FromString("primary")
+            });
+
+        var addResult = session.UpdateObjectScriptComponent("cube-a", script);
+        var updateResult = session.UpdateObjectScriptComponent(
+            "cube-a",
+            new SceneFileScriptComponentDefinition(
+                "MoveOnInput",
+                new Dictionary<string, SceneFileScriptPropertyValue>
+                {
+                    ["speed"] = SceneFileScriptPropertyValue.FromNumber(4.0d)
+                }));
+        var removeResult = session.RemoveObjectScriptComponent("cube-a", "MoveOnInput");
+
+        Assert.True(addResult.IsSuccess);
+        Assert.True(updateResult.IsSuccess);
+        Assert.True(removeResult.IsSuccess);
+        Assert.True(session.IsDirty);
+        Assert.Empty(Assert.Single(session.Objects).ScriptComponents);
+        Assert.DoesNotContain(
+            session.Document!.Scene.Objects.Single().Components,
+            item => item.Type == SceneFileComponentTypes.Script);
+    }
+
+    [Fact]
+    public void Save_ScriptRigidBodyAndBoxCollider_RoundTripsThroughSession()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+
+        Assert.True(
+            session.UpdateObjectScriptComponent(
+                "cube-a",
+                new SceneFileScriptComponentDefinition(
+                    "MoveOnInput",
+                    new Dictionary<string, SceneFileScriptPropertyValue>
+                    {
+                        ["speed"] = SceneFileScriptPropertyValue.FromNumber(2.0d),
+                        ["enabled"] = SceneFileScriptPropertyValue.FromBoolean(true),
+                        ["label"] = SceneFileScriptPropertyValue.FromString("mover")
+                    })).IsSuccess);
+        Assert.True(
+            session.UpdateObjectRigidBodyComponent(
+                "cube-a",
+                new SceneFileRigidBodyComponentDefinition("Dynamic", 2.5d)).IsSuccess);
+        Assert.True(
+            session.UpdateObjectBoxColliderComponent(
+                "cube-a",
+                new SceneFileBoxColliderComponentDefinition(
+                    new Vector3(2.0f, 3.0f, 4.0f),
+                    new Vector3(0.5f, 1.0f, -0.5f))).IsSuccess);
+
+        var result = session.Save();
+
+        Assert.True(result.IsSuccess);
+        Assert.False(session.IsDirty);
+        var item = Assert.Single(session.Objects);
+        var script = Assert.Single(item.ScriptComponents);
+        Assert.Equal("MoveOnInput", script.ScriptId);
+        Assert.Equal(2.0d, script.Properties["speed"].Number);
+        Assert.True(script.Properties["enabled"].Boolean);
+        Assert.Equal("mover", script.Properties["label"].Text);
+        Assert.Equal(SceneRigidBodyType.Dynamic, item.RigidBodyComponent!.BodyType);
+        Assert.Equal(2.5d, item.RigidBodyComponent.Mass);
+        Assert.Equal(new Vector3(2.0f, 3.0f, 4.0f), item.BoxColliderComponent!.Size);
+        Assert.Equal(new Vector3(0.5f, 1.0f, -0.5f), item.BoxColliderComponent.Center);
+    }
+
+    [Fact]
+    public void UpdateObjectPhysicsComponents_StaticRigidBodyNormalizesMassAndComponentsCanExistIndependently()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+
+        Assert.True(
+            session.UpdateObjectRigidBodyComponent(
+                "cube-a",
+                new SceneFileRigidBodyComponentDefinition("Static", 99.0d)).IsSuccess);
+        Assert.Equal(SceneRigidBodyType.Static, Assert.Single(session.Objects).RigidBodyComponent!.BodyType);
+        Assert.Equal(0.0d, Assert.Single(session.Objects).RigidBodyComponent!.Mass);
+        Assert.Null(Assert.Single(session.Objects).BoxColliderComponent);
+
+        Assert.True(session.RemoveObjectRigidBodyComponent("cube-a").IsSuccess);
+        Assert.True(
+            session.UpdateObjectBoxColliderComponent(
+                "cube-a",
+                new SceneFileBoxColliderComponentDefinition(Vector3.One, Vector3.Zero)).IsSuccess);
+        Assert.Null(Assert.Single(session.Objects).RigidBodyComponent);
+        Assert.NotNull(Assert.Single(session.Objects).BoxColliderComponent);
+    }
+
+    [Fact]
+    public void UpdateObjectPhysicsComponents_InvalidValuesFailWithoutChangingSession()
+    {
+        var scenePath = WriteSceneFile(CreateValidSceneJson("scene-a", "cube-a"));
+        var session = new SceneEditorSession();
+        Assert.True(session.Open(scenePath).IsSuccess);
+        Assert.True(session.SelectObject("cube-a").IsSuccess);
+        var originalDocument = session.Document;
+        var originalScene = session.Scene;
+
+        var rigidBodyResult = session.UpdateObjectRigidBodyComponent(
+            "cube-a",
+            new SceneFileRigidBodyComponentDefinition("Dynamic", 0.0d));
+        var boxColliderResult = session.UpdateObjectBoxColliderComponent(
+            "cube-a",
+            new SceneFileBoxColliderComponentDefinition(Vector3.Zero, Vector3.Zero));
+
+        Assert.False(rigidBodyResult.IsSuccess);
+        Assert.Equal(SceneEditorFailureKind.InvalidTransform, rigidBodyResult.Failure!.Kind);
+        Assert.False(boxColliderResult.IsSuccess);
+        Assert.Equal(SceneEditorFailureKind.InvalidTransform, boxColliderResult.Failure!.Kind);
+        Assert.Same(originalDocument, session.Document);
+        Assert.Same(originalScene, session.Scene);
+        Assert.Equal("cube-a", session.SelectedObjectId);
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
     public void Open_TransformOnlyObject_CanSelectWithoutMeshRenderer()
     {
         var scenePath = WriteSceneFile(CreateTransformOnlySceneJson("scene-a", "empty-a"));

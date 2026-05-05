@@ -261,17 +261,17 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Review
+Done
 
 ## 完成度（Completion）
-`95`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-021.md`

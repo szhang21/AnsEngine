@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ClosedAt: `2026-05-05 00:34`
 
 ## Summary
@@ -66,8 +66,8 @@
 
 ## ArchiveReadiness
 
-- `TASK-APP-021` is ready for Human review/signoff.
-- `TASK-QA-021` can now run full M20 gate review.
+- `TASK-APP-021` has passed Human review/signoff.
+- `TASK-QA-021` has completed the M20 gate review and archive closeout.
 
 ## Risk
 

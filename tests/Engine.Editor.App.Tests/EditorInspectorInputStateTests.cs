@@ -123,6 +123,77 @@ public sealed class EditorInspectorInputStateTests
         Assert.Contains("non-finite", controller.LastError!, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Apply_ScriptRigidBodyAndBoxCollider_UpdatesSessionThroughController()
+    {
+        var controller = CreateControllerWithSelectedObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+        inputState.SyncFrom(snapshot.Inspector);
+        inputState.SetScriptValues("MoveOnInput", """{"speed": 2.25, "enabled": true, "label": "mover"}""");
+        inputState.SetRigidBodyValues("Dynamic", 1.5d);
+        inputState.SetBoxColliderValues(new Vector3(2.0f, 3.0f, 4.0f), new Vector3(0.5f, 0.0f, -0.5f));
+
+        var result = inputState.Apply(controller, snapshot.Inspector);
+
+        Assert.True(result, controller.LastError);
+        var selected = controller.Session.SelectedObject!;
+        var script = Assert.Single(selected.ScriptComponents);
+        Assert.Equal("MoveOnInput", script.ScriptId);
+        Assert.Equal(2.25d, script.Properties["speed"].Number);
+        Assert.True(script.Properties["enabled"].Boolean);
+        Assert.Equal("mover", script.Properties["label"].Text);
+        Assert.Equal(SceneRigidBodyType.Dynamic, selected.RigidBodyComponent!.BodyType);
+        Assert.Equal(1.5d, selected.RigidBodyComponent.Mass);
+        Assert.Equal(new Vector3(2.0f, 3.0f, 4.0f), selected.BoxColliderComponent!.Size);
+        Assert.Equal(new Vector3(0.5f, 0.0f, -0.5f), selected.BoxColliderComponent.Center);
+    }
+
+    [Fact]
+    public void Apply_InvalidScriptPropertiesJson_FailsAndLeavesDocumentUnchanged()
+    {
+        var controller = CreateControllerWithSelectedObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+        inputState.SyncFrom(snapshot.Inspector);
+        inputState.SetScriptValues("MoveOnInput", "[1, 2]");
+        var originalDocument = controller.Session.Document;
+        var initialDirty = controller.Session.IsDirty;
+
+        var result = inputState.Apply(controller, snapshot.Inspector);
+
+        Assert.False(result);
+        Assert.Same(originalDocument, controller.Session.Document);
+        Assert.Equal(initialDirty, controller.Session.IsDirty);
+        Assert.Empty(controller.Session.SelectedObject!.ScriptComponents);
+        Assert.Contains("JSON object", controller.LastError!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AddRemoveComponentHelpers_CallControllerSessionPaths()
+    {
+        var controller = CreateControllerWithSelectedObject();
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+        var inputState = new EditorInspectorInputState();
+
+        Assert.True(inputState.AddScriptComponent(controller, snapshot.Inspector), controller.LastError);
+        snapshot = EditorGuiSnapshotFactory.Create(controller);
+        Assert.Single(snapshot.Inspector.Scripts.Scripts);
+        Assert.True(inputState.RemoveFirstScriptComponent(controller, snapshot.Inspector), controller.LastError);
+        snapshot = EditorGuiSnapshotFactory.Create(controller);
+        Assert.Empty(snapshot.Inspector.Scripts.Scripts);
+
+        Assert.True(inputState.AddRigidBodyComponent(controller, snapshot.Inspector), controller.LastError);
+        Assert.True(inputState.AddBoxColliderComponent(controller, EditorGuiSnapshotFactory.Create(controller).Inspector), controller.LastError);
+        snapshot = EditorGuiSnapshotFactory.Create(controller);
+        Assert.True(snapshot.Inspector.PhysicsParticipation.IsPhysicsReady);
+
+        Assert.True(inputState.RemoveRigidBodyComponent(controller, snapshot.Inspector), controller.LastError);
+        Assert.True(inputState.RemoveBoxColliderComponent(controller, EditorGuiSnapshotFactory.Create(controller).Inspector), controller.LastError);
+        snapshot = EditorGuiSnapshotFactory.Create(controller);
+        Assert.False(snapshot.Inspector.PhysicsParticipation.IsPhysicsReady);
+    }
+
     private static EditorAppController CreateControllerWithSelectedObject()
     {
         var controller = new EditorAppController(new EditorScenePathResolver());

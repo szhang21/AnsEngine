@@ -7,6 +7,10 @@ public sealed record EditorInspectorSnapshot(
     EditorInspectorObjectGroupSnapshot Object,
     EditorInspectorTransformGroupSnapshot Transform,
     EditorInspectorMeshRendererGroupSnapshot MeshRenderer,
+    EditorInspectorScriptsGroupSnapshot Scripts,
+    EditorInspectorRigidBodyGroupSnapshot RigidBody,
+    EditorInspectorBoxColliderGroupSnapshot BoxCollider,
+    EditorInspectorPhysicsParticipationSnapshot PhysicsParticipation,
     string EmptyMessage)
 {
     public string ObjectId => Object.ObjectId;
@@ -42,3 +46,35 @@ public sealed record EditorInspectorMeshRendererGroupSnapshot(
     string Mesh,
     string Material,
     string EmptyMessage);
+
+public sealed record EditorInspectorScriptsGroupSnapshot(
+    string Title,
+    IReadOnlyList<EditorInspectorScriptSnapshot> Scripts,
+    string EmptyMessage);
+
+public sealed record EditorInspectorScriptSnapshot(
+    string ScriptId,
+    string PropertiesJson);
+
+public sealed record EditorInspectorRigidBodyGroupSnapshot(
+    string Title,
+    bool HasRigidBody,
+    string BodyType,
+    double Mass,
+    string EmptyMessage);
+
+public sealed record EditorInspectorBoxColliderGroupSnapshot(
+    string Title,
+    bool HasBoxCollider,
+    Vector3 Size,
+    Vector3 Center,
+    string EmptyMessage);
+
+public sealed record EditorInspectorPhysicsParticipationSnapshot(
+    string Title,
+    bool HasTransform,
+    bool HasRigidBody,
+    bool HasBoxCollider)
+{
+    public bool IsPhysicsReady => HasTransform && HasRigidBody && HasBoxCollider;
+}

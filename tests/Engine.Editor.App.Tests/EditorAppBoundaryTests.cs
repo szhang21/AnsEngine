@@ -15,11 +15,12 @@ public sealed class EditorAppBoundaryTests
         Assert.Contains(@"..\Engine.SceneData\Engine.SceneData.csproj", projectFile);
         Assert.Contains(@"..\Engine.Contracts\Engine.Contracts.csproj", projectFile);
         Assert.Contains(@"..\Engine.Platform\Engine.Platform.csproj", projectFile);
+        Assert.Contains(@"..\Engine.Scene\Engine.Scene.csproj", projectFile);
+        Assert.Contains(@"..\Engine.Render\Engine.Render.csproj", projectFile);
+        Assert.Contains(@"..\Engine.Asset\Engine.Asset.csproj", projectFile);
         Assert.Contains("OpenTK", projectFile);
         Assert.Contains("ImGui.NET", projectFile);
         Assert.DoesNotContain("Engine.App.csproj", projectFile);
-        Assert.DoesNotContain("Engine.Render.csproj", projectFile);
-        Assert.DoesNotContain("Engine.Asset.csproj", projectFile);
     }
 
     [Fact]

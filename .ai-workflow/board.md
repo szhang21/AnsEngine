@@ -21,7 +21,8 @@
 
 ## InProgress
 
-- （空）
+- `TASK-EAPP-011` M21 Scene View preview foundation（人工验收打回：当前仍绘制固定占位三角形，需改为基于真实 submission mesh batches 的 projected preview triangles）
+- `TASK-QA-022` M21 Editor authoring MVP gate review and archive（依赖 TASK-EAPP-011 回退，撤回“可归档”结论，待修复后重新复验）
 
 ## Verify
 
@@ -29,14 +30,17 @@
 
 ## Review
 
-- `TASK-SCENE-020` M20 Scene Transform writeback contract（Executor 验收通过，待人工签收）
-- `TASK-APP-020` M20 App Physics production bridge（Executor 验收通过，待人工签收）
-- `TASK-PHYS-003` M20 Physics kinematic collision resolve（Executor 验收通过，待人工签收）
-- `TASK-APP-021` M20 Runtime physics order and writeback integration（Executor 验收通过，待人工签收）
-- `TASK-QA-021` M20 Physics Runtime Collision MVP gate review and archive（Executor 验收通过，M20 可归档，待人工签收）
+- `TASK-EAPP-009` M21 Unity-like Editor shell and theme baseline（Executor 验收通过，待人工签收）
+- `TASK-EDITOR-006` M21 Editor component authoring core APIs（Executor 验收通过，待人工签收）
+- `TASK-EAPP-010` M21 Inspector Script and Physics component stack integration（Executor 验收通过，待人工签收）
 
 ## Done
 
+- `TASK-SCENE-020` M20 Scene Transform writeback contract（人工验收通过，已归档）
+- `TASK-APP-020` M20 App Physics production bridge（人工验收通过，已归档）
+- `TASK-PHYS-003` M20 Physics kinematic collision resolve（人工验收通过，已归档）
+- `TASK-APP-021` M20 Runtime physics order and writeback integration（人工验收通过，已归档）
+- `TASK-QA-021` M20 Physics Runtime Collision MVP gate review and archive（人工验收通过，已归档）
 - `TASK-PHYS-001` M19 Engine.Physics module and boundary foundation（人工验收通过，已归档）
 - `TASK-SDATA-009` M19 SceneData RigidBody and BoxCollider component schema（人工验收通过，已归档）
 - `TASK-PHYS-002` M19 PhysicsWorld load, fixed step, snapshot and AABB queries（人工验收通过，已归档）

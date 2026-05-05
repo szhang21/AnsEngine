@@ -276,6 +276,94 @@ public sealed class SceneEditorSession
                 .ToArray());
     }
 
+    public SceneEditorSessionResult UpdateObjectScriptComponent(
+        string objectId,
+        SceneFileScriptComponentDefinition script)
+    {
+        ArgumentNullException.ThrowIfNull(script);
+
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => ReplaceFirstMatchingScriptOrAppend(components, script));
+    }
+
+    public SceneEditorSessionResult RemoveObjectScriptComponent(string objectId, string scriptId)
+    {
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => RemoveFirstMatchingScript(components, scriptId));
+    }
+
+    public SceneEditorSessionResult UpdateObjectRigidBodyComponent(
+        string objectId,
+        SceneFileRigidBodyComponentDefinition rigidBody)
+    {
+        ArgumentNullException.ThrowIfNull(rigidBody);
+
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => ReplaceComponent(components, rigidBody));
+    }
+
+    public SceneEditorSessionResult RemoveObjectRigidBodyComponent(string objectId)
+    {
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => components
+                .Where(item => !string.Equals(item.Type, SceneFileComponentTypes.RigidBody, StringComparison.Ordinal))
+                .ToArray());
+    }
+
+    public SceneEditorSessionResult UpdateObjectBoxColliderComponent(
+        string objectId,
+        SceneFileBoxColliderComponentDefinition boxCollider)
+    {
+        ArgumentNullException.ThrowIfNull(boxCollider);
+
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => ReplaceComponent(components, boxCollider));
+    }
+
+    public SceneEditorSessionResult RemoveObjectBoxColliderComponent(string objectId)
+    {
+        if (mDocument is null)
+        {
+            return CreateNoDocumentFailure();
+        }
+
+        return UpdateObjectComponents(
+            objectId,
+            components => components
+                .Where(item => !string.Equals(item.Type, SceneFileComponentTypes.BoxCollider, StringComparison.Ordinal))
+                .ToArray());
+    }
+
     public SceneEditorSessionResult Save()
     {
         if (mDocument is null)
@@ -499,6 +587,49 @@ public sealed class SceneEditorSession
         return components
             .Where(item => !string.Equals(item.Type, component.Type, StringComparison.Ordinal))
             .Concat(new[] { component })
+            .ToArray();
+    }
+
+    private static IReadOnlyList<SceneFileComponentDefinition> ReplaceFirstMatchingScriptOrAppend(
+        IReadOnlyList<SceneFileComponentDefinition> components,
+        SceneFileScriptComponentDefinition script)
+    {
+        var updated = components.ToArray();
+        for (var index = 0; index < updated.Length; index += 1)
+        {
+            if (updated[index] is SceneFileScriptComponentDefinition existingScript &&
+                string.Equals(existingScript.ScriptId, script.ScriptId, StringComparison.Ordinal))
+            {
+                updated[index] = script;
+                return updated;
+            }
+        }
+
+        return updated.Concat(new[] { script }).ToArray();
+    }
+
+    private static IReadOnlyList<SceneFileComponentDefinition> RemoveFirstMatchingScript(
+        IReadOnlyList<SceneFileComponentDefinition> components,
+        string scriptId)
+    {
+        var removed = false;
+        return components
+            .Where(
+                item =>
+                {
+                    if (removed || item is not SceneFileScriptComponentDefinition script)
+                    {
+                        return true;
+                    }
+
+                    if (!string.Equals(script.ScriptId, scriptId, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+
+                    removed = true;
+                    return false;
+                })
             .ToArray();
     }
 }

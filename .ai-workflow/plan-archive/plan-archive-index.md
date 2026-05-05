@@ -12,6 +12,12 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M21-2026-05-05`
+  Status: `Active`
+  LastUpdated: `2026-05-05`
+  MilestoneSummary: `M21 进行中（Unity-like Editor Authoring MVP，Script/RigidBody/BoxCollider 组件编辑、专业工具布局与 Scene View 预览地基）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M21-2026-05-05.md`
+
 - PlanId: `PLAN-M20-2026-05-04`
   Status: `Closed`
   LastUpdated: `2026-05-05 00:00`

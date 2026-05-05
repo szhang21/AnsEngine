@@ -27,6 +27,8 @@ public sealed class EditorGuiSnapshotFactoryTests
         Assert.Equal(snapshot.Layout.DisplaySize.Y - snapshot.Layout.StatusBarSize.Y, snapshot.Layout.StatusBarPosition.Y);
         Assert.Equal(snapshot.Layout.DisplaySize.X, snapshot.Layout.ToolbarSize.X);
         Assert.Equal(snapshot.Layout.DisplaySize.X, snapshot.Layout.StatusBarSize.X);
+        Assert.Equal(new Vector2(8.0f, 5.0f), snapshot.Theme.FramePadding);
+        Assert.Equal(4.0f, snapshot.Theme.WindowRounding);
     }
 
     [Fact]
@@ -39,13 +41,13 @@ public sealed class EditorGuiSnapshotFactoryTests
 
         Assert.Equal(displaySize, snapshot.Layout.DisplaySize);
         Assert.Equal(Vector2.Zero, snapshot.Layout.ToolbarPosition);
-        Assert.Equal(new Vector2(displaySize.X, 104.0f), snapshot.Layout.ToolbarSize);
-        Assert.Equal(new Vector2(0.0f, 104.0f), snapshot.Layout.HierarchyPosition);
-        Assert.Equal(new Vector2(260.0f, 662.0f), snapshot.Layout.HierarchySize);
-        Assert.Equal(new Vector2(920.0f, 104.0f), snapshot.Layout.InspectorPosition);
-        Assert.Equal(new Vector2(360.0f, 662.0f), snapshot.Layout.InspectorSize);
-        Assert.Equal(new Vector2(260.0f, 104.0f), snapshot.Layout.MainWorkspacePosition);
-        Assert.Equal(new Vector2(660.0f, 662.0f), snapshot.Layout.MainWorkspaceSize);
+        Assert.Equal(new Vector2(displaySize.X, 56.0f), snapshot.Layout.ToolbarSize);
+        Assert.Equal(new Vector2(0.0f, 56.0f), snapshot.Layout.HierarchyPosition);
+        Assert.Equal(new Vector2(260.0f, 710.0f), snapshot.Layout.HierarchySize);
+        Assert.Equal(new Vector2(920.0f, 56.0f), snapshot.Layout.InspectorPosition);
+        Assert.Equal(new Vector2(360.0f, 710.0f), snapshot.Layout.InspectorSize);
+        Assert.Equal(new Vector2(260.0f, 56.0f), snapshot.Layout.SceneViewPosition);
+        Assert.Equal(new Vector2(660.0f, 710.0f), snapshot.Layout.SceneViewSize);
         Assert.Equal(new Vector2(0.0f, 766.0f), snapshot.Layout.StatusBarPosition);
         Assert.Equal(new Vector2(displaySize.X, 34.0f), snapshot.Layout.StatusBarSize);
     }
@@ -59,6 +61,7 @@ public sealed class EditorGuiSnapshotFactoryTests
         var snapshot = EditorGuiSnapshotFactory.Create(controller);
 
         Assert.NotEmpty(snapshot.HierarchyItems);
+        Assert.True(snapshot.ScenePreview.IsNonBlank);
         Assert.EndsWith(Path.Combine("src", "Engine.App", "SampleScenes", "default.scene.json"), snapshot.StatusBar.ScenePath);
         Assert.Equal("clean", snapshot.StatusBar.DirtyText);
         Assert.Equal("<none>", snapshot.StatusBar.SelectedObjectId);
@@ -92,9 +95,38 @@ public sealed class EditorGuiSnapshotFactoryTests
         Assert.Equal("Object", snapshot.Inspector.Object.Title);
         Assert.Equal("Transform", snapshot.Inspector.Transform.Title);
         Assert.Equal("MeshRenderer", snapshot.Inspector.MeshRenderer.Title);
+        Assert.Equal("Scripts", snapshot.Inspector.Scripts.Title);
+        Assert.Equal("RigidBody", snapshot.Inspector.RigidBody.Title);
+        Assert.Equal("BoxCollider", snapshot.Inspector.BoxCollider.Title);
+        Assert.Equal("PhysicsParticipation", snapshot.Inspector.PhysicsParticipation.Title);
         Assert.True(snapshot.Inspector.Transform.HasTransform);
         Assert.True(snapshot.Inspector.MeshRenderer.HasMeshRenderer);
+        Assert.Equal(
+            snapshot.Inspector.Transform.HasTransform &&
+            snapshot.Inspector.RigidBody.HasRigidBody &&
+            snapshot.Inspector.BoxCollider.HasBoxCollider,
+            snapshot.Inspector.PhysicsParticipation.IsPhysicsReady);
         Assert.Contains(snapshot.HierarchyItems, item => item.ObjectId == objectId && item.IsSelected);
+    }
+
+    [Fact]
+    public void Create_SelectedAuthoringObject_ShowsScriptPhysicsGroupsAndReadyState()
+    {
+        var controller = new EditorAppController(new EditorScenePathResolver());
+        Assert.True(controller.OpenScene(WriteAuthoringTemporarySceneFile()), controller.LastError);
+        Assert.True(controller.SelectObject("mover"), controller.LastError);
+
+        var snapshot = EditorGuiSnapshotFactory.Create(controller);
+
+        var script = Assert.Single(snapshot.Inspector.Scripts.Scripts);
+        Assert.Equal("MoveOnInput", script.ScriptId);
+        Assert.Contains("\"speed\":2", script.PropertiesJson);
+        Assert.True(snapshot.Inspector.RigidBody.HasRigidBody);
+        Assert.Equal("Dynamic", snapshot.Inspector.RigidBody.BodyType);
+        Assert.Equal(1.0d, snapshot.Inspector.RigidBody.Mass);
+        Assert.True(snapshot.Inspector.BoxCollider.HasBoxCollider);
+        Assert.Equal(Vector3.One, snapshot.Inspector.BoxCollider.Size);
+        Assert.True(snapshot.Inspector.PhysicsParticipation.IsPhysicsReady);
     }
 
     [Fact]
@@ -150,6 +182,56 @@ public sealed class EditorGuiSnapshotFactoryTests
                     "components": [
                       {
                         "type": "Transform"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """);
+        return scenePath;
+    }
+
+    private static string WriteAuthoringTemporarySceneFile()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "AnsEngine.Editor.App.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        var scenePath = Path.Combine(directoryPath, "authoring.scene.json");
+        File.WriteAllText(
+            scenePath,
+            """
+            {
+              "version": "2.0",
+              "scene": {
+                "id": "editor-app-authoring-scene",
+                "name": "Editor App Authoring Scene",
+                "objects": [
+                  {
+                    "id": "mover",
+                    "name": "Mover",
+                    "components": [
+                      {
+                        "type": "Transform"
+                      },
+                      {
+                        "type": "Script",
+                        "scriptId": "MoveOnInput",
+                        "properties": {
+                          "speed": 2
+                        }
+                      },
+                      {
+                        "type": "RigidBody",
+                        "bodyType": "Dynamic",
+                        "mass": 1
+                      },
+                      {
+                        "type": "BoxCollider",
+                        "size": {
+                          "x": 1,
+                          "y": 1,
+                          "z": 1
+                        }
                       }
                     ]
                   }

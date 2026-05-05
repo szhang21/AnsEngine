@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ClosedAt: `2026-05-04 23:55`
 
 ## Summary
@@ -67,7 +67,7 @@
 
 ## ArchiveReadiness
 
-- `TASK-SCENE-020` is ready for Human review/signoff.
+- `TASK-SCENE-020` has passed Human review/signoff and is ready for final archive closeout.
 - `TASK-APP-020` may now consume this Scene writeback capability only from `Engine.App` bridge/composition code.
 
 ## Risk

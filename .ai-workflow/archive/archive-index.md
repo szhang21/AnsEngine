@@ -18,6 +18,176 @@
 - ValidationEvidence
 - SnapshotPath
 
+## 当前记录
+
+- TaskId: `TASK-QA-022`
+  Title: M21 Editor authoring MVP gate review and archive
+  Priority: `P2`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-05`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Verified M21 execution cards reached Review with complete evidence
+    - Ran full solution tests plus focused editor authoring/preview and App collision smoke
+    - Confirmed boundary direction and M21 non-goal constraints
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/boundaries/engine-editor.md`
+    - `.ai-workflow/tasks/task-qa-022.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-022.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，全 solution 测试通过）
+    - Platform Test: pass（`Engine.Platform.Tests` 10 条通过）
+    - Editor Smoke: pass（authoring/preview focused filter 3 条通过）
+    - App Collision Smoke: pass（`ApplicationHost_Run_MoveOnInputCannotMoveThroughStaticColliderBeforeRender` 1 条通过）
+    - Headless App Smoke: pass（native window disabled + auto exit，ExitCode=0）
+    - CodeQuality: NoNewHighRisk=true, MustFixCount=0, MustFixDisposition=none
+    - DesignQuality: DQ-1/DQ-2/DQ-3/DQ-4 pass
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-022.md`
+
+- TaskId: `TASK-EAPP-011`
+  Title: M21 Scene View preview foundation
+  Priority: `P1`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-05-05`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added EditorScenePreviewHost and nonblank SceneView preview snapshot
+    - Refreshes preview after open/apply/save/save-as/selection changes
+    - Updated approved Editor.App boundary for Scene/Render/Asset preview dependencies
+  FilesChanged:
+    - `src/Engine.Editor.App/Engine.Editor.App.csproj`
+    - `src/Engine.Editor.App/EditorAppController.cs`
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshot.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
+    - `src/Engine.Editor.App/EditorScenePreviewHost.cs`
+    - `src/Engine.Editor.App/EditorScenePreviewSnapshot.cs`
+    - `tests/Engine.Editor.App.Tests/EditorAppBoundaryTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorAppControllerTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-011.md`
+    - `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`，39 条通过）
+    - Render/Scene Tests: pass（`Engine.Render.Tests` 18 条通过；`Engine.Scene.Tests` 57 条通过）
+    - Smoke: pass（sample scene 产生非空 SceneView preview，Apply/Save 刷新；未引用 ApplicationHost/script/physics/play-mode）
+    - Boundary: pass（Editor.App 依赖与批准边界一致，Editor/App 仍保持隔离）
+    - Perf: pass（preview 按操作刷新，无逐帧 scene reload 或 runtime app duplication）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
+
+- TaskId: `TASK-EAPP-010`
+  Title: M21 Inspector Script and Physics component stack integration
+  Priority: `P0`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-05-05`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added Inspector groups for Scripts, RigidBody, BoxCollider and PhysicsParticipation
+    - Routed component Apply/add/remove through EditorAppController and SceneEditorSession
+    - Covered JSON parse rollback and physics-ready state in Editor.App tests
+  FilesChanged:
+    - `src/Engine.Editor.App/EditorAppController.cs`
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
+    - `src/Engine.Editor.App/EditorInspectorInputState.cs`
+    - `src/Engine.Editor.App/EditorInspectorSnapshot.cs`
+    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
+    - `tests/Engine.Editor.App.Tests/EditorInspectorInputStateTests.cs`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-010.md`
+    - `.ai-workflow/archive/2026-05/TASK-EAPP-010.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`，37 条通过）
+    - Smoke: pass（Inspector 通过 controller/session 编辑 Script/RigidBody/BoxCollider，JSON 失败不改文档）
+    - Boundary: pass（未新增 Render/Asset/Scene 依赖）
+    - Perf: pass（JSON parse 仅 Apply 触发，无逐帧 preview/render 工作）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EAPP-010.md`
+
+- TaskId: `TASK-EDITOR-006`
+  Title: M21 Editor component authoring core APIs
+  Priority: `P0`
+  PrimaryModule: `Engine.Editor`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
+  Owner: `Exec-Editor`
+  ClosedAt: `2026-05-05`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added explicit `SceneEditorSession` APIs for Script/RigidBody/BoxCollider update and remove
+    - Reused existing component update and SceneData normalization path
+    - Covered headless save/reload, invalid failures and dependency boundary tests
+  FilesChanged:
+    - `src/Engine.Editor/Session/SceneEditorSession.cs`
+    - `tests/Engine.Editor.Tests/SceneEditorSessionTests.cs`
+    - `.ai-workflow/boundaries/engine-editor.md`
+    - `.ai-workflow/tasks/task-editor-006.md`
+    - `.ai-workflow/archive/2026-05/TASK-EDITOR-006.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Editor.Tests/Engine.Editor.Tests.csproj --no-restore --nologo -v minimal`，34 条通过）
+    - Smoke: pass（headless open -> edit -> save -> reload 覆盖新组件）
+    - Boundary: pass（未新增 App/Render/Platform/Asset/OpenTK 依赖）
+    - Perf: pass（无 GUI 依赖、无重复 normalizer、无逐帧 IO）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EDITOR-006.md`
+
+- TaskId: `TASK-EAPP-009`
+  Title: M21 Unity-like Editor shell and theme baseline
+  Priority: `P0`
+  PrimaryModule: `Engine.Editor.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
+  Owner: `Exec-EditorApp`
+  ClosedAt: `2026-05-05`
+  Status: `Review`
+  HumanSignoff: `pending`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Central layout contract renamed from `MainWorkspace*` to `SceneView*`
+    - Compact Unity-like docked shell and dark tool theme snapshot added
+    - Old viewport placeholder text removed without preview/render dependency
+  FilesChanged:
+    - `src/Engine.Editor.App/EditorGuiSnapshot.cs`
+    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
+    - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
+    - `.ai-workflow/boundaries/engine-editor-app.md`
+    - `.ai-workflow/tasks/task-eapp-009.md`
+    - `.ai-workflow/archive/2026-05/TASK-EAPP-009.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`，33 条通过）
+    - Smoke: pass（旧 viewport 占位文案已移除，中央区域为 `Scene View` 容器）
+    - Boundary: pass（未新增 Render/Asset/Scene 依赖）
+    - Perf: pass（无逐帧文件 IO、preview/render 接线或 asset loading）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EAPP-009.md`
+
 ## 归档记录
 
 ### 模板
@@ -55,8 +225,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
   Owner: `Exec-QA`
   ClosedAt: `2026-05-05 00:37`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Rechecked M20 implementation cards, boundaries, and archive evidence
@@ -87,8 +257,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
   Owner: `Exec-App`
   ClosedAt: `2026-05-05 00:34`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added App runtime physics orchestrator for candidate transform resolve/writeback
@@ -118,8 +288,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
   Owner: `Exec-Physics`
   ClosedAt: `2026-05-05 00:13`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added explicit kinematic move result from desired to resolved transform
@@ -147,8 +317,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
   Owner: `Exec-App`
   ClosedAt: `2026-05-05 00:08`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added App-owned production bridge from `SceneDescription` to `PhysicsWorldDefinition`
@@ -179,8 +349,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
   Owner: `Exec-Scene`
   ClosedAt: `2026-05-04 23:55`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added generic Scene transform writeback API using `Engine.Contracts.SceneTransform`

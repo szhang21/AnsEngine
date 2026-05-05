@@ -89,6 +89,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M21 QA 边界复验，确认 `Engine.Editor` 仍只依赖 `Engine.Core`、`Engine.Contracts`、`Engine.SceneData`，未引入 GUI、OpenTK、ImGui、Render、Asset、Scene、App 或 `Engine.Editor.App` 依赖。
+  - 变更原因：支撑 `TASK-QA-022`，证明 M21 的 Inspector authoring 与 Scene View preview 没有污染 headless editor core。
+  - 风险与回滚方案：后续若需要 Editor core 感知资源或 preview 状态，必须另走边界变更；当前 M21 保持 Editor headless。
+- 2026-05-05
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneEditorSession` 新增 Script、RigidBody、BoxCollider 的 headless component authoring API，支持更新与移除并继续通过 SceneData normalizer 维护保存/reload、dirty、selection 与失败语义。
+  - 变更原因：支撑 `TASK-EDITOR-006`，为 M21 Inspector authoring 提供不依赖 GUI/Render/Asset/Scene/App 的会话核心能力。
+  - 风险与回滚方案：当前不实现 GUI 输入、Script property JSON 文本解析、runtime physics-ready 判定或 Scene View preview；若后续 GUI 需要更复杂多脚本管理，应通过 Editor.App wrapper 与现有显式 session API 增量扩展。
 - 2026-05-02
   - 变更人：Execution-Agent
   - 变更内容：`SceneEditorSession` headless core 新增 component-based editing 入口：默认 `AddObject(string, string)` 创建 Transform + MeshRenderer，Transform/MeshRenderer 通过组件方法更新，MeshRenderer 可移除以保留 Transform-only object；旧扁平 `UpdateObjectResources` / `UpdateObjectTransform` 仅作为短期兼容桥接。

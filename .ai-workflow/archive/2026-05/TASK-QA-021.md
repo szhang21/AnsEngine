@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ClosedAt: `2026-05-05 00:37`
 
 ## Summary
@@ -65,7 +65,7 @@
 
 ## ArchiveReadiness
 
-- M20 can be archived after Human review/signoff.
+- M20 has completed Human review/signoff and can be archived.
 - M21+ should own any Dynamic gravity, velocity/force/impulse, solver, CCD, Editor UI, or Play Mode expansion.
 
 ## Risk

@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ClosedAt: `2026-05-05 00:13`
 
 ## Summary
@@ -63,7 +63,7 @@
 
 ## ArchiveReadiness
 
-- `TASK-PHYS-003` is ready for Human review/signoff.
+- `TASK-PHYS-003` has passed Human review/signoff.
 - `TASK-APP-021` may now wire Script -> Physics resolve/writeback -> Render using this API from App only.
 
 ## Risk
