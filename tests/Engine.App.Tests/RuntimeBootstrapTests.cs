@@ -3,6 +3,7 @@ using Engine.Asset;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Platform;
+using Engine.Physics;
 using Engine.Render;
 using Engine.Scene;
 using Engine.SceneData;
@@ -283,6 +284,83 @@ public sealed class RuntimeBootstrapTests
     }
 
     [Fact]
+    public void ApplicationHost_Run_OrdersScriptPhysicsWritebackBeforeRender()
+    {
+        var callLog = new List<string>();
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var sceneRuntime = new LoggingSceneRuntime(sceneGraph, callLog);
+        var script = new LoggingInputScript(callLog);
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register("LogInput", () => script));
+        var app = new ApplicationHost(
+            new AutoCloseWindowService(callLog),
+            new CountingRenderer(callLog),
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), new AutoCloseWindowService()),
+            new StubMeshAssetProvider(),
+            new PhysicsScriptSceneDescriptionLoader("LogInput"),
+            "physics-script.scene.json",
+            new NullInputService(),
+            new StubTimeService(new TimeSnapshot(0.25, 1.25, 4.0), callLog),
+            new ScriptRuntime(registry));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.True(callLog.IndexOf("ScriptUpdate") < callLog.IndexOf("PhysicsWriteback"));
+        Assert.True(callLog.IndexOf("PhysicsWriteback") < callLog.IndexOf("RenderFrame"));
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_MoveOnInputCannotMoveThroughStaticColliderBeforeRender()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var renderer = new SnapshotCapturingRenderer(sceneGraph);
+        var app = new ApplicationHost(
+            new AutoCloseWindowService(),
+            renderer,
+            CreateSceneRuntime(sceneGraph),
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), new AutoCloseWindowService()),
+            new StubMeshAssetProvider(),
+            new PhysicsMovementSceneDescriptionLoader(),
+            "physics-move.scene.json",
+            new StubInputService(InputSnapshot.FromKeys(EngineKey.D)),
+            new FixedTimeService(new TimeSnapshot(0.5, 0.5, 2.0)),
+            CreateMoveOnInputRuntime());
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.NotNull(renderer.FirstRenderedSnapshot);
+        var mover = Assert.Single(renderer.FirstRenderedSnapshot!.Objects, item => item.ObjectId == "mover");
+        AssertVectorNearlyEqual(Vector3.Zero, mover.LocalTransform!.Value.Position);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_PhysicsWritebackFailureReturnsErrorBeforeRender()
+    {
+        var windowService = new TrackingWindowService();
+        var renderer = new CountingRenderer();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            new FailingWritebackSceneRuntime(),
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new PhysicsSceneDescriptionLoader(),
+            "physics.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0.016, 60)));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal(1, renderer.InitializeCalls);
+        Assert.Equal(0, renderer.RenderCalls);
+        Assert.Equal(1, renderer.ShutdownCalls);
+    }
+
+    [Fact]
     public void ApplicationHost_Run_UnknownScriptIdFailsCleanlyBeforeRender()
     {
         var windowService = new TrackingWindowService();
@@ -306,6 +384,161 @@ public sealed class RuntimeBootstrapTests
         Assert.Equal(0, renderer.RenderCalls);
         Assert.Equal(1, renderer.ShutdownCalls);
         Assert.Equal(1, windowService.DisposeCalls);
+    }
+
+    [Fact]
+    public void ScenePhysicsWorldDefinitionBridge_CreateDefinition_MapsSceneDescriptionBodies()
+    {
+        var scene = CreatePhysicsScene();
+
+        var definition = CreatePhysicsWorldDefinition(scene);
+
+        Assert.Equal(2, definition.Bodies.Count);
+        var dynamicBody = definition.Bodies[0];
+        Assert.Equal("cube-main", dynamicBody.BodyId);
+        Assert.Equal("Cube Main", dynamicBody.BodyName);
+        Assert.Equal(PhysicsBodyType.Dynamic, dynamicBody.BodyType);
+        Assert.Equal(2.5d, dynamicBody.Mass);
+        Assert.Equal(new Vector3(1.0f, 2.0f, 3.0f), dynamicBody.Transform!.Value.Position);
+        Assert.Equal(new Vector3(1.0f, 1.5f, 2.0f), dynamicBody.BoxCollider!.Size);
+        Assert.Equal(new Vector3(0.0f, 0.25f, 0.0f), dynamicBody.BoxCollider.Center);
+
+        var staticBody = definition.Bodies[1];
+        Assert.Equal("wall", staticBody.BodyId);
+        Assert.Equal(PhysicsBodyType.Static, staticBody.BodyType);
+        Assert.Equal(0.0d, staticBody.Mass);
+    }
+
+    [Fact]
+    public void ScenePhysicsWorldDefinitionBridge_CreateDefinition_OnlyCompletePhysicsObjectsEnterWorld()
+    {
+        var scene = new SceneDescription(
+            "partial-physics-scene",
+            "partial.scene.json",
+            new SceneCameraDescription(Vector3.UnitZ, Vector3.Zero, 1.0f),
+            new[]
+            {
+                CreatePhysicsObject("complete", "Complete", SceneRigidBodyType.Static, 0.0d),
+                new SceneObjectDescription(
+                    "missing-transform",
+                    "Missing Transform",
+                    new SceneComponentDescription[]
+                    {
+                        new SceneRigidBodyComponentDescription(SceneRigidBodyType.Static, 0.0d),
+                        new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+                    }),
+                new SceneObjectDescription(
+                    "missing-body",
+                    "Missing Body",
+                    new SceneComponentDescription[]
+                    {
+                        new SceneTransformComponentDescription(SceneTransformDescription.Identity),
+                        new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+                    }),
+                new SceneObjectDescription(
+                    "missing-collider",
+                    "Missing Collider",
+                    new SceneComponentDescription[]
+                    {
+                        new SceneTransformComponentDescription(SceneTransformDescription.Identity),
+                        new SceneRigidBodyComponentDescription(SceneRigidBodyType.Static, 0.0d)
+                    })
+            });
+
+        var definition = CreatePhysicsWorldDefinition(scene);
+
+        var body = Assert.Single(definition.Bodies);
+        Assert.Equal("complete", body.BodyId);
+    }
+
+    [Fact]
+    public void ScenePhysicsWorldDefinitionBridge_CreateDefinition_DoesNotMutateSceneDescription()
+    {
+        var scene = CreatePhysicsScene();
+        var originalObjects = scene.Objects;
+        var originalComponents = scene.Objects[0].Components;
+        var originalTransform = scene.Objects[0].TransformComponent!.Transform;
+
+        _ = CreatePhysicsWorldDefinition(scene);
+
+        Assert.Same(originalObjects, scene.Objects);
+        Assert.Same(originalComponents, scene.Objects[0].Components);
+        Assert.Equal(originalTransform, scene.Objects[0].TransformComponent!.Transform);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_CreatesPhysicsWorldBeforeSceneInitialization()
+    {
+        var sceneRuntime = new SpySceneRuntime();
+        var app = new ApplicationHost(
+            new AutoCloseWindowService(),
+            new CountingRenderer(),
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), new AutoCloseWindowService()),
+            new StubMeshAssetProvider(),
+            new PhysicsSceneDescriptionLoader(),
+            "physics.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0.016, 60)));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(0, exitCode);
+        Assert.True(sceneRuntime.InitializeCalled);
+        var physicsWorldField = typeof(ApplicationHost).GetField("mPhysicsWorld", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(physicsWorldField);
+        var physicsWorld = Assert.IsType<PhysicsWorld>(physicsWorldField!.GetValue(app));
+        Assert.Equal(2, physicsWorld.BodyCount);
+    }
+
+    [Fact]
+    public void ApplicationHost_Run_PhysicsWorldInitializationFailureReturnsErrorBeforeSceneInitialization()
+    {
+        var windowService = new TrackingWindowService();
+        var renderer = new CountingRenderer();
+        var sceneRuntime = new SpySceneRuntime();
+        var app = new ApplicationHost(
+            windowService,
+            renderer,
+            sceneRuntime,
+            new NullAssetService(new EngineRuntimeInfo("AnsEngine", "0.1.0"), windowService),
+            new StubMeshAssetProvider(),
+            new MalformedPhysicsSceneDescriptionLoader(),
+            "malformed-physics.scene.json",
+            new NullInputService(),
+            new FixedTimeService(new TimeSnapshot(0.016, 0.016, 60)));
+
+        var exitCode = app.Run();
+
+        Assert.Equal(1, exitCode);
+        Assert.False(sceneRuntime.InitializeCalled);
+        Assert.Equal(1, renderer.InitializeCalls);
+        Assert.Equal(0, renderer.RenderCalls);
+        Assert.Equal(1, renderer.ShutdownCalls);
+    }
+
+    [Fact]
+    public void JsonSceneDescriptionLoader_BundledDefaultSceneInitializesPhysicsWorld()
+    {
+        var scenePath = Path.GetFullPath(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "..",
+                "src",
+                "Engine.App",
+                "SampleScenes",
+                "default.scene.json"));
+        var loadResult = new JsonSceneDescriptionLoader().Load(scenePath);
+        Assert.True(loadResult.IsSuccess, loadResult.Failure?.Message);
+
+        var definition = CreatePhysicsWorldDefinition(loadResult.Scene!);
+        var world = PhysicsWorld.Load(definition);
+
+        Assert.Equal(2, world.BodyCount);
     }
 
     [Fact]
@@ -527,6 +760,78 @@ public sealed class RuntimeBootstrapTests
             Activator.CreateInstance(adapterType!, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new object[] { sceneGraph }, null));
     }
 
+    private static PhysicsWorldDefinition CreatePhysicsWorldDefinition(SceneDescription sceneDescription)
+    {
+        var bridgeType = typeof(RuntimeBootstrap).Assembly.GetType("Engine.App.ScenePhysicsWorldDefinitionBridge");
+        Assert.NotNull(bridgeType);
+        var method = bridgeType!.GetMethod("CreateDefinition", BindingFlags.Public | BindingFlags.Static);
+        Assert.NotNull(method);
+        return Assert.IsType<PhysicsWorldDefinition>(method!.Invoke(null, new object[] { sceneDescription }));
+    }
+
+    private static RuntimeSceneSnapshot CreateSnapshotFromScene(SceneDescription? sceneDescription)
+    {
+        var objects = sceneDescription?.Objects
+            .Select((sceneObject, index) => new SceneRuntimeObjectSnapshot(
+                index + 1,
+                sceneObject.ObjectId,
+                sceneObject.ObjectName,
+                sceneObject.TransformComponent is not null,
+                sceneObject.TransformComponent is null
+                    ? null
+                    : new SceneTransform(
+                        sceneObject.TransformComponent.Transform.Position,
+                        sceneObject.TransformComponent.Transform.Scale,
+                        sceneObject.TransformComponent.Transform.Rotation),
+                sceneObject.MeshRendererComponent is not null,
+                sceneObject.MeshRendererComponent?.Mesh,
+                sceneObject.MeshRendererComponent?.Material))
+            .ToArray() ?? Array.Empty<SceneRuntimeObjectSnapshot>();
+        return new RuntimeSceneSnapshot(
+            objects,
+            new SceneCameraRuntimeSnapshot(Vector3.UnitZ, Vector3.Zero, 1.0f),
+            0,
+            0.0d);
+    }
+
+    private static SceneDescription CreatePhysicsScene()
+    {
+        return new SceneDescription(
+            "physics-scene",
+            "physics.scene.json",
+            new SceneCameraDescription(Vector3.UnitZ, Vector3.Zero, 1.0f),
+            new[]
+            {
+                CreatePhysicsObject(
+                    "cube-main",
+                    "Cube Main",
+                    SceneRigidBodyType.Dynamic,
+                    2.5d,
+                    new SceneTransformDescription(new Vector3(1.0f, 2.0f, 3.0f), Quaternion.Identity, Vector3.One),
+                    new SceneBoxColliderComponentDescription(new Vector3(1.0f, 1.5f, 2.0f), new Vector3(0.0f, 0.25f, 0.0f))),
+                CreatePhysicsObject("wall", "Wall", SceneRigidBodyType.Static, 0.0d)
+            });
+    }
+
+    private static SceneObjectDescription CreatePhysicsObject(
+        string objectId,
+        string objectName,
+        SceneRigidBodyType bodyType,
+        double mass,
+        SceneTransformDescription? transform = null,
+        SceneBoxColliderComponentDescription? collider = null)
+    {
+        return new SceneObjectDescription(
+            objectId,
+            objectName,
+            new SceneComponentDescription[]
+            {
+                new SceneTransformComponentDescription(transform ?? SceneTransformDescription.Identity),
+                new SceneRigidBodyComponentDescription(bodyType, mass),
+                collider ?? new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+            });
+    }
+
     private static ScriptRuntime CreateRotateSelfRuntime()
     {
         var registry = new ScriptRegistry();
@@ -660,6 +965,31 @@ public sealed class RuntimeBootstrapTests
         }
     }
 
+    private sealed class SnapshotCapturingRenderer : IRenderer
+    {
+        private readonly SceneGraphService mSceneGraphService;
+
+        public SnapshotCapturingRenderer(SceneGraphService sceneGraphService)
+        {
+            mSceneGraphService = sceneGraphService;
+        }
+
+        public RuntimeSceneSnapshot? FirstRenderedSnapshot { get; private set; }
+
+        public void Initialize()
+        {
+        }
+
+        public void RenderFrame()
+        {
+            FirstRenderedSnapshot ??= mSceneGraphService.CreateRuntimeSnapshot();
+        }
+
+        public void Shutdown()
+        {
+        }
+    }
+
     private sealed class TrackingWindowService : IWindowService
     {
         public WindowConfig Configuration { get; } = new(1280, 720, "AnsEngine-Tests");
@@ -714,12 +1044,96 @@ public sealed class RuntimeBootstrapTests
             throw new NotSupportedException("Spy scene runtime does not support script binding.");
         }
 
+        public RuntimeSceneSnapshot CreateRuntimeSnapshot()
+        {
+            return CreateSnapshotFromScene(SceneDescription);
+        }
+
+        public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+        {
+            mCallLog?.Add("PhysicsWriteback");
+            return SceneTransformWriteResult.Success();
+        }
+
         public void Update(TimeSnapshot time, InputSnapshot input)
         {
             UpdateCalls += 1;
             LastTime = time;
             LastInput = input;
             mCallLog?.Add("SceneUpdate");
+        }
+    }
+
+    private sealed class LoggingSceneRuntime : ISceneRuntime
+    {
+        private readonly SceneGraphService mSceneGraphService;
+        private readonly List<string> mCallLog;
+
+        public LoggingSceneRuntime(SceneGraphService sceneGraphService, List<string> callLog)
+        {
+            mSceneGraphService = sceneGraphService;
+            mCallLog = callLog;
+        }
+
+        public void InitializeScene(SceneDescription sceneDescription)
+        {
+            mSceneGraphService.LoadSceneDescription(sceneDescription);
+        }
+
+        public SceneScriptObjectBindResult BindScriptObject(string objectId)
+        {
+            return mSceneGraphService.BindScriptObject(objectId);
+        }
+
+        public RuntimeSceneSnapshot CreateRuntimeSnapshot()
+        {
+            return mSceneGraphService.CreateRuntimeSnapshot();
+        }
+
+        public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+        {
+            mCallLog.Add("PhysicsWriteback");
+            return mSceneGraphService.TrySetObjectTransform(objectId, transform);
+        }
+
+        public void Update(TimeSnapshot time, InputSnapshot input)
+        {
+            mSceneGraphService.UpdateRuntime(
+                new SceneUpdateContext(time.DeltaSeconds, time.TotalSeconds, input.AnyInputDetected));
+            mCallLog.Add("SceneUpdate");
+        }
+    }
+
+    private sealed class FailingWritebackSceneRuntime : ISceneRuntime
+    {
+        private SceneDescription? mSceneDescription;
+
+        public void InitializeScene(SceneDescription sceneDescription)
+        {
+            mSceneDescription = sceneDescription;
+        }
+
+        public SceneScriptObjectBindResult BindScriptObject(string objectId)
+        {
+            throw new NotSupportedException("Failing writeback scene runtime does not support script binding.");
+        }
+
+        public RuntimeSceneSnapshot CreateRuntimeSnapshot()
+        {
+            return CreateSnapshotFromScene(mSceneDescription);
+        }
+
+        public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+        {
+            return SceneTransformWriteResult.FailureResult(
+                new SceneTransformWriteFailure(
+                    SceneTransformWriteFailureKind.MissingTransform,
+                    "Synthetic writeback failure.",
+                    objectId));
+        }
+
+        public void Update(TimeSnapshot time, InputSnapshot input)
+        {
         }
     }
 
@@ -796,6 +1210,114 @@ public sealed class RuntimeBootstrapTests
                             new SceneMeshRef("mesh://cube"),
                             new SceneMaterialRef("material://default"),
                             SceneTransformDescription.Identity)
+                    }));
+        }
+    }
+
+    private sealed class PhysicsSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(CreatePhysicsScene());
+        }
+    }
+
+    private sealed class PhysicsScriptSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        private readonly string mScriptId;
+
+        public PhysicsScriptSceneDescriptionLoader(string scriptId)
+        {
+            mScriptId = scriptId;
+        }
+
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(
+                new SceneDescription(
+                    "physics-script-scene",
+                    sceneFilePath,
+                    new SceneCameraDescription(Vector3.UnitZ, Vector3.Zero, 1.0f),
+                    new[]
+                    {
+                        new SceneObjectDescription(
+                            "mover",
+                            "Mover",
+                            new SceneComponentDescription[]
+                            {
+                                new SceneTransformComponentDescription(SceneTransformDescription.Identity),
+                                new SceneMeshRendererComponentDescription(
+                                    new SceneMeshRef("mesh://cube"),
+                                    new SceneMaterialRef("material://default")),
+                                new SceneScriptComponentDescription(mScriptId, new Dictionary<string, SceneScriptPropertyValue>()),
+                                new SceneRigidBodyComponentDescription(SceneRigidBodyType.Dynamic, 1.0d),
+                                new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+                            })
+                    }));
+        }
+    }
+
+    private sealed class PhysicsMovementSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(
+                new SceneDescription(
+                    "physics-movement-scene",
+                    sceneFilePath,
+                    new SceneCameraDescription(Vector3.UnitZ, Vector3.Zero, 1.0f),
+                    new[]
+                    {
+                        new SceneObjectDescription(
+                            "mover",
+                            "Mover",
+                            new SceneComponentDescription[]
+                            {
+                                new SceneTransformComponentDescription(SceneTransformDescription.Identity),
+                                new SceneMeshRendererComponentDescription(
+                                    new SceneMeshRef("mesh://cube"),
+                                    new SceneMaterialRef("material://highlight")),
+                                new SceneScriptComponentDescription(
+                                    MoveOnInputScript.kScriptId,
+                                    new Dictionary<string, SceneScriptPropertyValue>
+                                    {
+                                        ["speedUnitsPerSecond"] = SceneScriptPropertyValue.FromNumber(2.0d)
+                                    }),
+                                new SceneRigidBodyComponentDescription(SceneRigidBodyType.Dynamic, 1.0d),
+                                new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+                            }),
+                        new SceneObjectDescription(
+                            "wall",
+                            "Wall",
+                            new SceneComponentDescription[]
+                            {
+                                new SceneTransformComponentDescription(
+                                    new SceneTransformDescription(
+                                        new Vector3(1.0f, 0.0f, 0.0f),
+                                        Quaternion.Identity,
+                                        Vector3.One)),
+                                new SceneMeshRendererComponentDescription(
+                                    new SceneMeshRef("mesh://cube"),
+                                    new SceneMaterialRef("material://default")),
+                                new SceneRigidBodyComponentDescription(SceneRigidBodyType.Static, 0.0d),
+                                new SceneBoxColliderComponentDescription(Vector3.One, Vector3.Zero)
+                            })
+                    }));
+        }
+    }
+
+    private sealed class MalformedPhysicsSceneDescriptionLoader : ISceneDescriptionLoader
+    {
+        public SceneDescriptionLoadResult Load(string sceneFilePath)
+        {
+            return SceneDescriptionLoadResult.Success(
+                new SceneDescription(
+                    "malformed-physics-scene",
+                    sceneFilePath,
+                    new SceneCameraDescription(Vector3.UnitZ, Vector3.Zero, 1.0f),
+                    new[]
+                    {
+                        CreatePhysicsObject("bad-dynamic-body", "Bad Dynamic Body", SceneRigidBodyType.Dynamic, 0.0d)
                     }));
         }
     }

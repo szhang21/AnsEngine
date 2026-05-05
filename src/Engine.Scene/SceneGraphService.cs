@@ -42,6 +42,11 @@ public sealed class SceneGraphService : ISceneRenderContractProvider
         return mRuntimeScene.BindScriptObject(objectId);
     }
 
+    public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+    {
+        return mRuntimeScene.TrySetObjectTransform(objectId, transform);
+    }
+
     public void AddRootNode()
     {
         _ = mRuntimeInfo.EngineName;

@@ -78,6 +78,70 @@ public sealed class PhysicsWorld
         return PhysicsGroundQueryResult.FromAabb(body.BodyId, body.Aabb);
     }
 
+    public PhysicsKinematicMoveResult ResolveKinematicMove(string bodyId, PhysicsTransform desiredTransform)
+    {
+        if (string.IsNullOrWhiteSpace(bodyId))
+        {
+            throw new ArgumentException("Physics kinematic move requires a body id.", nameof(bodyId));
+        }
+
+        if (!IsFinite(desiredTransform.Position) ||
+            !IsFinite(desiredTransform.Rotation) ||
+            !IsFinite(desiredTransform.Scale))
+        {
+            throw new ArgumentException("Physics kinematic move desired transform values must be finite.", nameof(desiredTransform));
+        }
+
+        var mover = mBodies.FirstOrDefault(body => string.Equals(body.BodyId, bodyId, StringComparison.Ordinal));
+        if (mover is null)
+        {
+            throw new ArgumentException($"Physics body '{bodyId}' was not found.", nameof(bodyId));
+        }
+
+        if (mover.BodyType != PhysicsBodyType.Dynamic)
+        {
+            throw new ArgumentException($"Physics body '{bodyId}' must be Dynamic to resolve a kinematic move.", nameof(bodyId));
+        }
+
+        var currentTransform = mover.Transform;
+        var resolvedPosition = currentTransform.Position;
+        var delta = desiredTransform.Position - currentTransform.Position;
+        string? firstBlockingBodyId = null;
+
+        TryApplyAxis(
+            mover,
+            desiredTransform,
+            delta.X,
+            new Vector3(1.0f, 0.0f, 0.0f),
+            ref resolvedPosition,
+            ref firstBlockingBodyId);
+        TryApplyAxis(
+            mover,
+            desiredTransform,
+            delta.Y,
+            new Vector3(0.0f, 1.0f, 0.0f),
+            ref resolvedPosition,
+            ref firstBlockingBodyId);
+        TryApplyAxis(
+            mover,
+            desiredTransform,
+            delta.Z,
+            new Vector3(0.0f, 0.0f, 1.0f),
+            ref resolvedPosition,
+            ref firstBlockingBodyId);
+
+        var resolvedTransform = new PhysicsTransform(
+            resolvedPosition,
+            desiredTransform.Rotation,
+            desiredTransform.Scale);
+        return new PhysicsKinematicMoveResult(
+            bodyId,
+            desiredTransform,
+            resolvedTransform,
+            firstBlockingBodyId is not null,
+            firstBlockingBodyId);
+    }
+
     private static PhysicsBodySnapshot CreateBodySnapshot(PhysicsBodyDefinition body)
     {
         ArgumentNullException.ThrowIfNull(body);
@@ -181,4 +245,43 @@ public sealed class PhysicsWorld
                float.IsFinite(value.Z) &&
                float.IsFinite(value.W);
     }
+
+    private void TryApplyAxis(
+        PhysicsBodySnapshot mover,
+        PhysicsTransform desiredTransform,
+        float axisDelta,
+        Vector3 axis,
+        ref Vector3 resolvedPosition,
+        ref string? firstBlockingBodyId)
+    {
+        if (axisDelta == 0.0f)
+        {
+            return;
+        }
+
+        var candidatePosition = resolvedPosition + (axis * axisDelta);
+        var candidateTransform = new PhysicsTransform(
+            candidatePosition,
+            desiredTransform.Rotation,
+            desiredTransform.Scale);
+        var candidateAabb = CalculateAabb(candidateTransform, mover.BoxCollider);
+        var blockingBody = mBodies.FirstOrDefault(body =>
+            body.BodyType == PhysicsBodyType.Static &&
+            !string.Equals(body.BodyId, mover.BodyId, StringComparison.Ordinal) &&
+            Overlaps(candidateAabb, body.Aabb));
+        if (blockingBody is not null)
+        {
+            firstBlockingBodyId ??= blockingBody.BodyId;
+            return;
+        }
+
+        resolvedPosition = candidatePosition;
+    }
 }
+
+public sealed record PhysicsKinematicMoveResult(
+    string BodyId,
+    PhysicsTransform DesiredTransform,
+    PhysicsTransform ResolvedTransform,
+    bool HasHit,
+    string? BlockingBodyId);

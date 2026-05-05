@@ -58,6 +58,24 @@
             "properties": {
               "speedUnitsPerSecond": 1
             }
+          },
+          {
+            "type": "RigidBody",
+            "bodyType": "Dynamic",
+            "mass": 1
+          },
+          {
+            "type": "BoxCollider",
+            "size": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "center": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
           }
         ]
       },
@@ -66,9 +84,26 @@
         "name": "object-001",
         "components": [
           {
+            "type": "RigidBody",
+            "bodyType": "Static"
+          },
+          {
+            "type": "BoxCollider",
+            "size": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "center": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          {
             "type": "Transform",
             "position": {
-              "x": 0,
+              "x": 1,
               "y": 0.1,
               "z": 0.1
             },

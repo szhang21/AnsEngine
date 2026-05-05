@@ -116,6 +116,57 @@ internal sealed class RuntimeScene
         return null;
     }
 
+    public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+    {
+        if (string.IsNullOrWhiteSpace(objectId))
+        {
+            return SceneTransformWriteResult.FailureResult(
+                new SceneTransformWriteFailure(
+                    SceneTransformWriteFailureKind.ObjectNotFound,
+                    "Scene object id must not be null or whitespace.",
+                    objectId));
+        }
+
+        if (!IsValidTransform(transform))
+        {
+            return SceneTransformWriteResult.FailureResult(
+                new SceneTransformWriteFailure(
+                    SceneTransformWriteFailureKind.InvalidTransform,
+                    $"Scene object id '{objectId}' transform contains non-finite values.",
+                    objectId));
+        }
+
+        for (var index = 0; index < mObjects.Count; index += 1)
+        {
+            if (!string.Equals(mObjects[index].ObjectId, objectId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var transformComponent = mObjects[index].Transform;
+            if (transformComponent is null)
+            {
+                return SceneTransformWriteResult.FailureResult(
+                    new SceneTransformWriteFailure(
+                        SceneTransformWriteFailureKind.MissingTransform,
+                        $"Scene object id '{objectId}' has no Transform component.",
+                        objectId));
+            }
+
+            transformComponent.SetLocalTransform(
+                transform.Position,
+                transform.Rotation,
+                transform.Scale);
+            return SceneTransformWriteResult.Success();
+        }
+
+        return SceneTransformWriteResult.FailureResult(
+            new SceneTransformWriteFailure(
+                SceneTransformWriteFailureKind.ObjectNotFound,
+                $"Scene object id '{objectId}' was not found.",
+                objectId));
+    }
+
     public SceneScriptObjectBindResult BindScriptObject(string objectId)
     {
         for (var index = 0; index < mObjects.Count; index += 1)
@@ -148,5 +199,27 @@ internal sealed class RuntimeScene
     {
         UpdateFrameCount = 0;
         AccumulatedUpdateSeconds = 0.0d;
+    }
+
+    private static bool IsValidTransform(SceneTransform transform)
+    {
+        return IsFinite(transform.Position) &&
+               IsFinite(transform.Scale) &&
+               IsFinite(transform.Rotation);
+    }
+
+    private static bool IsFinite(System.Numerics.Vector3 value)
+    {
+        return float.IsFinite(value.X) &&
+               float.IsFinite(value.Y) &&
+               float.IsFinite(value.Z);
+    }
+
+    private static bool IsFinite(System.Numerics.Quaternion value)
+    {
+        return float.IsFinite(value.X) &&
+               float.IsFinite(value.Y) &&
+               float.IsFinite(value.Z) &&
+               float.IsFinite(value.W);
     }
 }

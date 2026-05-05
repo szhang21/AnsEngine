@@ -774,6 +774,123 @@ public sealed class SceneGraphServiceTests
     }
 
     [Fact]
+    public void TrySetObjectTransform_UpdatesOnlyTargetAndIsVisibleInSnapshotAndRenderFrame()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var transform = new SceneTransform(
+            new Vector3(4.0f, 5.0f, 6.0f),
+            new Vector3(2.0f, 3.0f, 4.0f),
+            Quaternion.CreateFromYawPitchRoll(0.1f, 0.2f, 0.3f));
+        sceneGraph.LoadSceneDescription(
+            new SceneDescription(
+                "sample-scene",
+                "Sample Scene",
+                null!,
+                new[]
+                {
+                    new SceneObjectDescription(
+                        "cube-a",
+                        "Cube A",
+                        new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                        new Engine.Contracts.SceneMaterialRef("material://default"),
+                        SceneTransformDescription.Identity),
+                    new SceneObjectDescription(
+                        "cube-b",
+                        "Cube B",
+                        new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                        new Engine.Contracts.SceneMaterialRef("material://default"),
+                        SceneTransformDescription.Identity)
+                }));
+
+        var result = sceneGraph.TrySetObjectTransform("cube-a", transform);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        var snapshot = sceneGraph.CreateRuntimeSnapshot();
+        var firstSnapshot = snapshot.Objects.Single(item => item.ObjectId == "cube-a");
+        var secondSnapshot = snapshot.Objects.Single(item => item.ObjectId == "cube-b");
+        var frame = sceneGraph.BuildRenderFrame();
+        var firstFrame = frame.Items.Single(item => item.NodeId == firstSnapshot.NodeId);
+        var secondFrame = frame.Items.Single(item => item.NodeId == secondSnapshot.NodeId);
+
+        Assert.Equal(transform, firstSnapshot.LocalTransform);
+        Assert.Equal(transform, firstFrame.Transform);
+        Assert.Equal(SceneTransform.Identity, secondSnapshot.LocalTransform);
+        Assert.Equal(SceneTransform.Identity, secondFrame.Transform);
+    }
+
+    [Fact]
+    public void TrySetObjectTransform_TransformOnlyObjectUpdatesSnapshotButNotRenderFrame()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        var transform = new SceneTransform(new Vector3(1, 2, 3), Vector3.One, Quaternion.Identity);
+        sceneGraph.LoadSceneDescription(
+            new SceneDescription(
+                "sample-scene",
+                "Sample Scene",
+                null!,
+                new[]
+                {
+                    new SceneObjectDescription(
+                        "empty-a",
+                        "Empty A",
+                        new SceneComponentDescription[]
+                        {
+                            new SceneTransformComponentDescription(SceneTransformDescription.Identity)
+                        })
+                }));
+
+        var result = sceneGraph.TrySetObjectTransform("empty-a", transform);
+
+        Assert.True(result.IsSuccess, result.Failure?.Message);
+        var item = Assert.Single(sceneGraph.CreateRuntimeSnapshot().Objects);
+        Assert.Equal(transform, item.LocalTransform);
+        Assert.Empty(sceneGraph.BuildRenderFrame().Items);
+    }
+
+    [Fact]
+    public void TrySetObjectTransform_MissingObjectReturnsExplicitFailure()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        sceneGraph.AddRootNode();
+
+        var result = sceneGraph.TrySetObjectTransform("missing-object", SceneTransform.Identity);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneTransformWriteFailureKind.ObjectNotFound, result.Failure!.Kind);
+        Assert.Equal("missing-object", result.Failure.ObjectId);
+    }
+
+    [Fact]
+    public void TrySetObjectTransform_ObjectWithoutTransformReturnsExplicitFailure()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.CreateObject(1, "empty-a", "Empty A");
+
+        var result = runtimeScene.TrySetObjectTransform("empty-a", SceneTransform.Identity);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneTransformWriteFailureKind.MissingTransform, result.Failure!.Kind);
+        Assert.Equal("empty-a", result.Failure.ObjectId);
+    }
+
+    [Fact]
+    public void TrySetObjectTransform_NonFiniteTransformReturnsExplicitFailure()
+    {
+        var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));
+        sceneGraph.AddRootNode();
+        var transform = new SceneTransform(
+            new Vector3(float.NaN, 0.0f, 0.0f),
+            Vector3.One,
+            Quaternion.Identity);
+
+        var result = sceneGraph.TrySetObjectTransform("node-1", transform);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(SceneTransformWriteFailureKind.InvalidTransform, result.Failure!.Kind);
+        Assert.Equal("node-1", result.Failure.ObjectId);
+    }
+
+    [Fact]
     public void BindScriptObject_TransformOnlyObject_CanModifySnapshotButNotRenderFrame()
     {
         var sceneGraph = new SceneGraphService(new EngineRuntimeInfo("AnsEngine", "0.1.0"));

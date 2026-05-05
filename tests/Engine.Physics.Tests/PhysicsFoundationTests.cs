@@ -136,6 +136,112 @@ public sealed class PhysicsFoundationTests
     }
 
     [Fact]
+    public void ResolveKinematicMove_NoCollisionReturnsDesiredTransform()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(5.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var desired = new PhysicsTransform(new Vector3(1.0f, 2.0f, 3.0f), Quaternion.Identity, Vector3.One);
+
+        var result = world.ResolveKinematicMove("mover", desired);
+
+        Assert.Equal("mover", result.BodyId);
+        Assert.Equal(desired, result.DesiredTransform);
+        Assert.Equal(desired, result.ResolvedTransform);
+        Assert.False(result.HasHit);
+        Assert.Null(result.BlockingBodyId);
+    }
+
+    [Fact]
+    public void ResolveKinematicMove_MoveIntoStaticColliderIsBlockedWithoutMutatingWorld()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(1.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var desired = new PhysicsTransform(new Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity, Vector3.One);
+
+        var result = world.ResolveKinematicMove("mover", desired);
+
+        Assert.True(result.HasHit);
+        Assert.Equal("wall", result.BlockingBodyId);
+        Assert.Equal(Vector3.Zero, result.ResolvedTransform.Position);
+        Assert.Equal(Vector3.Zero, Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "mover").Transform.Position);
+        Assert.Equal(
+            new Vector3(1.0f, 0.0f, 0.0f),
+            Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "wall").Transform.Position);
+    }
+
+    [Fact]
+    public void ResolveKinematicMove_PartialAxisBlockPreservesUnblockedAxesInXyzOrder()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(2.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var desired = new PhysicsTransform(new Vector3(2.0f, 3.0f, 4.0f), Quaternion.Identity, Vector3.One);
+
+        var result = world.ResolveKinematicMove("mover", desired);
+
+        Assert.True(result.HasHit);
+        Assert.Equal("wall", result.BlockingBodyId);
+        Assert.Equal(new Vector3(0.0f, 3.0f, 4.0f), result.ResolvedTransform.Position);
+    }
+
+    [Fact]
+    public void ResolveKinematicMove_StaticBodiesCannotBeMoved()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("static-body", "Static Body", PhysicsBodyType.Static, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+
+        var failure = Assert.Throws<ArgumentException>(
+            () => world.ResolveKinematicMove(
+                "static-body",
+                new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+
+        Assert.Contains("must be Dynamic", failure.Message, StringComparison.Ordinal);
+        Assert.Equal(Vector3.Zero, Assert.Single(world.CreateSnapshot().Bodies).Transform.Position);
+    }
+
+    [Fact]
+    public void ResolveKinematicMove_MalformedInputFailsFastWithStableDiagnostics()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d)
+                }));
+
+        var missingBody = Assert.Throws<ArgumentException>(
+            () => world.ResolveKinematicMove("missing", new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+        var emptyBody = Assert.Throws<ArgumentException>(
+            () => world.ResolveKinematicMove(" ", new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+        var invalidTransform = Assert.Throws<ArgumentException>(
+            () => world.ResolveKinematicMove(
+                "mover",
+                new PhysicsTransform(new Vector3(float.NaN, 0.0f, 0.0f), Quaternion.Identity, Vector3.One)));
+
+        Assert.Contains("was not found", missingBody.Message, StringComparison.Ordinal);
+        Assert.Contains("requires a body id", emptyBody.Message, StringComparison.Ordinal);
+        Assert.Contains("desired transform values must be finite", invalidTransform.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Load_MalformedDefinitionFailsFastWithStableDiagnostics()
     {
         var missingTransform = new PhysicsWorldDefinition(

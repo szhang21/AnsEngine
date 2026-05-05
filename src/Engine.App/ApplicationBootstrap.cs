@@ -2,6 +2,7 @@
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Platform;
+using Engine.Physics;
 using Engine.Render;
 using Engine.Scene;
 using Engine.SceneData;
@@ -141,6 +142,16 @@ internal sealed class SceneRuntimeAdapter : ISceneRuntime
         return mSceneGraphService.BindScriptObject(objectId);
     }
 
+    public RuntimeSceneSnapshot CreateRuntimeSnapshot()
+    {
+        return mSceneGraphService.CreateRuntimeSnapshot();
+    }
+
+    public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
+    {
+        return mSceneGraphService.TrySetObjectTransform(objectId, transform);
+    }
+
     public void Update(TimeSnapshot time, InputSnapshot input)
     {
         mSceneGraphService.UpdateRuntime(
@@ -184,7 +195,9 @@ public sealed class ApplicationHost : IApplication
     private readonly IInputService mInputService;
     private readonly ITimeService mTimeService;
     private readonly ScriptRuntime mScriptRuntime;
+    private readonly RuntimePhysicsOrchestrator mPhysicsOrchestrator = new();
     private readonly double? mAutoExitSeconds;
+    private PhysicsWorld? mPhysicsWorld;
 
     public ApplicationHost(
         IWindowService windowService,
@@ -226,6 +239,7 @@ public sealed class ApplicationHost : IApplication
                 return 1;
             }
 
+            mPhysicsWorld = ScenePhysicsWorldDefinitionBridge.CreateWorld(loadResult.Scene);
             mSceneRuntime.InitializeScene(loadResult.Scene);
             var bindResult = BindScripts(loadResult.Scene);
             if (!bindResult.IsSuccess)
@@ -247,6 +261,13 @@ public sealed class ApplicationHost : IApplication
                 if (!scriptUpdateResult.IsSuccess)
                 {
                     Console.Error.WriteLine($"Script update failed: {scriptUpdateResult.Failure?.Kind} - {scriptUpdateResult.Failure?.Message}");
+                    return 1;
+                }
+
+                var physicsUpdateResult = mPhysicsOrchestrator.ResolveAndWriteBack(mPhysicsWorld!, mSceneRuntime);
+                if (!physicsUpdateResult.IsSuccess)
+                {
+                    Console.Error.WriteLine($"Physics update failed: {physicsUpdateResult.FailureMessage}");
                     return 1;
                 }
 
