@@ -2,6 +2,7 @@ using Engine.Core;
 using Engine.Scene;
 using Engine.SceneData;
 using Engine.Contracts;
+using Engine.Runtime.Abstractions;
 using System.Numerics;
 using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
@@ -28,6 +29,32 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(7, runtimeObject.NodeId);
         Assert.Equal("cube-main", runtimeObject.ObjectId);
         Assert.Equal("Cube Main", runtimeObject.ObjectName);
+        Assert.IsAssignableFrom<IRuntimeObject>(runtimeObject);
+    }
+
+    [Fact]
+    public void SceneRuntimeObject_EmptyComponentCollection_ReturnsNullForMissingTypedLookup()
+    {
+        var runtimeObject = new SceneRuntimeObject(7, "cube-main", "Cube Main");
+
+        Assert.Null(runtimeObject.GetComponent<TestRuntimeComponent>());
+        Assert.False(runtimeObject.HasComponent<TestRuntimeComponent>());
+    }
+
+    [Fact]
+    public void SceneRuntimeObject_TypedComponentLookup_ReturnsRegisteredRuntimeComponent()
+    {
+        var component = new TestRuntimeComponent("custom-component");
+        var runtimeObject = new SceneRuntimeObject(
+            7,
+            "cube-main",
+            "Cube Main",
+            components: new IRuntimeComponent[] { component });
+
+        Assert.Same(component, runtimeObject.GetComponent<TestRuntimeComponent>());
+        Assert.True(runtimeObject.HasComponent<TestRuntimeComponent>());
+        Assert.Null(runtimeObject.GetComponent<OtherRuntimeComponent>());
+        Assert.False(runtimeObject.HasComponent<OtherRuntimeComponent>());
     }
 
     [Fact]
@@ -66,6 +93,33 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(component.LocalPosition, transform.Position);
         Assert.Equal(component.LocalRotation, transform.Rotation);
         Assert.Equal(component.LocalScale, transform.Scale);
+        Assert.IsAssignableFrom<IRuntimeTransformComponent>(component);
+        Assert.Equal(transform, component.LocalTransform);
+    }
+
+    [Fact]
+    public void SceneTransformComponent_SetLocalTransform_UsesRuntimeAbstractionContract()
+    {
+        IRuntimeTransformComponent component = SceneTransformComponent.FromDescription(SceneTransformDescription.Identity);
+        var transform = new SceneTransform(
+            new Vector3(4.0f, 5.0f, 6.0f),
+            new Vector3(2.0f, 3.0f, 4.0f),
+            Quaternion.CreateFromYawPitchRoll(0.1f, 0.2f, 0.3f));
+
+        component.SetLocalTransform(transform);
+
+        Assert.Equal(transform, component.LocalTransform);
+    }
+
+    [Fact]
+    public void SceneRuntimeObject_TransformRemainsCoreFieldAndNotGenericLookupComponent()
+    {
+        var transform = SceneTransformComponent.FromDescription(SceneTransformDescription.Identity);
+        var runtimeObject = new SceneRuntimeObject(7, "cube-main", "Cube Main", transform);
+
+        Assert.Same(transform, runtimeObject.Transform);
+        Assert.Null(runtimeObject.GetComponent<IRuntimeTransformComponent>());
+        Assert.False(runtimeObject.HasComponent<IRuntimeTransformComponent>());
     }
 
     [Fact]
@@ -96,6 +150,18 @@ public sealed class SceneGraphServiceTests
 
         Assert.Same(transform, runtimeObject.Transform);
         Assert.Same(meshRenderer, runtimeObject.MeshRenderer);
+        Assert.Same(meshRenderer, runtimeObject.GetComponent<SceneMeshRendererComponent>());
+        Assert.True(runtimeObject.HasComponent<SceneMeshRendererComponent>());
+    }
+
+    [Fact]
+    public void SceneMeshRendererComponent_ImplementsRuntimeComponent()
+    {
+        var meshRenderer = new SceneMeshRendererComponent(
+            new Engine.Contracts.SceneMeshRef("mesh://cube"),
+            new Engine.Contracts.SceneMaterialRef("material://default"));
+
+        Assert.IsAssignableFrom<IRuntimeComponent>(meshRenderer);
     }
 
     [Fact]
@@ -1169,5 +1235,19 @@ public sealed class SceneGraphServiceTests
         Assert.False(float.IsNaN(camera.Projection.M22));
         Assert.NotEqual(Matrix4x4.Identity, camera.View);
         Assert.NotEqual(Matrix4x4.Identity, camera.Projection);
+    }
+
+    private sealed class TestRuntimeComponent : IRuntimeComponent
+    {
+        public TestRuntimeComponent(string componentId)
+        {
+            ComponentId = componentId;
+        }
+
+        public string ComponentId { get; }
+    }
+
+    private sealed class OtherRuntimeComponent : IRuntimeComponent
+    {
     }
 }

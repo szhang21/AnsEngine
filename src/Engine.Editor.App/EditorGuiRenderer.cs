@@ -124,18 +124,26 @@ public sealed class EditorGuiRenderer
 
         if (preview.IsNonBlank)
         {
-            var center = origin + size * 0.5f;
-            var half = MathF.Min(size.X, size.Y) * 0.16f;
-            var color = ImGui.GetColorU32(new Vector4(0.42f, 0.85f, 0.58f, 1.0f));
-            drawList.AddTriangleFilled(
-                new Vector2(center.X, center.Y - half),
-                new Vector2(center.X - half, center.Y + half),
-                new Vector2(center.X + half, center.Y + half),
-                color);
+            foreach (var triangle in preview.ProjectedTriangles)
+            {
+                var color = ImGui.GetColorU32(new Vector4(triangle.Color, 1.0f));
+                drawList.AddTriangleFilled(
+                    ToSurfacePoint(triangle.First, origin, size),
+                    ToSurfacePoint(triangle.Second, origin, size),
+                    ToSurfacePoint(triangle.Third, origin, size),
+                    color);
+            }
         }
 
         ImGui.TextUnformatted(preview.StatusText);
         ImGui.TextUnformatted($"Items: {preview.RenderItemCount}  Batches: {preview.BatchCount}  Vertices: {preview.MeshVertexCount}");
+    }
+
+    private static Vector2 ToSurfacePoint(Vector2 normalizedDevicePoint, Vector2 origin, Vector2 size)
+    {
+        var x = origin.X + (normalizedDevicePoint.X + 1.0f) * 0.5f * size.X;
+        var y = origin.Y + (1.0f - (normalizedDevicePoint.Y + 1.0f) * 0.5f) * size.Y;
+        return new Vector2(x, y);
     }
 
     private void DrawInspector(EditorGuiSnapshot snapshot)

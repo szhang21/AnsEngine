@@ -1,6 +1,8 @@
+using Engine.Runtime.Abstractions;
+
 namespace Engine.Scripting;
 
-public interface IScriptSelfObject
+public interface IScriptSelfObject : IRuntimeObject
 {
-    IScriptTransformComponent Transform { get; }
+    IRuntimeTransformComponent Transform { get; }
 }

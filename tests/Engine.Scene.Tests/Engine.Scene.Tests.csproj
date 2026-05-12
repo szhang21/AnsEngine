@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Engine.Scene\Engine.Scene.csproj" />
+    <ProjectReference Include="..\..\src\Engine.Runtime.Abstractions\Engine.Runtime.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

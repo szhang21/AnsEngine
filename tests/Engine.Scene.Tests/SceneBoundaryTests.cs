@@ -18,6 +18,7 @@ public sealed class SceneBoundaryTests
         Assert.DoesNotContain("Engine.App", projectFile);
         Assert.DoesNotContain("Engine.Editor", projectFile);
         Assert.DoesNotContain("Engine.Editor.App", projectFile);
+        Assert.Contains("Engine.Runtime.Abstractions", projectFile);
         Assert.DoesNotContain("OpenTK", projectFile);
         Assert.DoesNotContain("ImGui", projectFile);
         Assert.DoesNotContain("OpenGL", projectFile);
@@ -45,6 +46,8 @@ public sealed class SceneBoundaryTests
         var sceneAssemblyName = typeof(SceneGraphService).Assembly.GetName().Name;
         Assert.DoesNotContain(sceneAssemblyName, GetReferencedAssemblyNames("src", "Engine.Render", "Engine.Render.csproj"));
         Assert.DoesNotContain(sceneAssemblyName, GetReferencedAssemblyNames("src", "Engine.SceneData", "Engine.SceneData.csproj"));
+        Assert.DoesNotContain("Engine.Runtime.Abstractions", GetReferencedAssemblyNames("src", "Engine.Render", "Engine.Render.csproj"));
+        Assert.DoesNotContain("Engine.Runtime.Abstractions", GetReferencedAssemblyNames("src", "Engine.SceneData", "Engine.SceneData.csproj"));
     }
 
     [Fact]

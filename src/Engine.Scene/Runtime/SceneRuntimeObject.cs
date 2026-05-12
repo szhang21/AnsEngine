@@ -1,13 +1,18 @@
 namespace Engine.Scene;
 
-internal sealed class SceneRuntimeObject
+using Engine.Runtime.Abstractions;
+
+internal sealed class SceneRuntimeObject : IRuntimeObject
 {
+    private readonly IReadOnlyList<IRuntimeComponent> mComponents;
+
     public SceneRuntimeObject(
         int nodeId,
         string objectId,
         string objectName,
         SceneTransformComponent? transform = null,
-        SceneMeshRendererComponent? meshRenderer = null)
+        SceneMeshRendererComponent? meshRenderer = null,
+        IEnumerable<IRuntimeComponent>? components = null)
     {
         if (nodeId <= 0)
         {
@@ -20,7 +25,7 @@ internal sealed class SceneRuntimeObject
             : objectId;
         ObjectName = string.IsNullOrWhiteSpace(objectName) ? ObjectId : objectName;
         Transform = transform;
-        MeshRenderer = meshRenderer;
+        mComponents = CreateComponentCollection(meshRenderer, components);
     }
 
     public int NodeId { get; }
@@ -31,7 +36,25 @@ internal sealed class SceneRuntimeObject
 
     public SceneTransformComponent? Transform { get; }
 
-    public SceneMeshRendererComponent? MeshRenderer { get; }
+    public SceneMeshRendererComponent? MeshRenderer => GetComponent<SceneMeshRendererComponent>();
+
+    public T? GetComponent<T>() where T : class, IRuntimeComponent
+    {
+        for (var index = 0; index < mComponents.Count; index += 1)
+        {
+            if (mComponents[index] is T component)
+            {
+                return component;
+            }
+        }
+
+        return null;
+    }
+
+    public bool HasComponent<T>() where T : class, IRuntimeComponent
+    {
+        return GetComponent<T>() is not null;
+    }
 
     public SceneRuntimeObjectSnapshot CreateSnapshot()
     {
@@ -44,5 +67,22 @@ internal sealed class SceneRuntimeObject
             MeshRenderer is not null,
             MeshRenderer?.Mesh,
             MeshRenderer?.Material);
+    }
+
+    private static IReadOnlyList<IRuntimeComponent> CreateComponentCollection(
+        SceneMeshRendererComponent? meshRenderer,
+        IEnumerable<IRuntimeComponent>? components)
+    {
+        if (meshRenderer is null)
+        {
+            return components?.ToArray() ?? Array.Empty<IRuntimeComponent>();
+        }
+
+        if (components is null)
+        {
+            return new IRuntimeComponent[] { meshRenderer };
+        }
+
+        return new IRuntimeComponent[] { meshRenderer }.Concat(components).ToArray();
     }
 }

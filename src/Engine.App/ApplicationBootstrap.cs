@@ -4,6 +4,7 @@ using Engine.Core;
 using Engine.Platform;
 using Engine.Physics;
 using Engine.Render;
+using Engine.Runtime.Abstractions;
 using Engine.Scene;
 using Engine.SceneData;
 using Engine.SceneData.Abstractions;
@@ -400,10 +401,27 @@ internal sealed class SceneScriptSelfObject : IScriptSelfObject
 {
     public SceneScriptSelfObject(SceneScriptObjectHandle handle)
     {
+        ArgumentNullException.ThrowIfNull(handle);
+        ObjectId = handle.ObjectId;
+        ObjectName = handle.ObjectName;
         Transform = new SceneScriptTransformComponent(handle);
     }
 
-    public IScriptTransformComponent Transform { get; }
+    public string ObjectId { get; }
+
+    public string ObjectName { get; }
+
+    public IRuntimeTransformComponent Transform { get; }
+
+    public T? GetComponent<T>() where T : class, IRuntimeComponent
+    {
+        return Transform as T;
+    }
+
+    public bool HasComponent<T>() where T : class, IRuntimeComponent
+    {
+        return GetComponent<T>() is not null;
+    }
 }
 
 internal sealed class SceneScriptTransformComponent : IScriptTransformComponent

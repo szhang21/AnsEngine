@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\Engine.Runtime.Abstractions\Engine.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Engine.SceneData\Engine.SceneData.csproj" />
   </ItemGroup>
 

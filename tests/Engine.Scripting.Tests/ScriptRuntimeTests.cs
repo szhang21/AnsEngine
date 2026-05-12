@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using Engine.Runtime.Abstractions;
 using Engine.Scripting;
 using System.Numerics;
 using Xunit;
@@ -255,6 +256,19 @@ public sealed class ScriptRuntimeTests
 
         Assert.DoesNotContain("Engine.Scene", projectFile);
         Assert.DoesNotContain("Engine.Scene", sourceText);
+        Assert.Contains("Engine.Runtime.Abstractions", projectFile);
+    }
+
+    [Fact]
+    public void ScriptSelfObject_AlignsWithRuntimeAbstractions()
+    {
+        var self = new TestSelfObject();
+
+        Assert.IsAssignableFrom<IRuntimeObject>(self);
+        Assert.IsAssignableFrom<IRuntimeTransformComponent>(self.Transform);
+        Assert.Same(self.Transform, ((IScriptSelfObject)self).Transform);
+        Assert.Same(self.Transform, self.GetComponent<IScriptTransformComponent>());
+        Assert.True(self.HasComponent<IRuntimeTransformComponent>());
     }
 
     private static IReadOnlyList<ScriptBindingDescription> CreateBindings(
@@ -368,9 +382,23 @@ public sealed class ScriptRuntimeTests
 
     private sealed class TestSelfObject : IScriptSelfObject
     {
+        public string ObjectId => "cube-main";
+
+        public string ObjectName => "Cube Main";
+
         public TestTransformComponent Transform { get; } = new();
 
-        IScriptTransformComponent IScriptSelfObject.Transform => Transform;
+        IRuntimeTransformComponent IScriptSelfObject.Transform => Transform;
+
+        public T? GetComponent<T>() where T : class, IRuntimeComponent
+        {
+            return Transform as T;
+        }
+
+        public bool HasComponent<T>() where T : class, IRuntimeComponent
+        {
+            return GetComponent<T>() is not null;
+        }
     }
 
     private sealed class TestTransformComponent : IScriptTransformComponent

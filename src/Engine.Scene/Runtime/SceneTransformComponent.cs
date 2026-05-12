@@ -1,10 +1,11 @@
 using Engine.Contracts;
+using Engine.Runtime.Abstractions;
 using Engine.SceneData;
 using System.Numerics;
 
 namespace Engine.Scene;
 
-internal sealed class SceneTransformComponent
+internal sealed class SceneTransformComponent : IRuntimeTransformComponent
 {
     public SceneTransformComponent(Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
     {
@@ -18,6 +19,8 @@ internal sealed class SceneTransformComponent
     public Quaternion LocalRotation { get; private set; }
 
     public Vector3 LocalScale { get; private set; }
+
+    public SceneTransform LocalTransform => ToSceneTransform();
 
     public static SceneTransformComponent FromDescription(SceneTransformDescription transformDescription)
     {
@@ -43,5 +46,10 @@ internal sealed class SceneTransformComponent
         LocalPosition = localPosition;
         LocalRotation = localRotation;
         LocalScale = localScale;
+    }
+
+    public void SetLocalTransform(SceneTransform transform)
+    {
+        SetLocalTransform(transform.Position, transform.Rotation, transform.Scale);
     }
 }

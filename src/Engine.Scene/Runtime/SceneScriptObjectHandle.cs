@@ -19,6 +19,6 @@ public sealed class SceneScriptObjectHandle
 
     public void SetLocalTransform(SceneTransform transform)
     {
-        mRuntimeObject.Transform!.SetLocalTransform(transform.Position, transform.Rotation, transform.Scale);
+        mRuntimeObject.Transform!.SetLocalTransform(transform);
     }
 }

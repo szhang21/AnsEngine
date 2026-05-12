@@ -153,10 +153,7 @@ internal sealed class RuntimeScene
                         objectId));
             }
 
-            transformComponent.SetLocalTransform(
-                transform.Position,
-                transform.Rotation,
-                transform.Scale);
+            transformComponent.SetLocalTransform(transform);
             return SceneTransformWriteResult.Success();
         }
 

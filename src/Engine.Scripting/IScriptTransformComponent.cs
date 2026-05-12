@@ -1,10 +1,7 @@
-using Engine.Contracts;
+using Engine.Runtime.Abstractions;
 
 namespace Engine.Scripting;
 
-public interface IScriptTransformComponent
+public interface IScriptTransformComponent : IRuntimeTransformComponent
 {
-    SceneTransform LocalTransform { get; }
-
-    void SetLocalTransform(SceneTransform transform);
 }

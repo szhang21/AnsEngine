@@ -1,4 +1,12 @@
+using System.Numerics;
+
 namespace Engine.Editor.App;
+
+public readonly record struct EditorScenePreviewTriangle(
+    Vector2 First,
+    Vector2 Second,
+    Vector2 Third,
+    Vector3 Color);
 
 public sealed record EditorScenePreviewSnapshot(
     bool HasScene,
@@ -6,6 +14,7 @@ public sealed record EditorScenePreviewSnapshot(
     int RenderItemCount,
     int BatchCount,
     int MeshVertexCount,
+    IReadOnlyList<EditorScenePreviewTriangle> ProjectedTriangles,
     int RefreshVersion,
     string StatusText)
 {
@@ -15,6 +24,7 @@ public sealed record EditorScenePreviewSnapshot(
         0,
         0,
         0,
+        Array.Empty<EditorScenePreviewTriangle>(),
         0,
         "No scene loaded.");
 }

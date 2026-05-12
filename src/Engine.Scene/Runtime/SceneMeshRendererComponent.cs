@@ -1,9 +1,10 @@
 using Engine.Contracts;
+using Engine.Runtime.Abstractions;
 using Engine.SceneData;
 
 namespace Engine.Scene;
 
-internal sealed class SceneMeshRendererComponent
+internal sealed class SceneMeshRendererComponent : IRuntimeComponent
 {
     public SceneMeshRendererComponent(SceneMeshRef mesh, SceneMaterialRef material)
     {

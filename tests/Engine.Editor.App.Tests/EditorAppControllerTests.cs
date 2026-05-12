@@ -49,6 +49,22 @@ public sealed class EditorAppControllerTests
     }
 
     [Fact]
+    public void OpenStartupScene_ProjectsPreviewTrianglesFromSubmissionMeshBatches()
+    {
+        var controller = new EditorAppController(new EditorScenePathResolver());
+
+        var result = controller.OpenStartupScene();
+
+        Assert.True(result, controller.LastError);
+        Assert.Equal(2, controller.PreviewSnapshot.BatchCount);
+        Assert.Equal(24, controller.PreviewSnapshot.ProjectedTriangles.Count);
+        Assert.Equal(
+            controller.PreviewSnapshot.MeshVertexCount / 3,
+            controller.PreviewSnapshot.ProjectedTriangles.Count);
+        Assert.True(controller.PreviewSnapshot.ProjectedTriangles.Select(triangle => triangle.Color).Distinct().Count() > 1);
+    }
+
+    [Fact]
     public void ApplyAndSave_RefreshPreviewWithoutRuntimeApp()
     {
         var controller = new EditorAppController(new EditorScenePathResolver());
