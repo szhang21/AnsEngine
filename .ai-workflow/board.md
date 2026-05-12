@@ -17,7 +17,9 @@
 
 ## Todo
 
-- （空）
+- `TASK-PHYS-004` M23 Physics mutating kinematic move API
+- `TASK-APP-022` M23 App physics orchestrator state sync
+- `TASK-QA-024` M23 Physics state sync gate review and archive
 
 ## InProgress
 
