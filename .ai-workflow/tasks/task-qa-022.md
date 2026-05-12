@@ -241,33 +241,50 @@ true
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-InProgress
+Done
 
 ## 完成度（Completion）
-`70`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `AcceptanceDispute`
 - DetectedAt: `2026-05-06`
 - ReopenReason: `DependsOn TASK-EAPP-011 was reopened during human acceptance review. The prior QA conclusion that M21 preview was sufficient and archive-ready is no longer valid until Scene View renders projected triangles from real submission mesh batches.`
 - OriginTaskId:
-- HumanSignoff: `fail`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-022.md`
-- ClosedAt:
+- ClosedAt: `2026-05-11`
 - Summary:
-  - QA conclusion reopened because `TASK-EAPP-011` no longer satisfies the expected M21 Scene View preview behavior during human acceptance review.
-  - M21 cannot be archived until preview rendering is corrected and the runtime/editor smoke is revalidated.
+  - Revalidated M21 after `TASK-EAPP-011` produced real submission mesh batch preview triangles and reached Done.
+  - Verified M21 execution cards reached Done with build/test/smoke/boundary/perf evidence and Human signoff.
+  - Confirmed Editor authoring, Scene View nonblank preview, runtime collision smoke, approved dependency direction and M21 non-goal constraints.
 - FilesChanged:
+  - `.ai-workflow/boundaries/engine-editor-app.md`
+  - `.ai-workflow/boundaries/engine-editor.md`
+  - `.ai-workflow/tasks/task-qa-022.md`
+  - `.ai-workflow/archive/2026-05/TASK-QA-022.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/plan-archive/2026-05/PLAN-M21-2026-05-05.md`
+  - `.ai-workflow/plan-archive/plan-archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
+  - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; existing `net7.0` EOL warnings only, already recorded during M21 execution)
+  - Test: pass (`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`; all solution tests passed in recorded QA evidence)
+  - Platform Test: pass (`dotnet test tests/Engine.Platform.Tests/Engine.Platform.Tests.csproj --no-restore --nologo -v minimal`; 10 passed)
+  - Editor Authoring/Preview Smoke: pass (`Editor.App.Tests` filter for Script/RigidBody/BoxCollider apply, nonblank preview and apply/save refresh; 3 passed)
+  - App Runtime Collision Smoke: pass (`Engine.App.Tests` filter `ApplicationHost_Run_MoveOnInputCannotMoveThroughStaticColliderBeforeRender`; 1 passed)
+  - Headless App Smoke: pass (`ANS_ENGINE_USE_NATIVE_WINDOW=false ANS_ENGINE_AUTO_EXIT_SECONDS=0.05 dotnet run --project src/Engine.App/Engine.App.csproj --nologo`; exit 0)
+  - Boundary: pass (`Engine.Editor.App` depends on Scene/Render/Asset only for approved preview; `Engine.Editor` remains headless; `Engine.App` does not reference Editor/App)
+  - Perf: pass (preview refresh is operation-triggered; no per-frame scene reload, asset reload storm or runtime app duplication)
 - CodeQuality:
-  - NoNewHighRisk: `false`
-  - MustFixCount: `1`
-  - MustFixDisposition: `follow-up-created`
+  - NoNewHighRisk: `true`
+  - MustFixCount: `0`
+  - MustFixDisposition: `none`
 - DesignQuality:
   - DQ-1 SRP: `pass`
   - DQ-2 DIP: `pass`
   - DQ-3 OCP-oriented extension: `pass`
-  - DQ-4 Open/closed evaluation: `warn`
-- ModuleAttributionCheck: fail
+  - DQ-4 Open/closed evaluation: `pass`
+- ModuleAttributionCheck: pass

@@ -21,8 +21,7 @@
 
 ## InProgress
 
-- `TASK-EAPP-011` M21 Scene View preview foundation（人工验收打回：当前仍绘制固定占位三角形，需改为基于真实 submission mesh batches 的 projected preview triangles）
-- `TASK-QA-022` M21 Editor authoring MVP gate review and archive（依赖 TASK-EAPP-011 回退，撤回“可归档”结论，待修复后重新复验）
+- （空）
 
 ## Verify
 
@@ -30,12 +29,21 @@
 
 ## Review
 
-- `TASK-EAPP-009` M21 Unity-like Editor shell and theme baseline（Executor 验收通过，待人工签收）
-- `TASK-EDITOR-006` M21 Editor component authoring core APIs（Executor 验收通过，待人工签收）
-- `TASK-EAPP-010` M21 Inspector Script and Physics component stack integration（Executor 验收通过，待人工签收）
+- （空）
 
 ## Done
 
+- `TASK-QA-023` M22 Runtime Abstractions gate review and archive（人工验收通过，已归档）
+- `TASK-SCRIPT-004` M22 Scripting runtime abstraction alignment（人工验收通过，已归档）
+- `TASK-SCENE-023` M22 MeshRenderer component container migration（人工验收通过，已归档）
+- `TASK-SCENE-022` M22 Transform contract alignment（人工验收通过，已归档）
+- `TASK-SCENE-021` M22 Scene runtime object implements abstractions（人工验收通过，已归档）
+- `TASK-RABS-001` M22 Runtime Abstractions module foundation（人工验收通过，已归档）
+- `TASK-QA-022` M21 Editor authoring MVP gate review and archive（人工验收通过，已归档）
+- `TASK-EAPP-011` M21 Scene View preview foundation（人工验收通过，已归档）
+- `TASK-EAPP-010` M21 Inspector Script and Physics component stack integration（人工验收通过，已归档）
+- `TASK-EDITOR-006` M21 Editor component authoring core APIs（人工验收通过，已归档）
+- `TASK-EAPP-009` M21 Unity-like Editor shell and theme baseline（人工验收通过，已归档）
 - `TASK-SCENE-020` M20 Scene Transform writeback contract（人工验收通过，已归档）
 - `TASK-APP-020` M20 App Physics production bridge（人工验收通过，已归档）
 - `TASK-PHYS-003` M20 Physics kinematic collision resolve（人工验收通过，已归档）

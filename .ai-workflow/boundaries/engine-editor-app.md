@@ -98,6 +98,11 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：修复 M21.4 Scene View preview 验收打回问题，`EditorScenePreviewHost` 将真实 `SceneRenderSubmission` mesh batches 投影为 preview triangles，`EditorGuiRenderer` 绘制这些 projected triangles，不再绘制固定占位三角形。
+  - 变更原因：支撑 `TASK-EAPP-011` 缺陷回流，满足默认场景预览显示真实 cube mesh geometry 的最低验收线。
+  - 风险与回滚方案：改动仍限定在 Editor.App edit-time preview composition，不新增 `Engine.App` 依赖，不执行 script/physics/Play Mode；若后续需要 picking/gizmo/viewport camera，应另立任务卡评审边界。
 - 2026-05-05
   - 变更人：Execution-Agent
   - 变更内容：完成 M21 QA 边界复验，确认 `Engine.Editor.App` 的 Scene/Render/Asset 依赖仅用于 edit-time preview composition，未引用 `Engine.App`，未引入 Play Mode、script execution、physics simulate、picking 或 gizmo。

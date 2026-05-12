@@ -45,6 +45,7 @@
 - `Engine.SceneData` -> `src/Engine.SceneData/**`
 - `Engine.Editor` -> `src/Engine.Editor/**`
 - `Engine.Editor.App` -> `src/Engine.Editor.App/**`
+- `Engine.Runtime.Abstractions` -> `src/Engine.Runtime.Abstractions/**`
 
 ## 5) 变更管理
 
@@ -57,6 +58,10 @@
 
 ## 6) 变更记录
 
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `Engine.Runtime.Abstractions` 推荐模块与路径映射。
+  - 变更原因：`TASK-RABS-001` 新增 runtime object/component 公共抽象模块，需要边界目录能稳定引用 `.ai-workflow/boundaries/engine-runtime-abstractions.md`。
 - 2026-04-30
   - 变更人：Execution-Agent
   - 变更内容：新增 `Engine.Editor.App` 边界合同与路径映射，支撑 M13 独立 GUI 编辑器宿主入口。

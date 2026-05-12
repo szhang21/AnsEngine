@@ -20,18 +20,233 @@
 
 ## 当前记录
 
+- TaskId: `TASK-QA-023`
+  Title: M22 Runtime Abstractions gate review and archive
+  Priority: `P2`
+  PrimaryModule: `Engine.Runtime.Abstractions`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Completed M22 gate review with no MustFix findings
+    - Confirmed Runtime.Abstractions only depends on Contracts and keeps minimal API shape
+    - Confirmed Scene/Scripting/App/Render/SceneData dependency directions satisfy M22
+    - Confirmed scene render, script self-transform, physics writeback before render, and Render/SceneData no-runtime-abstractions evidence
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-qa-023.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-023.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/plan-archive/2026-05/PLAN-M22-2026-05-11.md`
+    - `.ai-workflow/plan-archive/plan-archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过）
+    - Dependency: pass（Runtime.Abstractions 仅引用 Contracts；Scene/Scripting/App 引用方向符合合同；Render/SceneData 未引用 Runtime.Abstractions）
+    - API Shape: pass（Runtime.Abstractions 未出现 update/traversal/add/remove/cross-object API）
+    - Smoke: pass（Scene render frame、script self Transform update、physics writeback before render、Render/SceneData dependency guards 均有测试覆盖）
+    - CodeQuality: pass（NoNewHighRisk=true，MustFixCount=0）
+    - DesignQuality: pass（DQ-1/DQ-2/DQ-3/DQ-4）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-023.md`
+
+- TaskId: `TASK-SCRIPT-004`
+  Title: M22 Scripting runtime abstraction alignment
+  Priority: `P1`
+  PrimaryModule: `Engine.Scripting`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-Scripting`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `Engine.Scripting -> Engine.Runtime.Abstractions`
+    - Made `IScriptSelfObject` align to `IRuntimeObject`
+    - Returned `IRuntimeTransformComponent` from `Self.Transform` while preserving `context.Self.Transform`
+    - Updated App bridge to wrap Scene handles as runtime self objects without lifecycle/order changes
+  FilesChanged:
+    - `src/Engine.Scripting/Engine.Scripting.csproj`
+    - `src/Engine.Scripting/IScriptSelfObject.cs`
+    - `src/Engine.Scripting/IScriptTransformComponent.cs`
+    - `tests/Engine.Scripting.Tests/Engine.Scripting.Tests.csproj`
+    - `tests/Engine.Scripting.Tests/ScriptRuntimeTests.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-script-004.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCRIPT-004.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过，含 `Engine.Scripting.Tests` 18/18 与 `Engine.App.Tests` 27/27）
+    - Focused Test: pass（`dotnet test tests/Engine.Scripting.Tests/Engine.Scripting.Tests.csproj --no-restore --nologo -v minimal`，18/18）
+    - App Bridge Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，27/27）
+    - Smoke: pass（`context.Self.Transform`、ScriptRuntime binding/update lifecycle、App update order 保持不变）
+    - Boundary: pass（`Engine.Scripting` 仍不引用 `Engine.Scene`；Scene/Scripting bridge 归属 App）
+    - Perf: pass（adapter 未引入逐帧 search 或 script loading work）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-004.md`
+
+- TaskId: `TASK-SCENE-023`
+  Title: M22 MeshRenderer component container migration
+  Priority: `P1`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Made `SceneMeshRendererComponent` implement `IRuntimeComponent`
+    - Registered MeshRenderer in `SceneRuntimeObject` runtime component container
+    - Kept `MeshRenderer` compatibility accessor backed by typed lookup
+    - Preserved render output behavior and kept Render/SceneData free of Runtime.Abstractions dependencies
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/SceneMeshRendererComponent.cs`
+    - `src/Engine.Scene/Runtime/SceneRuntimeObject.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `tests/Engine.Scene.Tests/SceneBoundaryTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-023.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-023.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过，含 `Engine.Scene.Tests` 62/62）
+    - Focused Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，62/62）
+    - Smoke: pass（MeshRenderer typed lookup、Transform-only no render item、multi-object render order、M21 render output compatibility 已覆盖）
+    - Boundary: pass（`Engine.Render` 与 `Engine.SceneData` 未引用 `Engine.Runtime.Abstractions`）
+    - Perf: pass（MeshRenderer 构造期一次注册，lookup 限于内部 component collection）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-023.md`
+
+- TaskId: `TASK-SCENE-022`
+  Title: M22 Transform contract alignment
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Made `SceneTransformComponent` implement `IRuntimeTransformComponent`
+    - Added `LocalTransform` and `SetLocalTransform(SceneTransform)` contract surface
+    - Kept Transform as `SceneRuntimeObject.Transform` core field and out of generic lookup
+    - Preserved script self-transform, writeback, snapshot and render behavior
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/SceneTransformComponent.cs`
+    - `src/Engine.Scene/Runtime/SceneScriptObjectHandle.cs`
+    - `src/Engine.Scene/Runtime/RuntimeScene.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-022.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-022.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过，含 `Engine.Scene.Tests` 61/61）
+    - Focused Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，61/61）
+    - Smoke: pass（missing Transform failure semantics、script self-transform、physics writeback、Transform-only object、snapshot/render 行为均不变）
+    - Boundary: pass（Transform 对齐 Runtime.Abstractions 且仍为 core field；未新增 Scene 禁止依赖）
+    - Perf: pass（interface implementation 不引入额外 allocation 或 render path work）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-022.md`
+
+- TaskId: `TASK-SCENE-021`
+  Title: M22 Scene runtime object implements abstractions
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `Engine.Scene -> Engine.Runtime.Abstractions` dependency
+    - Made `SceneRuntimeObject` implement `IRuntimeObject`
+    - Added internal non-core runtime component collection with typed lookup
+    - Preserved NodeId, ObjectId/ObjectName, snapshot and render behavior
+  FilesChanged:
+    - `src/Engine.Scene/Engine.Scene.csproj`
+    - `src/Engine.Scene/Runtime/SceneRuntimeObject.cs`
+    - `tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj`
+    - `tests/Engine.Scene.Tests/SceneBoundaryTests.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-021.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-021.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过，含 `Engine.Scene.Tests` 59/59）
+    - Focused Test: pass（`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`，59/59）
+    - Smoke: pass（empty component collection stable；missing typed lookup returns null；`HasComponent<T>()` 与 lookup 一致；identity/snapshot/render 语义不变）
+    - Boundary: pass（`Engine.Scene` 允许 Runtime.Abstractions 依赖，仍无 Scripting/Physics/App/Render 依赖）
+    - Perf: pass（typed lookup 扫描内部小型不可外泄组件列表，不在 render path）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-021.md`
+
+- TaskId: `TASK-RABS-001`
+  Title: M22 Runtime Abstractions module foundation
+  Priority: `P0`
+  PrimaryModule: `Engine.Runtime.Abstractions`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+  Owner: `Exec-RuntimeAbstractions`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `Engine.Runtime.Abstractions` with `IRuntimeComponent`, `IRuntimeObject`, and `IRuntimeTransformComponent`
+    - Added API shape and boundary tests proving only the minimal M22.1 surface is exposed
+    - Added runtime abstractions boundary contract and boundary README mapping
+  FilesChanged:
+    - `AnsEngine.sln`
+    - `src/Engine.Runtime.Abstractions/Engine.Runtime.Abstractions.csproj`
+    - `src/Engine.Runtime.Abstractions/IRuntimeComponent.cs`
+    - `src/Engine.Runtime.Abstractions/IRuntimeObject.cs`
+    - `src/Engine.Runtime.Abstractions/IRuntimeTransformComponent.cs`
+    - `tests/Engine.Runtime.Abstractions.Tests/Engine.Runtime.Abstractions.Tests.csproj`
+    - `tests/Engine.Runtime.Abstractions.Tests/RuntimeAbstractionsApiShapeTests.cs`
+    - `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+    - `.ai-workflow/boundaries/README.md`
+    - `.ai-workflow/tasks/task-rabs-001.md`
+    - `.ai-workflow/archive/2026-05/TASK-RABS-001.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过，含 `Engine.Runtime.Abstractions.Tests` 4/4）
+    - Focused Test: pass（`dotnet test tests/Engine.Runtime.Abstractions.Tests/Engine.Runtime.Abstractions.Tests.csproj --no-restore --nologo -v minimal`，4/4）
+    - Smoke: pass（solution 可加载新模块；public API shape 与 M22.1 一致；Runtime.Abstractions source 未出现禁止 API 名称）
+    - Boundary: pass（`Engine.Runtime.Abstractions` 仅引用 `Engine.Contracts`，无禁止模块引用）
+    - Perf: pass（仅新增接口模块，无 runtime 主路径成本）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-RABS-001.md`
+
 - TaskId: `TASK-QA-022`
   Title: M21 Editor authoring MVP gate review and archive
   Priority: `P2`
   PrimaryModule: `Engine.Editor.App`
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-QA`
-  ClosedAt: `2026-05-05`
-  Status: `Review`
-  HumanSignoff: `pending`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
-    - Verified M21 execution cards reached Review with complete evidence
+    - Verified M21 execution cards reached Done with complete evidence and Human signoff
     - Ran full solution tests plus focused editor authoring/preview and App collision smoke
     - Confirmed boundary direction and M21 non-goal constraints
   FilesChanged:
@@ -41,6 +256,8 @@
     - `.ai-workflow/archive/2026-05/TASK-QA-022.md`
     - `.ai-workflow/archive/archive-index.md`
     - `.ai-workflow/board.md`
+    - `.ai-workflow/plan-archive/2026-05/PLAN-M21-2026-05-05.md`
+    - `.ai-workflow/plan-archive/plan-archive-index.md`
   ValidationEvidence:
     - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
     - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，全 solution 测试通过）
@@ -58,25 +275,20 @@
   PrimaryModule: `Engine.Editor.App`
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
-  ClosedAt: `2026-05-05`
-  Status: `Review`
-  HumanSignoff: `pending`
+  ClosedAt: `2026-05-11`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
-    - Added EditorScenePreviewHost and nonblank SceneView preview snapshot
-    - Refreshes preview after open/apply/save/save-as/selection changes
-    - Updated approved Editor.App boundary for Scene/Render/Asset preview dependencies
+    - Repaired acceptance-dispute defect where Scene View still drew a fixed placeholder triangle
+    - Projected real SceneRenderSubmission mesh batches into preview snapshot triangles
+    - Updated Scene View drawing to render projected mesh triangles with material colors
+    - Added regression coverage for the default scene producing 2 batches and 24 projected triangles
   FilesChanged:
-    - `src/Engine.Editor.App/Engine.Editor.App.csproj`
-    - `src/Engine.Editor.App/EditorAppController.cs`
     - `src/Engine.Editor.App/EditorGuiRenderer.cs`
-    - `src/Engine.Editor.App/EditorGuiSnapshot.cs`
-    - `src/Engine.Editor.App/EditorGuiSnapshotFactory.cs`
     - `src/Engine.Editor.App/EditorScenePreviewHost.cs`
     - `src/Engine.Editor.App/EditorScenePreviewSnapshot.cs`
-    - `tests/Engine.Editor.App.Tests/EditorAppBoundaryTests.cs`
     - `tests/Engine.Editor.App.Tests/EditorAppControllerTests.cs`
-    - `tests/Engine.Editor.App.Tests/EditorGuiSnapshotFactoryTests.cs`
     - `.ai-workflow/boundaries/engine-editor-app.md`
     - `.ai-workflow/tasks/task-eapp-011.md`
     - `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
@@ -84,11 +296,10 @@
     - `.ai-workflow/board.md`
   ValidationEvidence:
     - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL warning）
-    - Test: pass（`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`，39 条通过）
-    - Render/Scene Tests: pass（`Engine.Render.Tests` 18 条通过；`Engine.Scene.Tests` 57 条通过）
-    - Smoke: pass（sample scene 产生非空 SceneView preview，Apply/Save 刷新；未引用 ApplicationHost/script/physics/play-mode）
-    - Boundary: pass（Editor.App 依赖与批准边界一致，Editor/App 仍保持隔离）
-    - Perf: pass（preview 按操作刷新，无逐帧 scene reload 或 runtime app duplication）
+    - Test: pass（`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`，40 条通过）
+    - Smoke: pass（default sample scene preview snapshot 包含 2 个真实 mesh batches 与 24 个 projected triangles；Apply/Save 刷新仍覆盖；未引用 ApplicationHost/script/physics/play-mode）
+    - Boundary: pass（变更限定在 `Engine.Editor.App`、Editor.App tests 与 workflow metadata；未新增 `Engine.App` 依赖）
+    - Perf: pass（projection 仅在 preview refresh 时发生，无逐帧 scene reload 或 runtime app duplication）
   SnapshotPath: `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
 
 - TaskId: `TASK-EAPP-010`
@@ -98,8 +309,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-05-05`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added Inspector groups for Scripts, RigidBody, BoxCollider and PhysicsParticipation
@@ -133,8 +344,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor.md`
   Owner: `Exec-Editor`
   ClosedAt: `2026-05-05`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Added explicit `SceneEditorSession` APIs for Script/RigidBody/BoxCollider update and remove
@@ -163,8 +374,8 @@
   BoundaryContractPath: `.ai-workflow/boundaries/engine-editor-app.md`
   Owner: `Exec-EditorApp`
   ClosedAt: `2026-05-05`
-  Status: `Review`
-  HumanSignoff: `pending`
+  Status: `Done`
+  HumanSignoff: `pass`
   ModuleAttributionCheck: `pass`
   Summary:
     - Central layout contract renamed from `MainWorkspace*` to `SceneView*`

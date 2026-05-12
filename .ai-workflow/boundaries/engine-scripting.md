@@ -34,6 +34,7 @@
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Contracts`
+  - `Engine.Runtime.Abstractions`
 - 可使用基础库/第三方：
   - `.NET` 标准库
 
@@ -72,8 +73,8 @@
 
 - `IScriptSelfObject` / `IScriptTransformComponent`
   - 用途：定义 script 可消费的自身对象与 Transform 访问面
-  - 输入/输出：通过 `Self.Transform` 读取/写入自身对象 local transform
-  - 错误语义：不提供跨对象查询或任意组件访问
+  - 输入/输出：`IScriptSelfObject` 对齐 `IRuntimeObject`，通过 `Self.Transform` 的 `IRuntimeTransformComponent` 读取/写入自身对象 local transform
+  - 错误语义：不提供跨对象查询，宿主只暴露绑定 self object 的窄 component lookup
   - 生命周期约束：由宿主在绑定 Script component 时提供
 
 ## 8) 数据与状态边界
@@ -96,6 +97,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M22 QA gate review，复验 `Engine.Scripting` 消费 `Engine.Runtime.Abstractions` 且不引用 `Engine.Scene`；`context.Self.Transform`、ScriptRuntime binding/update lifecycle 与禁止跨对象访问语义保持不变。
+  - 变更原因：支撑 `TASK-QA-023`，确认 Scripting runtime abstraction alignment 可进入归档准备状态。
+  - 风险与回滚方案：当前未发现 MustFix；后续脚本若需要更多 component 能力，应新增显式 capability 边界，不通过 Scene 反向依赖实现。
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：允许 `Engine.Scripting -> Engine.Runtime.Abstractions` 依赖；`IScriptSelfObject` 继承 `IRuntimeObject`，`Self.Transform` 对齐 `IRuntimeTransformComponent`，并保留 `IScriptTransformComponent` 作为兼容扩展接口。
+  - 变更原因：支撑 `TASK-SCRIPT-004`，让脚本 public abstraction 面向共享 runtime contracts，同时保持 `context.Self.Transform` ergonomics、ScriptRuntime lifecycle 与禁止跨对象访问语义不变。
+  - 风险与回滚方案：若后续需要脚本访问更多组件，必须另开任务设计显式能力边界；不得通过重新引入 `Engine.Scripting -> Engine.Scene` 或全局 scene query 绕过 Runtime.Abstractions。
 - 2026-05-03
   - 变更人：Execution-Agent
   - 变更内容：新增 scripting-owned `ScriptKey` / `ScriptInputSnapshot` 输入快照、`ScriptContext.Input` 与 `ScriptContext.WithFrame(...)`，扩展 `ScriptRuntime.Update(...)` 以传递同一帧输入，并新增 `ScriptPropertyReader` 统一 required number/bool/string property 读取。

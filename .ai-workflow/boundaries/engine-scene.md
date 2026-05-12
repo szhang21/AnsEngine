@@ -11,12 +11,13 @@
 ## 2) 目标与范围
 
 - 模块目标：负责场景数据组织与实体层级管理，向渲染与系统模块提供稳定、可查询的场景状态。
-- 适用范围：实体创建与销毁、Transform 层级、可见性数据准备、场景查询接口。
+- 适用范围：实体创建与销毁、Transform 层级、runtime object/component 状态、可见性数据准备、场景查询接口。
 - 非适用范围：底层 OpenGL 调用、资源导入与缓存策略、窗口输入处理、应用主流程调度。
 
 ## 3) 职责（Responsibilities）
 
 - 负责 Entity 与组件关系维护（若采用 ECS/轻 ECS 由本模块主导）。
+- 负责让 Scene runtime object 对齐 `Engine.Runtime.Abstractions` 的最小 object/component 抽象。
 - 负责 Transform 更新与层级变换传播。
 - 负责提供可见对象查询结果给渲染模块。
 - 负责场景状态一致性校验（如父子关系有效性）。
@@ -33,6 +34,7 @@
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Contracts`（渲染输入契约层）
+  - `Engine.Runtime.Abstractions`（runtime object/component 共享窄接口）
   - `Engine.SceneData`（规范化场景描述输入）
 - 可使用基础库/第三方：
   - `System.Numerics`（如项目采用）
@@ -43,6 +45,9 @@
 - 禁止直接依赖模块：
   - `Engine.Render` 的 OpenGL 实现细节
   - `Engine.Asset` 的导入器实现
+  - `Engine.Scripting`
+  - `Engine.Physics`
+  - `Engine.App`
 - 禁止跨层调用模式：
   - 在 `Scene` 内直接调用 OpenGL API
   - 在 `Scene` 内执行资源导入与文件 IO 流程编排
@@ -81,6 +86,26 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M22 QA gate review，复验 Scene runtime object/component abstraction alignment：`SceneRuntimeObject` 对齐 `IRuntimeObject`，Transform 保持 core spatial field，MeshRenderer 作为首个 generic runtime component 进入 container。
+  - 变更原因：支撑 `TASK-QA-023`，确认 Scene 依赖 Runtime.Abstractions 但仍不依赖 Scripting/Physics/Render/App，render frame 与 runtime snapshot 主路径无回归。
+  - 风险与回滚方案：当前未发现 MustFix；后续如迁移更多组件，应按单卡扩展并继续验证 Render/SceneData 不感知 runtime abstractions。
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneMeshRendererComponent` 对齐 `IRuntimeComponent` 并迁入 `SceneRuntimeObject` 的 runtime component container；`SceneRuntimeObject.MeshRenderer` 兼容访问器改为由 `GetComponent<SceneMeshRendererComponent>()` 驱动，render frame 仍从 Transform + MeshRenderer 输出。
+  - 变更原因：支撑 `TASK-SCENE-023`，验证 generic runtime component container 的真实使用路径，同时保持 M21 render output、transform-only object 和 render order 语义不变。
+  - 风险与回滚方案：未修改 Render contract 或 Render 依赖，未迁移 Transform/Script/Physics/Camera；如 MeshRenderer lookup 发生不一致，可回退 compatibility accessor/container registration 而不改变 render contract。
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneTransformComponent` 对齐 `IRuntimeTransformComponent`，通过 `Engine.Contracts.SceneTransform` 暴露 `LocalTransform` 与 `SetLocalTransform(SceneTransform)`；Transform 仍保留为 `SceneRuntimeObject.Transform` core spatial field，不注册进 generic component collection。
+  - 变更原因：支撑 `TASK-SCENE-022`，让 Scene Transform 具备 runtime abstraction contract，同时保持 script self-transform、physics writeback、snapshot 和 render frame 读取同一个 Transform instance。
+  - 风险与回滚方案：未新增 world transform、parent/children、traversal 或 public mutation collection API；如后续接口对齐异常，可回退 `SceneTransformComponent` 的 interface 实现而不改变 existing Transform field ownership。
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：允许 `Engine.Scene -> Engine.Runtime.Abstractions` 依赖，`SceneRuntimeObject` 对齐 `IRuntimeObject` 并持有内部 non-core runtime component collection，用于 typed lookup；仍禁止 Scene 依赖 Scripting/Physics/App/Render。
+  - 变更原因：支撑 `TASK-SCENE-021`，为 M22 Scene runtime object abstraction alignment 建立基础，同时保留 Transform 与 MeshRenderer 后续卡迁移边界。
+  - 风险与回滚方案：当前未暴露 public add/remove/traversal/update API，component collection 不外泄；如后续 lookup 语义异常，可回退 SceneRuntimeObject 内部 collection 实现而不改变对外 snapshot/render contract。
 - 2026-05-05
   - 变更人：Execution-Agent
   - 变更内容：完成 M20 QA 复验，确认 `Engine.Scene` 仅提供通用 `TrySetObjectTransform` 写回能力与 runtime snapshot/render observability，不引用 `Engine.Physics`，也不承载 physics-specific bridge、solver 或 App 调度。

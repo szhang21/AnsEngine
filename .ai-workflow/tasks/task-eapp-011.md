@@ -229,24 +229,40 @@ true
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-InProgress
+Done
 
 ## 完成度（Completion）
-`60`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `AcceptanceDispute`
 - DetectedAt: `2026-05-06`
 - ReopenReason: `Human review found that Scene View preview still draws a fixed placeholder triangle after preview submission generation. M21.4 must render projected triangles from real SceneRenderSubmission mesh batches so the default scene preview shows two cubes rather than a single placeholder shape.`
 - OriginTaskId:
-- HumanSignoff: `fail`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
 - ArchivePath: `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
-- ClosedAt:
+- ClosedAt: `2026-05-11`
 - Summary:
   - Reopened during human acceptance review because Scene View preview still uses a fixed placeholder triangle instead of projected triangles from real preview mesh batches.
-  - Required fix: upgrade `EditorScenePreviewHost.Refresh` and `EditorGuiRenderer.DrawScenePreview` to render projected geometry from `SceneRenderSubmission`.
+  - Upgraded `EditorScenePreviewHost.Refresh` to project triangles from real `SceneRenderSubmission` mesh batches into preview snapshot data.
+  - Updated `EditorGuiRenderer.DrawScenePreview` to render those projected triangles instead of the fixed placeholder triangle.
+  - Added Editor.App regression coverage proving the default scene produces 2 batches and 24 projected triangles from real cube meshes.
 - FilesChanged:
+  - `src/Engine.Editor.App/EditorScenePreviewHost.cs`
+  - `src/Engine.Editor.App/EditorScenePreviewSnapshot.cs`
+  - `src/Engine.Editor.App/EditorGuiRenderer.cs`
+  - `tests/Engine.Editor.App.Tests/EditorAppControllerTests.cs`
+  - `.ai-workflow/boundaries/engine-editor-app.md`
+  - `.ai-workflow/tasks/task-eapp-011.md`
+  - `.ai-workflow/archive/2026-05/TASK-EAPP-011.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck: fail
+  - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; existing `net7.0` EOL warnings only)
+  - Test: pass (`dotnet test tests/Engine.Editor.App.Tests/Engine.Editor.App.Tests.csproj --no-restore --nologo -v minimal`; 40 passed)
+  - Smoke: pass (default sample scene preview snapshot now contains 2 real mesh batches and 24 projected triangles; Apply/Save refresh remains covered; no ApplicationHost/script/physics/play-mode path added)
+  - Boundary: pass (changes stayed inside `Engine.Editor.App` and Editor.App tests; no new Engine.App dependency)
+  - Perf: pass (projection happens only during preview refresh, not as a per-frame scene reload or asset cold-load loop)
+- ModuleAttributionCheck: pass

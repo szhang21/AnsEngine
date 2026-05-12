@@ -2,14 +2,14 @@
 
 ## Status
 
-- Status: `Review`
-- Completion: `95`
-- HumanSignoff: `pending`
+- Status: `Done`
+- Completion: `100`
+- HumanSignoff: `pass`
 - ModuleAttributionCheck: `pass`
 
 ## Summary
 
-- Verified all M21 execution cards are in Review with build/test/smoke/boundary/perf evidence.
+- Verified all M21 execution cards reached Done with build/test/smoke/boundary/perf evidence and Human signoff.
 - Ran full solution tests, Platform tests, focused Editor authoring/preview smoke, App collision smoke and headless App startup smoke.
 - Confirmed Editor.App preview dependency expansion matches the approved boundary while Engine.Editor remains headless.
 - Confirmed no Play Mode, script execution preview, physics simulation preview, picking, gizmo, Undo/Redo or Project Browser slipped into M21.
@@ -43,7 +43,9 @@
 - `.ai-workflow/archive/2026-05/TASK-QA-022.md`
 - `.ai-workflow/archive/archive-index.md`
 - `.ai-workflow/board.md`
+- `.ai-workflow/plan-archive/2026-05/PLAN-M21-2026-05-05.md`
+- `.ai-workflow/plan-archive/plan-archive-index.md`
 
 ## Risk
 
-- low: full manual GUI visual confirmation is still useful before Human signoff, but automated coverage proves authoring paths, nonblank preview state, runtime collision path and boundary direction.
+- low: richer manual GUI visual review remains useful for future viewport polish, but M21 archive gates are closed for authoring paths, nonblank preview state, runtime collision path and boundary direction.

@@ -12,10 +12,16 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M22-2026-05-11`
+  Status: `Closed`
+  LastUpdated: `2026-05-12`
+  MilestoneSummary: `M22 完成（Runtime Abstractions And Component Container，新增 Engine.Runtime.Abstractions，共享 runtime object/component 抽象，Scene 实现对象组件容器，MeshRenderer 迁入 container，Scripting 消费抽象并保持不依赖 Scene）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M22-2026-05-11.md`
+
 - PlanId: `PLAN-M21-2026-05-05`
-  Status: `Active`
-  LastUpdated: `2026-05-05`
-  MilestoneSummary: `M21 进行中（Unity-like Editor Authoring MVP，Script/RigidBody/BoxCollider 组件编辑、专业工具布局与 Scene View 预览地基）`
+  Status: `Closed`
+  LastUpdated: `2026-05-11`
+  MilestoneSummary: `M21 完成（Unity-like Editor Authoring MVP，Script/RigidBody/BoxCollider 组件编辑、专业工具布局、真实 mesh batch Scene View 预览、runtime collision smoke 与 QA 收口）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M21-2026-05-05.md`
 
 - PlanId: `PLAN-M20-2026-05-04`

@@ -37,6 +37,7 @@
   - `Engine.Scene`
   - `Engine.SceneData`
   - `Engine.Scripting`
+  - `Engine.Runtime.Abstractions`
   - `Engine.Physics`（仅由 App 作为 composition root 持有 production bridge / world initialization / runtime orchestration）
   - `Engine.Asset`
   - `Engine.Render`
@@ -85,6 +86,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M22 QA gate review，复验 App 作为 Scene/Scripting/Physics/Render 的组合根桥接层，持有 Runtime.Abstractions 依赖并保持 `SceneRuntime.Update -> ScriptRuntime.Update -> Physics writeback -> RenderFrame` 主循环顺序。
+  - 变更原因：支撑 `TASK-QA-023`，确认 App bridge alignment 未改变脚本生命周期、physics writeback before render 语义或 render contract 消费方向。
+  - 风险与回滚方案：当前未发现 MustFix；后续若引入外部脚本加载或更多 runtime components，应继续由 App 显式桥接并更新边界。
+- 2026-05-11
+  - 变更人：Execution-Agent
+  - 变更内容：允许 `Engine.App -> Engine.Runtime.Abstractions` 依赖；App scripting adapter 将 `SceneScriptObjectHandle` 包装为实现 `IScriptSelfObject`/`IRuntimeObject` 的 self-object，并只通过 `IRuntimeTransformComponent` 暴露绑定对象自身 Transform。
+  - 变更原因：支撑 `TASK-SCRIPT-004`，在 App composition root 中完成 Scene 与 Scripting 的 runtime abstraction 对齐，同时保持主循环 update order 与 script binding/update lifecycle 不变。
+  - 风险与回滚方案：若后续脚本需要更多 runtime component 能力，应继续由 App 显式桥接并更新 Scripting 边界；不得把 Scene 内部对象集合或跨对象查询泄露给 Scripting。
 - 2026-05-05
   - 变更人：Execution-Agent
   - 变更内容：完成 M20 QA 复验，确认 App 作为唯一 production bridge / runtime orchestrator 持有 `Engine.Physics` 依赖；全量 build/test/headless smoke 通过，`SceneData load -> App bridge -> Script update -> Physics resolve/writeback -> Render` 主链路有测试与 smoke 证据。
