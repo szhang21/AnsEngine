@@ -20,6 +20,313 @@
 
 ## 当前记录
 
+- TaskId: `TASK-QA-025`
+  Title: M24 Runtime component lifecycle gate review and archive
+  Priority: `P2`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Completed M24 full-chain QA gate review with MustFixCount=0
+    - Confirmed runtime component lifecycle real path from SceneData load through Runtime tick to App render observation
+    - Confirmed implementation cards are Done/100 with archive snapshots, archive index entries, and board Done entries
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/boundaries/engine-runtime.md`
+    - `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/tasks/task-qa-025.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-025.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL warnings)
+    - Test: pass (`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`; solution visible test assemblies passed)
+    - Smoke: pass (App real Runtime session `MoveOnInput` headless scene updates Scene state before render)
+    - Boundary: pass (Runtime.Abstractions, Scene, Scripting, Runtime, and App dependency directions verified)
+    - Perf: pass (no per-frame PhysicsWorld rebuild, hot reload/source loading, or duplicate App scheduler)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-025.md`
+
+- TaskId: `TASK-APP-023`
+  Title: M24 App host contraction to Runtime session
+  Priority: `P1`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Contracted `ApplicationHost` to delegate initialization and per-frame tick to Runtime session
+    - Converted Platform input to runtime input before tick
+    - Removed App-owned script update, physics writeback orchestration, and built-in script catalog ownership
+  FilesChanged:
+    - `src/Engine.App/ApplicationBootstrap.cs`
+    - `src/Engine.App/ApplicationContracts.cs`
+    - `src/Engine.App/Engine.App.csproj`
+    - `src/Engine.App/SceneRuntimeContracts.cs`
+    - `src/Engine.App/ScenePhysicsWorldDefinitionBridge.cs`
+    - `src/Engine.App/RuntimePhysicsOrchestrator.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `tests/Engine.App.Tests/Engine.App.Tests.csproj`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-023.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-023.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL and Windows Kits `LIB` warnings)
+    - Test: pass (`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`; 15 passed, 0 failed)
+    - Smoke: pass (real Runtime session `MoveOnInput` headless scene updates Scene state before render)
+    - Perf: pass (one Runtime tick per frame; no App-side script traversal or physics writeback orchestration)
+    - Dependency: pass (`Engine.App` no longer directly references `Engine.Physics` or `Engine.Scripting`)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-023.md`
+
+- TaskId: `TASK-RUNTIME-001`
+  Title: M24 Engine.Runtime module and tick pipeline
+  Priority: `P0`
+  PrimaryModule: `Engine.Runtime`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-runtime.md`
+  Owner: `Exec-Runtime`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added `Engine.Runtime` source/test projects and solution entries
+    - Added `EngineRuntimeSession` initialization and tick pipeline
+    - Added script update component traversal and runtime physics writeback before render
+  FilesChanged:
+    - `src/Engine.Runtime/**`
+    - `tests/Engine.Runtime.Tests/**`
+    - `AnsEngine.sln`
+    - `.ai-workflow/boundaries/engine-runtime.md`
+    - `.ai-workflow/boundaries/README.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-runtime-001.md`
+    - `.ai-workflow/archive/2026-05/TASK-RUNTIME-001.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL warnings)
+    - Test: pass (`dotnet test tests/Engine.Runtime.Tests/Engine.Runtime.Tests.csproj --no-restore --nologo -v minimal`; 7 passed, 0 failed)
+    - Smoke: pass (Runtime tests cover script update -> physics writeback -> scene state ready before render)
+    - Perf: pass (`PhysicsWorld` initialized once and reused across ticks)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-RUNTIME-001.md`
+
+- TaskId: `TASK-SCRIPT-005`
+  Title: M24 Scripting runtime update component conversion
+  Priority: `P0`
+  PrimaryModule: `Engine.Scripting`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scripting.md`
+  Owner: `Exec-Scripting`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added runtime update component binding output from `ScriptRuntime`
+    - Added Scripting-owned `RotateSelf` and `MoveOnInput` runtime update components
+    - Confirmed scripts update Transform through runtime owner/component lookup and fail deterministically when Transform is missing
+  FilesChanged:
+    - `src/Engine.Scripting/ScriptRuntime.cs`
+    - `src/Engine.Scripting/ScriptUpdateComponentBindingDescription.cs`
+    - `src/Engine.Scripting/ScriptUpdateComponentBindingResult.cs`
+    - `src/Engine.Scripting/RotateSelfScript.cs`
+    - `src/Engine.Scripting/MoveOnInputScript.cs`
+    - `tests/Engine.Scripting.Tests/ScriptRuntimeTests.cs`
+    - `.ai-workflow/boundaries/engine-scripting.md`
+    - `.ai-workflow/tasks/task-script-005.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCRIPT-005.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL and Windows Kits `LIB` path warnings)
+    - Test: pass (`dotnet test tests/Engine.Scripting.Tests/Engine.Scripting.Tests.csproj --no-restore --nologo -v minimal`; 22 passed, 0 failed)
+    - Smoke: pass (fake `IRuntimeObject` + `IRuntimeTransformComponent` tests prove owner lookup updates)
+    - Perf: pass (no per-frame JSON parsing, assembly scan, scene query, or Scripting-owned scheduler)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCRIPT-005.md`
+
+- TaskId: `TASK-SCENE-024`
+  Title: M24 Transform component container alignment
+  Priority: `P0`
+  PrimaryModule: `Engine.Scene`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-scene.md`
+  Owner: `Exec-Scene`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Registered `SceneTransformComponent` in `SceneRuntimeObject` runtime component lookup
+    - Confirmed `Transform`, `GetComponent<SceneTransformComponent>()`, and `GetComponent<IRuntimeTransformComponent>()` share the same instance
+    - Confirmed snapshot and render frame observe component-updated Transform state
+  FilesChanged:
+    - `src/Engine.Scene/Runtime/SceneRuntimeObject.cs`
+    - `tests/Engine.Scene.Tests/SceneGraphServiceTests.cs`
+    - `.ai-workflow/boundaries/engine-scene.md`
+    - `.ai-workflow/tasks/task-scene-024.md`
+    - `.ai-workflow/archive/2026-05/TASK-SCENE-024.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL warnings)
+    - Test: pass (`dotnet test tests/Engine.Scene.Tests/Engine.Scene.Tests.csproj --no-restore --nologo -v minimal`; 63 passed, 0 failed)
+    - Smoke: pass (transform-only snapshot and renderable object render frame behavior remain covered)
+    - Perf: pass (one-time component collection construction; no new per-frame allocation path)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-SCENE-024.md`
+
+- TaskId: `TASK-RABS-002`
+  Title: M24 Runtime update component lifecycle shape
+  Priority: `P0`
+  PrimaryModule: `Engine.Runtime.Abstractions`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+  Owner: `Exec-Runtime-Abstractions`
+  ClosedAt: `2026-05-27`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Added scheduler-free runtime update lifecycle public API shape
+    - Added runtime input snapshot/key and update result/failure contracts
+    - Confirmed abstractions still do not own scheduler, traversal, storage, mutation, or concrete runtime dependencies
+  FilesChanged:
+    - `src/Engine.Runtime.Abstractions/IRuntimeUpdateComponent.cs`
+    - `src/Engine.Runtime.Abstractions/RuntimeUpdateContext.cs`
+    - `src/Engine.Runtime.Abstractions/RuntimeInputSnapshot.cs`
+    - `src/Engine.Runtime.Abstractions/RuntimeKey.cs`
+    - `src/Engine.Runtime.Abstractions/RuntimeUpdateResult.cs`
+    - `src/Engine.Runtime.Abstractions/RuntimeUpdateFailure.cs`
+    - `tests/Engine.Runtime.Abstractions.Tests/RuntimeAbstractionsApiShapeTests.cs`
+    - `.ai-workflow/boundaries/engine-runtime-abstractions.md`
+    - `.ai-workflow/tasks/task-rabs-002.md`
+    - `.ai-workflow/archive/2026-05/TASK-RABS-002.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; 0 errors, existing `net7.0` EOL and Windows Kits `LIB` path warnings)
+    - Test: pass (`dotnet test tests/Engine.Runtime.Abstractions.Tests/Engine.Runtime.Abstractions.Tests.csproj --no-restore --nologo -v minimal`; 8 passed, 0 failed)
+    - Smoke: pass (solution build loaded and compiled downstream Scene/Scripting/App projects with the new abstractions)
+    - Perf: pass (public API/value shape only; no traversal, scheduler, per-frame runtime path, or component mutation implementation)
+    - CodeQuality: pass (NoNewHighRisk=true, MustFixCount=0)
+    - DesignQuality: pass (DQ-1/DQ-2/DQ-3/DQ-4)
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-RABS-002.md`
+
+- TaskId: `TASK-QA-024`
+  Title: M23 Physics state sync gate review and archive
+  Priority: `P2`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-QA`
+  ClosedAt: `2026-05-13`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Completed M23 gate review with no MustFix findings
+    - Confirmed `ResolveKinematicMove(...)` remains non-mutating and `ApplyKinematicMove(...)` mutates dynamic body Transform/AABB
+    - Confirmed App orchestrator calls `ApplyKinematicMove(...)` and writes Physics resolved transform back to Scene
+    - Confirmed continuous-frame stale PhysicsWorld state regression is covered
+    - Confirmed Render/SceneData do not know physics state sync
+  FilesChanged:
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-qa-024.md`
+    - `.ai-workflow/archive/2026-05/TASK-QA-024.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+    - `.ai-workflow/plan-archive/2026-05/PLAN-M23-2026-05-13.md`
+    - `.ai-workflow/plan-archive/plan-archive-index.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`，solution 可见测试项目通过）
+    - Focused Physics: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，20/20）
+    - Focused App: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，28/28）
+    - Dependency: pass（`Engine.Physics` 无 project references；`Engine.Scene`/`Engine.Render`/`Engine.SceneData` 未引用 `Engine.Physics`；App 仍是 bridge）
+    - Smoke: pass（Resolve non-mutating、Apply mutating、App apply/writeback、连续帧无 stale PhysicsWorld state、Render/SceneData no awareness）
+    - Perf: pass（无 full world rebuild、额外 SceneData IO 或 solver path）
+    - CodeQuality: pass（NoNewHighRisk=true，MustFixCount=0）
+    - DesignQuality: pass（DQ-1/DQ-2/DQ-3/DQ-4）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-QA-024.md`
+
+- TaskId: `TASK-APP-022`
+  Title: M23 App physics orchestrator state sync
+  Priority: `P0`
+  PrimaryModule: `Engine.App`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-app.md`
+  Owner: `Exec-App`
+  ClosedAt: `2026-05-13`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Switched `RuntimePhysicsOrchestrator` to `PhysicsWorld.ApplyKinematicMove(...)`
+    - Kept Scene writeback aligned to Physics returned resolved transform
+    - Added two-frame runtime smoke proving PhysicsWorld state sync across frames
+    - Preserved collision smoke and writeback-failure-before-render behavior
+  FilesChanged:
+    - `src/Engine.App/RuntimePhysicsOrchestrator.cs`
+    - `tests/Engine.App.Tests/RuntimeBootstrapTests.cs`
+    - `.ai-workflow/boundaries/engine-app.md`
+    - `.ai-workflow/tasks/task-app-022.md`
+    - `.ai-workflow/archive/2026-05/TASK-APP-022.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`，28/28）
+    - Smoke: pass（script desired transform -> Physics apply -> Scene resolved transform -> next frame Physics uses updated body state -> render observes Scene）
+    - Perf: pass（未引入逐帧 PhysicsWorld 重建、SceneData IO、Render side effect 或跨模块内部集合访问）
+    - Boundary: pass（App 仍为 bridge；Physics 不知道 Scene，Scene 不知道 Physics）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-APP-022.md`
+
+- TaskId: `TASK-PHYS-004`
+  Title: M23 Physics mutating kinematic move API
+  Priority: `P0`
+  PrimaryModule: `Engine.Physics`
+  BoundaryContractPath: `.ai-workflow/boundaries/engine-physics.md`
+  Owner: `Exec-Physics`
+  ClosedAt: `2026-05-13`
+  Status: `Done`
+  HumanSignoff: `pass`
+  ModuleAttributionCheck: `pass`
+  Summary:
+    - Kept `ResolveKinematicMove(...)` non-mutating
+    - Added `ApplyKinematicMove(...)` as explicit mutating API
+    - Updated dynamic body Transform and AABB to resolved transform on successful apply
+    - Preserved static body and malformed input diagnostics
+  FilesChanged:
+    - `src/Engine.Physics/PhysicsWorld.cs`
+    - `tests/Engine.Physics.Tests/PhysicsFoundationTests.cs`
+    - `.ai-workflow/boundaries/engine-physics.md`
+    - `.ai-workflow/tasks/task-phys-004.md`
+    - `.ai-workflow/archive/2026-05/TASK-PHYS-004.md`
+    - `.ai-workflow/archive/archive-index.md`
+    - `.ai-workflow/board.md`
+  ValidationEvidence:
+    - Build: pass（`dotnet build AnsEngine.sln --nologo -v minimal`，仅既有 `net7.0` EOL 与 Windows Kits `LIB` 路径 warning）
+    - Test: pass（`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`，20/20）
+    - Smoke: pass（two-step apply/query 证明第二次 resolve 从更新后的 PhysicsWorld body state 出发）
+    - Perf: pass（未引入 solver/CCD/gravity/full world rebuild；apply 只替换一个 body entry 并重算一个 AABB）
+    - Boundary: pass（`Engine.Physics` 仍无 Engine 模块依赖）
+  SnapshotPath: `.ai-workflow/archive/2026-05/TASK-PHYS-004.md`
+
 - TaskId: `TASK-QA-023`
   Title: M22 Runtime Abstractions gate review and archive
   Priority: `P2`

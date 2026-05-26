@@ -60,9 +60,9 @@
 
 - `PhysicsWorld`
   - 用途：承载 physics bodies/colliders 状态并提供 load / step / snapshot / query 入口
-  - 输入/输出：输入 `PhysicsWorldDefinition`、`PhysicsStepContext` 与 kinematic desired transform，输出 world state、snapshot、query result 与 resolved transform
+  - 输入/输出：输入 `PhysicsWorldDefinition`、`PhysicsStepContext` 与 kinematic desired transform，输出 world state、snapshot、query result 与 resolved transform；`ResolveKinematicMove(...)` 只查询，`ApplyKinematicMove(...)` 成功后更新 dynamic body transform/AABB
   - 错误语义：malformed physics input 必须可诊断
-  - 生命周期约束：`Load -> Step* -> Snapshot/Query/ResolveKinematicMove`
+  - 生命周期约束：`Load -> Step* -> Snapshot/Query/ResolveKinematicMove/ApplyKinematicMove`
 
 - `PhysicsStepContext`
   - 用途：描述固定步进输入
@@ -96,6 +96,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M23 QA gate review，复验 `ResolveKinematicMove(...)` non-mutating、`ApplyKinematicMove(...)` mutating state/AABB update、static/malformed diagnostics，以及 `Engine.Physics` 零 Engine 模块依赖。
+  - 变更原因：支撑 `TASK-QA-024`，确认 M23 physics state sync foundation 可进入归档准备状态，且未引入 gravity、velocity、solver、CCD、trigger、SceneData schema 或 Editor UI。
+  - 风险与回滚方案：当前未发现 MustFix；后续若扩展 dynamic solver 或 rollback 语义，应另立任务并重新审查 Physics/App 边界。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `PhysicsWorld.ApplyKinematicMove(...)` mutating API，复用 kinematic resolve 校验与 X/Y/Z conservative static AABB 语义；成功 apply 后替换 dynamic body snapshot，使 internal Transform 与 AABB 对齐 resolved transform，同时保持 `ResolveKinematicMove(...)` non-mutating。
+  - 变更原因：支撑 `TASK-PHYS-004`，修复 M20 遗留的 PhysicsWorld 内部 body state 无法进入下一帧的问题，为 App orchestrator 后续状态同步接线提供 Physics core API。
+  - 风险与回滚方案：当前不引入 gravity、velocity、solver、CCD、trigger、Scene writeback 或任何 Engine 模块依赖；如 apply 语义异常，可回退新增 API 和测试，不改变既有 resolve/query 行为。
 - 2026-05-05
   - 变更人：Execution-Agent
   - 变更内容：完成 M20 QA 复验，确认 `Engine.Physics` 生产代码仍无 ProjectReference/PackageReference，源码未引用 Scene/App/Render/Scripting/SceneData/Core/Contracts/Editor 等 Engine 模块；kinematic resolve 仅返回 resolved transform/result，不直接写回 Scene。

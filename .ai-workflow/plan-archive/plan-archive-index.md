@@ -12,10 +12,16 @@
 
 ## 当前记录
 
+- PlanId: `PLAN-M24-RUNTIME-COMPONENT-LIFECYCLE`
+  Status: `Closed`
+  LastUpdated: `2026-05-27`
+  MilestoneSummary: `M24 完成（Runtime Component Lifecycle Refactor，Transform 纳入真实 runtime component container，脚本转为 runtime update component，新增 Engine.Runtime tick pipeline，App 收敛为 host/composition root）`
+  SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M24-RUNTIME-COMPONENT-LIFECYCLE.md`
+
 - PlanId: `PLAN-M23-2026-05-13`
-  Status: `Active`
+  Status: `Closed`
   LastUpdated: `2026-05-13`
-  MilestoneSummary: `M23 进行中（Kinematic Physics State Synchronization，新增 mutating kinematic move API，保持 Resolve 查询语义，App orchestrator 同步 PhysicsWorld body state 与 Scene Transform，验证连续帧 physics state 不再陈旧）`
+  MilestoneSummary: `M23 完成（Kinematic Physics State Synchronization，新增 mutating kinematic move API，保持 Resolve 查询语义，App orchestrator 同步 PhysicsWorld body state 与 Scene Transform，连续帧 physics state 不再陈旧）`
   SnapshotPath: `.ai-workflow/plan-archive/2026-05/PLAN-M23-2026-05-13.md`
 
 - PlanId: `PLAN-M22-2026-05-11`

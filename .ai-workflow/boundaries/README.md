@@ -46,6 +46,7 @@
 - `Engine.Editor` -> `src/Engine.Editor/**`
 - `Engine.Editor.App` -> `src/Engine.Editor.App/**`
 - `Engine.Runtime.Abstractions` -> `src/Engine.Runtime.Abstractions/**`
+- `Engine.Runtime` -> `src/Engine.Runtime/**`
 
 ## 5) 变更管理
 
@@ -58,6 +59,10 @@
 
 ## 6) 变更记录
 
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：新增 `Engine.Runtime` 推荐模块与路径映射。
+  - 变更原因：`TASK-RUNTIME-001` 新增 concrete runtime session/tick pipeline 模块，需要边界目录能稳定引用 `.ai-workflow/boundaries/engine-runtime.md`。
 - 2026-05-11
   - 变更人：Execution-Agent
   - 变更内容：新增 `Engine.Runtime.Abstractions` 推荐模块与路径映射。

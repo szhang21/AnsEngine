@@ -17,9 +17,7 @@
 
 ## Todo
 
-- `TASK-PHYS-004` M23 Physics mutating kinematic move API
-- `TASK-APP-022` M23 App physics orchestrator state sync
-- `TASK-QA-024` M23 Physics state sync gate review and archive
+- （空）
 
 ## InProgress
 
@@ -35,6 +33,15 @@
 
 ## Done
 
+- `TASK-RUNTIME-001` M24 Engine.Runtime module and tick pipeline（人工验收通过，已归档）
+- `TASK-APP-023` M24 App host contraction to Runtime session（人工验收通过，已归档）
+- `TASK-QA-025` M24 Runtime component lifecycle gate review and archive（人工验收通过，已归档）
+- `TASK-SCRIPT-005` M24 Scripting runtime update component conversion（人工验收通过，已归档）
+- `TASK-SCENE-024` M24 Transform component container alignment（人工验收通过，已归档）
+- `TASK-RABS-002` M24 Runtime update component lifecycle shape（人工验收通过，已归档）
+- `TASK-QA-024` M23 Physics state sync gate review and archive（人工验收通过，已归档）
+- `TASK-APP-022` M23 App physics orchestrator state sync（人工验收通过，已归档）
+- `TASK-PHYS-004` M23 Physics mutating kinematic move API（人工验收通过，已归档）
 - `TASK-QA-023` M22 Runtime Abstractions gate review and archive（人工验收通过，已归档）
 - `TASK-SCRIPT-004` M22 Scripting runtime abstraction alignment（人工验收通过，已归档）
 - `TASK-SCENE-023` M22 MeshRenderer component container migration（人工验收通过，已归档）

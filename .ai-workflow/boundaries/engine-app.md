@@ -10,16 +10,16 @@
 
 ## 2) 目标与范围
 
-- 模块目标：作为应用组合根，负责模块初始化顺序、运行主循环编排与生命周期收口。
-- 适用范围：依赖注入/装配、系统启动与关闭流程、主循环驱动、运行模式配置。
+- 模块目标：作为应用组合根与 platform/app host，负责模块装配、应用主循环外壳、生命周期收口，并把 runtime behavior 委托给 `Engine.Runtime`。
+- 适用范围：依赖注入/装配、系统启动与关闭流程、窗口事件/输入/时间采集、Runtime session 调用、渲染提交、运行模式配置。
 - 非适用范围：渲染实现细节、场景内部数据结构实现、资源导入细节、平台底层接口实现。
 
 ## 3) 职责（Responsibilities）
 
 - 负责核心模块创建与依赖装配。
 - 负责系统启动顺序与关闭顺序管理。
-- 负责主循环阶段编排（输入/更新/渲染）。
-- 负责 runtime physics orchestration：从 Scene 读取候选 Transform、调用 Physics resolve、将 resolved Transform 写回 Scene。
+- 负责主循环外壳顺序：ProcessEvents -> Input/Time -> RuntimeSession.Tick -> RenderFrame -> Present。
+- 负责将 `Engine.Platform.InputSnapshot` 适配为 runtime input snapshot 后交给 Runtime session。
 - 负责应用级配置加载与运行模式切换。
 
 ## 4) 非职责（Non-Responsibilities）
@@ -28,17 +28,16 @@
 - 不负责实体与场景图内部逻辑（归属 `Engine.Scene`）。
 - 不负责资源解析与缓存内部机制（归属 `Engine.Asset`）。
 - 不负责窗口/输入底层适配（归属 `Engine.Platform`）。
+- 不负责 runtime tick ordering、script update component traversal 或 physics writeback 编排（归属 `Engine.Runtime`）。
+- 不负责 script catalog / built-in script ownership（归属 `Engine.Scripting`/`Engine.Runtime` 装配路径）。
 
 ## 5) 允许依赖（Allowed Dependencies）
 
 - 可直接依赖模块：
   - `Engine.Core`
   - `Engine.Platform`
-  - `Engine.Scene`
   - `Engine.SceneData`
-  - `Engine.Scripting`
-  - `Engine.Runtime.Abstractions`
-  - `Engine.Physics`（仅由 App 作为 composition root 持有 production bridge / world initialization / runtime orchestration）
+  - `Engine.Runtime`
   - `Engine.Asset`
   - `Engine.Render`
 - 可使用基础库/第三方：
@@ -51,6 +50,9 @@
 - 禁止跨层调用模式：
   - 在 `Engine.App` 中写入底层 OpenGL 操作
   - 在 `Engine.App` 中承载场景/资源内部业务逻辑
+  - 在 `Engine.App` 中直接执行 `Engine.Scripting` per-frame update
+  - 在 `Engine.App` 中直接执行 `Engine.Physics` writeback orchestration
+  - 在 `Engine.App` 中重新持有 Scene runtime adapter 作为 runtime update 主路经
 
 ## 7) 公开接口（Public Interfaces）
 
@@ -65,6 +67,12 @@
   - 输入/输出：输入配置与服务注册表，输出可运行应用实例
   - 错误语义：装配失败需可诊断
   - 生命周期约束：启动阶段执行一次
+
+- `IRuntimeSessionHost`
+  - 用途：App 对 `Engine.Runtime.EngineRuntimeSession` 的最小 host-facing 调用合同
+  - 输入/输出：输入 `SceneDescription` 初始化结果与每帧 `RuntimeTickContext` tick 结果
+  - 错误语义：初始化/tick 失败必须返回 deterministic failure，由 App 在 render 前转为退出诊断
+  - 生命周期约束：由组合根创建，初始化成功后每帧最多 tick 一次
 
 ## 8) 数据与状态边界
 
@@ -86,6 +94,31 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：M24 QA gate 复验确认 App 已收敛为 host/composition root：保留 window/input/time/asset/render/present/exit，主循环只调用 Runtime session tick；未保留 direct script update 或 physics writeback orchestration。
+  - 变更原因：支撑 `TASK-QA-025`，记录 M24 full-chain QA evidence。
+  - 风险与回滚方案：当前 MustFixCount=0；若 runtime tick regression 出现，应修复 Runtime/implementation 卡，不回退 App 侧 per-frame script/physics 编排。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M24 App host contraction：`ApplicationHost` 不再持有 `ISceneRuntime`、`ScriptRuntime`、App 侧 physics bridge/orchestrator 或 built-in script catalog；主循环改为 `ProcessEvents -> Input/Time -> EngineRuntimeSession.Tick -> RenderFrame -> Present`，并将 Platform input 适配到 `RuntimeInputSnapshot`。`Engine.App` project reference 移除 `Engine.Physics` 与 `Engine.Scripting`，改为依赖 `Engine.Runtime`。
+  - 变更原因：支撑 `TASK-APP-023`，让 `Engine.Runtime` 成为 runtime tick pipeline 的唯一调度模块，App 收敛为 host/composition root。
+  - 风险与回滚方案：如 Runtime session regression 出现，先修复 `Engine.Runtime` 或其测试；不得回滚为 App 直接调用 script update / physics writeback 主路经。App 仅保留窗口、输入、时间、资源、render/present、退出收口职责。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：M24 新增 `Engine.Runtime` concrete runtime session/tick pipeline 边界；App 后续应收敛为 host/composition root，保留 window/input/time/asset/render/present/exit ownership，并通过 Runtime session 驱动 scene/script/physics tick。
+  - 变更原因：支撑 `TASK-RUNTIME-001`，为后续 `TASK-APP-023` App host contraction 提供目标边界。
+  - 风险与回滚方案：本卡不执行 full App contraction；如 Runtime session 验证失败，App 现有主路径仍可保留，直到 Runtime 修复后再接线。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：完成 M23 QA gate review，复验 App orchestrator 使用 `ApplyKinematicMove(...)` mutating path、Scene writeback 使用 Physics resolved transform、连续帧 stale PhysicsWorld state 已由测试覆盖，writeback failure 仍在 render 前 deterministic fail。
+  - 变更原因：支撑 `TASK-QA-024`，确认 App 仍是唯一 runtime bridge，Render/SceneData 不感知 physics state sync，主循环顺序保持 `SceneRuntime.Update -> ScriptRuntime.Update -> Physics state-sync/writeback -> RenderFrame`。
+  - 风险与回滚方案：当前未发现 MustFix；no-rollback residual risk 已记录，若需要事务式回滚必须另立任务，不在 App 侧引入 shadow state 或绕过 Scene writeback contract。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：`RuntimePhysicsOrchestrator` 从纯查询 `ResolveKinematicMove(...)` 切换为 mutating `ApplyKinematicMove(...)`，并继续将返回的 resolved transform 通过 Scene writeback contract 写回；新增连续帧 App 测试验证 PhysicsWorld body state 与 Scene Transform 不再脱节。
+  - 变更原因：支撑 `TASK-APP-022`，修复 script-driven movement 在下一帧仍以 stale Physics body transform 解析的问题，同时保持 `SceneRuntime.Update -> ScriptRuntime.Update -> Physics state-sync/writeback -> RenderFrame` 顺序。
+  - 风险与回滚方案：当前仍采用计划规定的 no-rollback 语义：如果 Physics apply 成功但 Scene writeback 失败，App 在 render 前返回 deterministic failure，可能留下已更新的 PhysicsWorld state；如需事务回滚需另立任务，不在本卡引入 Scene/Physics 反向依赖或 shadow state。
 - 2026-05-11
   - 变更人：Execution-Agent
   - 变更内容：完成 M22 QA gate review，复验 App 作为 Scene/Scripting/Physics/Render 的组合根桥接层，持有 Runtime.Abstractions 依赖并保持 `SceneRuntime.Update -> ScriptRuntime.Update -> Physics writeback -> RenderFrame` 主循环顺序。

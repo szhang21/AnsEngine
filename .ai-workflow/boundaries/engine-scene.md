@@ -86,6 +86,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：M24 QA gate 复验确认 `Engine.Scene` 提供 runtime object/component lookup 与 render/snapshot state，Transform 已成为真实 runtime component lookup 结果；Scene 未直接依赖 App/Scripting/Physics。
+  - 变更原因：支撑 `TASK-QA-025`，记录 runtime component lifecycle gate evidence。
+  - 风险与回滚方案：当前 MustFixCount=0；后续若暴露 traversal/cross-object query 或 Scene-owned scheduler，必须另立任务并重新审边界。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：`SceneTransformComponent` 正式迁入 `SceneRuntimeObject` runtime component collection；`SceneRuntimeObject.Transform` convenience property 与 `GetComponent<IRuntimeTransformComponent>()` / `GetComponent<SceneTransformComponent>()` 返回同一 Transform 实例，snapshot 与 render frame 均读取该实例的更新后状态。
+  - 变更原因：支撑 `TASK-SCENE-024` 与 M24 runtime component lifecycle，让后续脚本和 runtime update component 能通过 owner/component lookup 修改自身 Transform，而不再依赖 Transform 作为不可查询的特殊 core field。
+  - 风险与回滚方案：未新增 Scene -> Scripting/Runtime/Physics/App/Render 依赖，未开放 public add/remove component mutation API，未改变 SceneData schema 或 Render contract；若 lookup 语义异常，可回退 Transform container registration，同时保留现有 snapshot/render contract。
 - 2026-05-11
   - 变更人：Execution-Agent
   - 变更内容：完成 M22 QA gate review，复验 Scene runtime object/component abstraction alignment：`SceneRuntimeObject` 对齐 `IRuntimeObject`，Transform 保持 core spatial field，MeshRenderer 作为首个 generic runtime component 进入 container。

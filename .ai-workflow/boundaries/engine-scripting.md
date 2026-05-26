@@ -97,6 +97,16 @@
 
 ## 10) 变更记录（Boundary Change Log）
 
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：M24 QA gate 复验确认 `Engine.Scripting` 输出 runtime update component binding，并由内置 `RotateSelf`/`MoveOnInput` 通过 runtime owner/component lookup 更新自身 Transform；Scripting 未依赖 Scene/App。
+  - 变更原因：支撑 `TASK-QA-025`，记录 runtime component lifecycle gate evidence。
+  - 风险与回滚方案：当前 MustFixCount=0；后续若加入 external DLL loading/source compilation/hot reload 或跨对象查询，必须另立任务并更新边界。
+- 2026-05-13
+  - 变更人：Execution-Agent
+  - 变更内容：新增 runtime update component binding 输出：`ScriptRuntime.BindUpdateComponents(...)` 返回可由 `Engine.Runtime` 消费的 `IRuntimeUpdateComponent` 列表；新增 Scripting-owned `RotateSelfScript` / `MoveOnInputScript`，其 runtime update 路径通过 `RuntimeUpdateContext.Owner.GetComponent<IRuntimeTransformComponent>()` 修改自身 Transform，并在 missing Transform 时返回 deterministic `RuntimeUpdateFailure`。
+  - 变更原因：支撑 `TASK-SCRIPT-005` 与 M24 scripting runtime component conversion，让内置脚本从 self-object adapter update 迁移到 runtime owner/component lookup，同时保留旧 `ScriptRuntime.Update(...)` 兼容入口直到 App/Runtime 后续卡收敛。
+  - 风险与回滚方案：未引入 `Engine.Scene`、`Engine.App` 或 `Engine.Platform` 依赖，未实现 scheduler/tick order、external loading、hot reload、cross-object query 或 Editor UI；如后续 runtime binding 异常，可回退新增 binding/result/built-in script 文件并保留现有 registry/property diagnostics。
 - 2026-05-11
   - 变更人：Execution-Agent
   - 变更内容：完成 M22 QA gate review，复验 `Engine.Scripting` 消费 `Engine.Runtime.Abstractions` 且不引用 `Engine.Scene`；`context.Self.Transform`、ScriptRuntime binding/update lifecycle 与禁止跨对象访问语义保持不变。

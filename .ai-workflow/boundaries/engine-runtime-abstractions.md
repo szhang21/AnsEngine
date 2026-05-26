@@ -85,7 +85,34 @@
   - [ ] 不引用 Scene/Scripting/App/Render/Physics/SceneData/Editor/Editor.App
   - [ ] 不暴露 update、traversal 或 add/remove component mutation API
 
+## M24.1 Boundary Update
+
+- Scope addition: `Engine.Runtime.Abstractions` may define runtime update lifecycle abstractions only.
+- Public additions:
+  - `IRuntimeUpdateComponent : IRuntimeComponent`
+  - `RuntimeUpdateContext`
+  - `RuntimeInputSnapshot`
+  - `RuntimeKey`
+  - `RuntimeUpdateResult`
+  - `RuntimeUpdateFailure`
+- Responsibility rule: this module defines lifecycle shape and frame input/result contracts, but does not own traversal, ordering, scheduler, component storage, script binding, physics, rendering, platform input, or app composition.
+- Dependency rule remains unchanged: direct dependency is limited to `Engine.Contracts` and .NET standard library.
+- Forbidden concrete dependencies remain: `Engine.Scene`, `Engine.Scripting`, `Engine.App`, `Engine.Physics`, `Engine.Runtime`, `Engine.Render`, `Engine.SceneData`, `Engine.Editor`, and `Engine.Editor.App`.
+- Boundary verification for M24.1 must confirm update lifecycle APIs exist while fixed update, scheduler, traversal, scene query, and add/remove mutation APIs remain absent.
+
 ## 10) 变更记录（Boundary Change Log）
+- 2026-05-13
+  - Changed by: Execution-Agent
+  - Task: `TASK-QA-025`
+  - Change: M24 QA gate verified `Engine.Runtime.Abstractions` remains scheduler-free API shape only, with no concrete Scene/Scripting/App/Physics/Runtime/Render/SceneData dependencies.
+  - Reason: Records M24 runtime component lifecycle gate evidence.
+  - Risk and rollback: Low. MustFixCount=0; future lifecycle expansion must stay shape-only here unless a new boundary task approves concrete ownership changes.
+- 2026-05-13
+  - Changed by: Execution-Agent
+  - Task: `TASK-RABS-002`
+  - Change: Added M24 runtime update component lifecycle shape to the Runtime.Abstractions boundary, including update component, context, runtime input snapshot, runtime key, and fail-fast result/failure contracts.
+  - Reason: Supports `PLAN-M24-RUNTIME-COMPONENT-LIFECYCLE` / `M24.1` so downstream Scene, Scripting, Runtime, and App cards can share one scheduler-free update component contract.
+  - Risk and rollback: Low. The change is public API shape only, keeps dependency direction unchanged, and introduces no traversal/scheduler/mutation implementation. Rollback is limited to removing the M24 API files and associated tests if downstream M24 cards are cancelled.
 
 - 2026-05-11
   - 变更人：Execution-Agent
