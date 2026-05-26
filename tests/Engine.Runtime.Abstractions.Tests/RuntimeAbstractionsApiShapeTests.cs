@@ -34,6 +34,69 @@ public sealed class RuntimeAbstractionsApiShapeTests
     }
 
     [Fact]
+    public void RuntimeUpdateComponent_PublicSurface_ExposesOnlyUpdateLifecycleEntry()
+    {
+        var method = Assert.Single(
+            typeof(IRuntimeUpdateComponent).GetMethods(),
+            item => item.Name == nameof(IRuntimeUpdateComponent.Update));
+
+        Assert.True(typeof(IRuntimeComponent).IsAssignableFrom(typeof(IRuntimeUpdateComponent)));
+        Assert.Equal(typeof(RuntimeUpdateResult), method.ReturnType);
+        Assert.Equal(typeof(RuntimeUpdateContext), Assert.Single(method.GetParameters()).ParameterType);
+    }
+
+    [Fact]
+    public void RuntimeUpdateContext_PublicSurface_UsesRuntimeObjectAndRuntimeInput()
+    {
+        var properties = typeof(RuntimeUpdateContext)
+            .GetProperties()
+            .Select(property => (property.Name, property.PropertyType))
+            .OrderBy(item => item.Name)
+            .ToArray();
+
+        Assert.Equal(
+            new[]
+            {
+                (nameof(RuntimeUpdateContext.DeltaSeconds), typeof(double)),
+                (nameof(RuntimeUpdateContext.Input), typeof(RuntimeInputSnapshot)),
+                (nameof(RuntimeUpdateContext.Owner), typeof(IRuntimeObject)),
+                (nameof(RuntimeUpdateContext.TotalSeconds), typeof(double))
+            },
+            properties);
+    }
+
+    [Fact]
+    public void RuntimeInputSnapshot_TracksOnlyRuntimeKeys()
+    {
+        var empty = RuntimeInputSnapshot.Empty;
+        var input = RuntimeInputSnapshot.FromKeys(RuntimeKey.W, RuntimeKey.A, RuntimeKey.W);
+
+        Assert.False(empty.AnyInputDetected);
+        Assert.False(empty.IsKeyDown(RuntimeKey.W));
+        Assert.True(input.AnyInputDetected);
+        Assert.True(input.IsKeyDown(RuntimeKey.W));
+        Assert.True(input.IsKeyDown(RuntimeKey.A));
+        Assert.False(input.IsKeyDown(RuntimeKey.S));
+        Assert.False(input.IsKeyDown(RuntimeKey.D));
+        Assert.Equal(new[] { "W", "A", "S", "D" }, Enum.GetNames<RuntimeKey>());
+    }
+
+    [Fact]
+    public void RuntimeUpdateResult_RepresentsSuccessAndFailure()
+    {
+        var success = RuntimeUpdateResult.Success();
+        var failure = RuntimeUpdateResult.FailureResult(
+            new RuntimeUpdateFailure("Missing Transform.", "cube", "RotateSelf"));
+
+        Assert.True(success.IsSuccess);
+        Assert.Null(success.Failure);
+        Assert.False(failure.IsSuccess);
+        Assert.Equal("Missing Transform.", failure.Failure?.Message);
+        Assert.Equal("cube", failure.Failure?.ObjectId);
+        Assert.Equal("RotateSelf", failure.Failure?.ComponentType);
+    }
+
+    [Fact]
     public void RuntimeAbstractions_AssemblyReferencesOnlyContractsAndFrameworkAssemblies()
     {
         var referencedAssemblies = typeof(IRuntimeObject).Assembly
@@ -54,7 +117,7 @@ public sealed class RuntimeAbstractionsApiShapeTests
     }
 
     [Fact]
-    public void RuntimeAbstractions_SourceDoesNotExposeForbiddenApiNames()
+    public void RuntimeAbstractions_SourceDoesNotExposeSchedulerTraversalOrMutationApiNames()
     {
         var sourceText = string.Join(
             '\n',
@@ -62,7 +125,10 @@ public sealed class RuntimeAbstractionsApiShapeTests
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
                 .Select(File.ReadAllText));
 
-        Assert.DoesNotContain("Update", sourceText);
+        Assert.DoesNotContain("FixedUpdate", sourceText);
+        Assert.DoesNotContain("Schedule", sourceText);
+        Assert.DoesNotContain("Scheduler", sourceText);
+        Assert.DoesNotContain("Traverse", sourceText);
         Assert.DoesNotContain("FindObject", sourceText);
         Assert.DoesNotContain("AddComponent", sourceText);
         Assert.DoesNotContain("RemoveComponent", sourceText);

@@ -1,16 +1,13 @@
-﻿using Engine.Asset;
+using Engine.Asset;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Platform;
-using Engine.Physics;
 using Engine.Render;
+using Engine.Runtime;
 using Engine.Runtime.Abstractions;
-using Engine.Scene;
 using Engine.SceneData;
 using Engine.SceneData.Abstractions;
-using Engine.Scripting;
 using System.Diagnostics;
-using System.Numerics;
 using ContractsProvider = Engine.Contracts.ISceneRenderContractProvider;
 
 namespace Engine.App;
@@ -28,39 +25,27 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
         var windowService = new NullWindowService(new WindowConfig(1280, 720, "AnsEngine"), useNativeWindow);
         var inputService = CreateInputService(useNativeWindow, windowService);
         var timeService = new FixedTimeService(new TimeSnapshot(0.016, 0, 60));
-        var sceneGraph = new SceneGraphService(runtimeInfo);
-        ISceneRuntime sceneRuntime = new SceneRuntimeAdapter(sceneGraph);
-        var scriptRuntime = CreateScriptRuntime();
-        ContractsProvider renderInputProvider = sceneGraph;
+        var runtimeSession = new EngineRuntimeSessionHost(new EngineRuntimeSession());
         var meshAssetProvider = CreateMeshAssetProvider();
         var sceneDescriptionLoader = CreateSceneDescriptionLoader();
         var sceneFilePath = ResolveSceneFilePath();
-        var renderer = CreateRenderer(useNativeWindow, windowService, runtimeInfo, renderInputProvider, meshAssetProvider);
+        var renderer = CreateRenderer(
+            useNativeWindow,
+            windowService,
+            runtimeInfo,
+            runtimeSession.SceneRenderProvider,
+            meshAssetProvider);
         var assetService = new NullAssetService(runtimeInfo, windowService, meshAssetProvider);
         return new ApplicationHost(
             windowService,
             renderer,
-            sceneRuntime,
+            runtimeSession,
             assetService,
             meshAssetProvider,
             sceneDescriptionLoader,
             sceneFilePath,
             inputService,
-            timeService,
-            scriptRuntime);
-    }
-
-    private static ScriptRuntime CreateScriptRuntime()
-    {
-        var registry = new ScriptRegistry();
-        var failure = registry.Register(RotateSelfScript.kScriptId, static () => new RotateSelfScript());
-        failure ??= registry.Register(MoveOnInputScript.kScriptId, static () => new MoveOnInputScript());
-        if (failure is not null)
-        {
-            throw new InvalidOperationException(failure.Message);
-        }
-
-        return new ScriptRuntime(registry);
+            timeService);
     }
 
     private static IInputService CreateInputService(bool useNativeWindow, IKeyboardStateProvider keyboardStateProvider)
@@ -123,40 +108,25 @@ public sealed class RuntimeBootstrap : IRuntimeBootstrap
     }
 }
 
-internal sealed class SceneRuntimeAdapter : ISceneRuntime
+public sealed class EngineRuntimeSessionHost : IRuntimeSessionHost
 {
-    private readonly SceneGraphService mSceneGraphService;
+    private readonly EngineRuntimeSession mSession;
 
-    public SceneRuntimeAdapter(SceneGraphService sceneGraphService)
+    public EngineRuntimeSessionHost(EngineRuntimeSession session)
     {
-        mSceneGraphService = sceneGraphService ?? throw new ArgumentNullException(nameof(sceneGraphService));
+        mSession = session ?? throw new ArgumentNullException(nameof(session));
     }
 
-    public void InitializeScene(SceneDescription sceneDescription)
+    public ContractsProvider SceneRenderProvider => mSession.SceneRenderProvider;
+
+    public RuntimeInitializationResult Initialize(SceneDescription sceneDescription)
     {
-        ArgumentNullException.ThrowIfNull(sceneDescription);
-        mSceneGraphService.LoadSceneDescription(sceneDescription);
+        return mSession.Initialize(sceneDescription);
     }
 
-    public SceneScriptObjectBindResult BindScriptObject(string objectId)
+    public RuntimeTickResult Tick(RuntimeTickContext context)
     {
-        return mSceneGraphService.BindScriptObject(objectId);
-    }
-
-    public RuntimeSceneSnapshot CreateRuntimeSnapshot()
-    {
-        return mSceneGraphService.CreateRuntimeSnapshot();
-    }
-
-    public SceneTransformWriteResult TrySetObjectTransform(string objectId, SceneTransform transform)
-    {
-        return mSceneGraphService.TrySetObjectTransform(objectId, transform);
-    }
-
-    public void Update(TimeSnapshot time, InputSnapshot input)
-    {
-        mSceneGraphService.UpdateRuntime(
-            new SceneUpdateContext(time.DeltaSeconds, time.TotalSeconds, input.AnyInputDetected));
+        return mSession.Tick(context);
     }
 }
 
@@ -188,42 +158,37 @@ public sealed class ApplicationHost : IApplication
     private static readonly SceneMeshRef sBootstrapMesh = new("mesh://cube");
     private readonly IWindowService mWindowService;
     private readonly IRenderer mRenderer;
-    private readonly ISceneRuntime mSceneRuntime;
+    private readonly IRuntimeSessionHost mRuntimeSession;
     private readonly IAssetService mAssetService;
     private readonly IMeshAssetProvider mMeshAssetProvider;
     private readonly ISceneDescriptionLoader mSceneDescriptionLoader;
     private readonly string mSceneFilePath;
     private readonly IInputService mInputService;
     private readonly ITimeService mTimeService;
-    private readonly ScriptRuntime mScriptRuntime;
-    private readonly RuntimePhysicsOrchestrator mPhysicsOrchestrator = new();
     private readonly double? mAutoExitSeconds;
-    private PhysicsWorld? mPhysicsWorld;
 
     public ApplicationHost(
         IWindowService windowService,
         IRenderer renderer,
-        ISceneRuntime sceneRuntime,
+        IRuntimeSessionHost runtimeSession,
         IAssetService assetService,
         IMeshAssetProvider meshAssetProvider,
         ISceneDescriptionLoader sceneDescriptionLoader,
         string sceneFilePath,
         IInputService inputService,
-        ITimeService timeService,
-        ScriptRuntime? scriptRuntime = null)
+        ITimeService timeService)
     {
-        mWindowService = windowService;
-        mRenderer = renderer;
-        mSceneRuntime = sceneRuntime;
-        mAssetService = assetService;
+        mWindowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
+        mRenderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
+        mRuntimeSession = runtimeSession ?? throw new ArgumentNullException(nameof(runtimeSession));
+        mAssetService = assetService ?? throw new ArgumentNullException(nameof(assetService));
         mMeshAssetProvider = meshAssetProvider ?? throw new ArgumentNullException(nameof(meshAssetProvider));
         mSceneDescriptionLoader = sceneDescriptionLoader ?? throw new ArgumentNullException(nameof(sceneDescriptionLoader));
         mSceneFilePath = string.IsNullOrWhiteSpace(sceneFilePath)
             ? throw new ArgumentException("Scene file path must not be null or whitespace.", nameof(sceneFilePath))
             : sceneFilePath;
-        mInputService = inputService;
-        mTimeService = timeService;
-        mScriptRuntime = scriptRuntime ?? new ScriptRuntime(new ScriptRegistry());
+        mInputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
+        mTimeService = timeService ?? throw new ArgumentNullException(nameof(timeService));
         mAutoExitSeconds = ResolveAutoExitSeconds();
     }
 
@@ -240,12 +205,11 @@ public sealed class ApplicationHost : IApplication
                 return 1;
             }
 
-            mPhysicsWorld = ScenePhysicsWorldDefinitionBridge.CreateWorld(loadResult.Scene);
-            mSceneRuntime.InitializeScene(loadResult.Scene);
-            var bindResult = BindScripts(loadResult.Scene);
-            if (!bindResult.IsSuccess)
+            var initializeResult = mRuntimeSession.Initialize(loadResult.Scene);
+            if (!initializeResult.IsSuccess)
             {
-                Console.Error.WriteLine($"Script bind failed: {bindResult.Failure?.Kind} - {bindResult.Failure?.Message}");
+                Console.Error.WriteLine(
+                    $"Runtime initialize failed: {initializeResult.Failure?.Stage} - {initializeResult.Failure?.Message}");
                 return 1;
             }
 
@@ -257,18 +221,15 @@ public sealed class ApplicationHost : IApplication
                 mWindowService.ProcessEvents();
                 var input = mInputService.GetSnapshot();
                 var time = mTimeService.Current;
-                mSceneRuntime.Update(time, input);
-                var scriptUpdateResult = mScriptRuntime.Update(time.DeltaSeconds, time.TotalSeconds, ConvertInput(input));
-                if (!scriptUpdateResult.IsSuccess)
+                var tickResult = mRuntimeSession.Tick(
+                    new RuntimeTickContext(
+                        time.DeltaSeconds,
+                        time.TotalSeconds,
+                        ConvertInput(input)));
+                if (!tickResult.IsSuccess)
                 {
-                    Console.Error.WriteLine($"Script update failed: {scriptUpdateResult.Failure?.Kind} - {scriptUpdateResult.Failure?.Message}");
-                    return 1;
-                }
-
-                var physicsUpdateResult = mPhysicsOrchestrator.ResolveAndWriteBack(mPhysicsWorld!, mSceneRuntime);
-                if (!physicsUpdateResult.IsSuccess)
-                {
-                    Console.Error.WriteLine($"Physics update failed: {physicsUpdateResult.FailureMessage}");
+                    Console.Error.WriteLine(
+                        $"Runtime tick failed: {tickResult.Failure?.Stage} - {tickResult.Failure?.Message}");
                     return 1;
                 }
 
@@ -300,89 +261,30 @@ public sealed class ApplicationHost : IApplication
         }
     }
 
-    private ScriptBindingResult BindScripts(SceneDescription sceneDescription)
+    private static RuntimeInputSnapshot ConvertInput(InputSnapshot input)
     {
-        var bindings = new List<ScriptBindingDescription>();
-        foreach (var sceneObject in sceneDescription.Objects)
-        {
-            foreach (var scriptComponent in sceneObject.ScriptComponents)
-            {
-                var bindObjectResult = mSceneRuntime.BindScriptObject(sceneObject.ObjectId);
-                if (!bindObjectResult.IsSuccess)
-                {
-                    return ScriptBindingResult.FailureResult(
-                        new ScriptFailure(
-                            ScriptFailureKind.ScriptFactoryFailed,
-                            bindObjectResult.Failure!.Message,
-                            scriptComponent.ScriptId,
-                            sceneObject.ObjectId));
-                }
-
-                bindings.Add(
-                        new ScriptBindingDescription(
-                            sceneObject.ObjectId,
-                            sceneObject.ObjectName,
-                            new SceneScriptSelfObject(bindObjectResult.Handle!),
-                            scriptComponent.ScriptId,
-                            ConvertProperties(scriptComponent.Properties)));
-            }
-        }
-
-        return mScriptRuntime.Bind(bindings);
-    }
-
-    private static ScriptInputSnapshot ConvertInput(InputSnapshot input)
-    {
-        var keys = new List<ScriptKey>(4);
+        var keys = new List<RuntimeKey>(4);
         if (input.IsKeyDown(EngineKey.W))
         {
-            keys.Add(ScriptKey.W);
+            keys.Add(RuntimeKey.W);
         }
 
         if (input.IsKeyDown(EngineKey.A))
         {
-            keys.Add(ScriptKey.A);
+            keys.Add(RuntimeKey.A);
         }
 
         if (input.IsKeyDown(EngineKey.S))
         {
-            keys.Add(ScriptKey.S);
+            keys.Add(RuntimeKey.S);
         }
 
         if (input.IsKeyDown(EngineKey.D))
         {
-            keys.Add(ScriptKey.D);
+            keys.Add(RuntimeKey.D);
         }
 
-        return keys.Count == 0 ? ScriptInputSnapshot.Empty : ScriptInputSnapshot.FromKeys(keys.ToArray());
-    }
-
-    private static IReadOnlyDictionary<string, ScriptPropertyValue> ConvertProperties(
-        IReadOnlyDictionary<string, SceneScriptPropertyValue> properties)
-    {
-        var result = new Dictionary<string, ScriptPropertyValue>(StringComparer.Ordinal);
-        foreach (var item in properties)
-        {
-            var value = item.Value;
-            if (value.IsNumber)
-            {
-                result.Add(item.Key, ScriptPropertyValue.FromNumber(value.Number!.Value));
-                continue;
-            }
-
-            if (value.IsBoolean)
-            {
-                result.Add(item.Key, ScriptPropertyValue.FromBoolean(value.Boolean!.Value));
-                continue;
-            }
-
-            if (value.IsString)
-            {
-                result.Add(item.Key, ScriptPropertyValue.FromString(value.Text ?? string.Empty));
-            }
-        }
-
-        return result;
+        return keys.Count == 0 ? RuntimeInputSnapshot.Empty : RuntimeInputSnapshot.FromKeys(keys.ToArray());
     }
 
     private static double? ResolveAutoExitSeconds()
@@ -394,129 +296,5 @@ public sealed class ApplicationHost : IApplication
         }
 
         return double.TryParse(value, out var seconds) && seconds > 0 ? seconds : null;
-    }
-}
-
-internal sealed class SceneScriptSelfObject : IScriptSelfObject
-{
-    public SceneScriptSelfObject(SceneScriptObjectHandle handle)
-    {
-        ArgumentNullException.ThrowIfNull(handle);
-        ObjectId = handle.ObjectId;
-        ObjectName = handle.ObjectName;
-        Transform = new SceneScriptTransformComponent(handle);
-    }
-
-    public string ObjectId { get; }
-
-    public string ObjectName { get; }
-
-    public IRuntimeTransformComponent Transform { get; }
-
-    public T? GetComponent<T>() where T : class, IRuntimeComponent
-    {
-        return Transform as T;
-    }
-
-    public bool HasComponent<T>() where T : class, IRuntimeComponent
-    {
-        return GetComponent<T>() is not null;
-    }
-}
-
-internal sealed class SceneScriptTransformComponent : IScriptTransformComponent
-{
-    private readonly SceneScriptObjectHandle mHandle;
-
-    public SceneScriptTransformComponent(SceneScriptObjectHandle handle)
-    {
-        mHandle = handle ?? throw new ArgumentNullException(nameof(handle));
-    }
-
-    public SceneTransform LocalTransform => mHandle.LocalTransform;
-
-    public void SetLocalTransform(SceneTransform transform)
-    {
-        mHandle.SetLocalTransform(transform);
-    }
-}
-
-public sealed class RotateSelfScript : IScriptBehavior
-{
-    public const string kScriptId = "RotateSelf";
-    private const string kSpeedRadiansPerSecondPropertyName = "speedRadiansPerSecond";
-
-    public void Initialize(ScriptContext context)
-    {
-        _ = ReadSpeed(context);
-    }
-
-    public void Update(ScriptContext context)
-    {
-        var speed = ReadSpeed(context);
-        var rotationDelta = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)(context.DeltaSeconds * speed));
-        var transform = context.Self.Transform.LocalTransform;
-        context.Self.Transform.SetLocalTransform(transform with
-        {
-            Rotation = Quaternion.Normalize(rotationDelta * transform.Rotation)
-        });
-    }
-
-    private static double ReadSpeed(ScriptContext context)
-    {
-        return ScriptPropertyReader.RequireNumber(context, kSpeedRadiansPerSecondPropertyName);
-    }
-}
-
-public sealed class MoveOnInputScript : IScriptBehavior
-{
-    public const string kScriptId = "MoveOnInput";
-    private const string kSpeedUnitsPerSecondPropertyName = "speedUnitsPerSecond";
-
-    public void Initialize(ScriptContext context)
-    {
-        _ = ReadSpeed(context);
-    }
-
-    public void Update(ScriptContext context)
-    {
-        var direction = Vector3.Zero;
-        if (context.Input.IsKeyDown(ScriptKey.W))
-        {
-            direction += new Vector3(0.0f, 0.0f, -1.0f);
-        }
-
-        if (context.Input.IsKeyDown(ScriptKey.S))
-        {
-            direction += new Vector3(0.0f, 0.0f, 1.0f);
-        }
-
-        if (context.Input.IsKeyDown(ScriptKey.A))
-        {
-            direction += new Vector3(-1.0f, 0.0f, 0.0f);
-        }
-
-        if (context.Input.IsKeyDown(ScriptKey.D))
-        {
-            direction += new Vector3(1.0f, 0.0f, 0.0f);
-        }
-
-        if (direction == Vector3.Zero)
-        {
-            return;
-        }
-
-        direction = Vector3.Normalize(direction);
-        var speed = ReadSpeed(context);
-        var transform = context.Self.Transform.LocalTransform;
-        context.Self.Transform.SetLocalTransform(transform with
-        {
-            Position = transform.Position + (direction * (float)(speed * context.DeltaSeconds))
-        });
-    }
-
-    private static double ReadSpeed(ScriptContext context)
-    {
-        return ScriptPropertyReader.RequireNumber(context, kSpeedUnitsPerSecondPropertyName);
     }
 }

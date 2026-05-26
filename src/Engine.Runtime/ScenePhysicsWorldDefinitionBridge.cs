@@ -1,9 +1,9 @@
+namespace Engine.Runtime;
+
 using Engine.Physics;
 using Engine.SceneData;
 
-namespace Engine.App;
-
-internal static class ScenePhysicsWorldDefinitionBridge
+public static class ScenePhysicsWorldDefinitionBridge
 {
     public static PhysicsWorldDefinition CreateDefinition(SceneDescription sceneDescription)
     {
@@ -44,7 +44,7 @@ internal static class ScenePhysicsWorldDefinitionBridge
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            throw new InvalidOperationException("App Physics bridge failed to initialize PhysicsWorld from SceneDescription.", ex);
+            throw new InvalidOperationException("Runtime failed to initialize PhysicsWorld from SceneDescription.", ex);
         }
     }
 

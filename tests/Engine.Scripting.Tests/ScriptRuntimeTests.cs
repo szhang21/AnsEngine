@@ -237,6 +237,104 @@ public sealed class ScriptRuntimeTests
         Assert.Equal(0, runtime.BoundScriptCount);
     }
 
+    [Fact]
+    public void BindUpdateComponents_BuiltInRotateSelf_UpdatesTransformThroughRuntimeOwnerLookup()
+    {
+        var runtime = CreateRuntime(Engine.Scripting.RotateSelfScript.kScriptId, new Engine.Scripting.RotateSelfScript());
+        var bindResult = runtime.BindUpdateComponents(
+            CreateUpdateComponentBindings(
+                Engine.Scripting.RotateSelfScript.kScriptId,
+                new Dictionary<string, ScriptPropertyValue>
+                {
+                    ["speedRadiansPerSecond"] = ScriptPropertyValue.FromNumber(Math.PI * 0.5d)
+                }));
+        var owner = new TestRuntimeObject("cube-main", "Cube Main", new TestTransformComponent());
+
+        var updateResult = Assert.Single(bindResult.Components).Update(
+            new RuntimeUpdateContext(owner, 1.0d, 1.0d, RuntimeInputSnapshot.Empty));
+
+        Assert.True(bindResult.IsSuccess, bindResult.Failure?.Message);
+        Assert.True(updateResult.IsSuccess, updateResult.Failure?.Message);
+        Assert.Equal(
+            Quaternion.Normalize(Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.5f)),
+            owner.Transform!.LocalTransform.Rotation);
+    }
+
+    [Fact]
+    public void BindUpdateComponents_BuiltInMoveOnInput_UsesRuntimeInputSnapshot()
+    {
+        var runtime = CreateRuntime(Engine.Scripting.MoveOnInputScript.kScriptId, new Engine.Scripting.MoveOnInputScript());
+        var bindResult = runtime.BindUpdateComponents(
+            CreateUpdateComponentBindings(
+                Engine.Scripting.MoveOnInputScript.kScriptId,
+                new Dictionary<string, ScriptPropertyValue>
+                {
+                    ["speedUnitsPerSecond"] = ScriptPropertyValue.FromNumber(2.0d)
+                }));
+        var owner = new TestRuntimeObject("cube-main", "Cube Main", new TestTransformComponent());
+
+        var updateResult = Assert.Single(bindResult.Components).Update(
+            new RuntimeUpdateContext(
+                owner,
+                0.5d,
+                0.5d,
+                RuntimeInputSnapshot.FromKeys(RuntimeKey.W, RuntimeKey.D)));
+
+        Assert.True(bindResult.IsSuccess, bindResult.Failure?.Message);
+        Assert.True(updateResult.IsSuccess, updateResult.Failure?.Message);
+        var expectedDirection = Vector3.Normalize(new Vector3(1.0f, 0.0f, -1.0f));
+        Assert.Equal(expectedDirection, owner.Transform!.LocalTransform.Position);
+    }
+
+    [Fact]
+    public void BindUpdateComponents_BuiltInScriptMissingTransform_ReturnsRuntimeUpdateFailure()
+    {
+        var runtime = CreateRuntime(Engine.Scripting.RotateSelfScript.kScriptId, new Engine.Scripting.RotateSelfScript());
+        var bindResult = runtime.BindUpdateComponents(
+            CreateUpdateComponentBindings(
+                Engine.Scripting.RotateSelfScript.kScriptId,
+                new Dictionary<string, ScriptPropertyValue>
+                {
+                    ["speedRadiansPerSecond"] = ScriptPropertyValue.FromNumber(1.0d)
+                }));
+        var owner = new TestRuntimeObject("empty", "Empty", transform: null);
+
+        var updateResult = Assert.Single(bindResult.Components).Update(
+            new RuntimeUpdateContext(owner, 1.0d, 1.0d, RuntimeInputSnapshot.Empty));
+
+        Assert.True(bindResult.IsSuccess, bindResult.Failure?.Message);
+        Assert.False(updateResult.IsSuccess);
+        Assert.Equal("empty", updateResult.Failure!.ObjectId);
+        Assert.Equal(Engine.Scripting.RotateSelfScript.kScriptId, updateResult.Failure.ComponentType);
+        Assert.Contains("requires a Transform component", updateResult.Failure.Message);
+    }
+
+    [Fact]
+    public void BindUpdateComponents_PreservesBindingOrderForRuntimeComponents()
+    {
+        var order = new List<string>();
+        var registry = new ScriptRegistry();
+        Assert.Null(registry.Register("first.script", () => new OrderRecordingScript("first", order)));
+        Assert.Null(registry.Register("second.script", () => new OrderRecordingScript("second", order)));
+        var runtime = new ScriptRuntime(registry);
+        var bindResult = runtime.BindUpdateComponents(
+            new[]
+            {
+                CreateUpdateComponentBinding("first.script", "cube-a"),
+                CreateUpdateComponentBinding("second.script", "cube-b")
+            });
+        var owner = new TestRuntimeObject("cube-main", "Cube Main", new TestTransformComponent());
+
+        foreach (var component in bindResult.Components)
+        {
+            var result = component.Update(new RuntimeUpdateContext(owner, 0.25d, 0.25d, RuntimeInputSnapshot.Empty));
+            Assert.True(result.IsSuccess, result.Failure?.Message);
+        }
+
+        Assert.True(bindResult.IsSuccess, bindResult.Failure?.Message);
+        Assert.Equal(new[] { "first", "second" }, order);
+    }
+
     private static ScriptRuntime CreateRuntime(string scriptId, IScriptBehavior script)
     {
         var registry = new ScriptRegistry();
@@ -256,6 +354,10 @@ public sealed class ScriptRuntimeTests
 
         Assert.DoesNotContain("Engine.Scene", projectFile);
         Assert.DoesNotContain("Engine.Scene", sourceText);
+        Assert.DoesNotContain("Engine.App", projectFile);
+        Assert.DoesNotContain("Engine.App", sourceText);
+        Assert.DoesNotContain("Engine.Platform", projectFile);
+        Assert.DoesNotContain("Engine.Platform", sourceText);
         Assert.Contains("Engine.Runtime.Abstractions", projectFile);
     }
 
@@ -313,6 +415,28 @@ public sealed class ScriptRuntimeTests
             ScriptInputSnapshot.Empty);
     }
 
+    private static IReadOnlyList<ScriptUpdateComponentBindingDescription> CreateUpdateComponentBindings(
+        string scriptId,
+        IReadOnlyDictionary<string, ScriptPropertyValue> properties)
+    {
+        return new[]
+        {
+            CreateUpdateComponentBinding(scriptId, "cube-main", properties)
+        };
+    }
+
+    private static ScriptUpdateComponentBindingDescription CreateUpdateComponentBinding(
+        string scriptId,
+        string objectId,
+        IReadOnlyDictionary<string, ScriptPropertyValue>? properties = null)
+    {
+        return new ScriptUpdateComponentBindingDescription(
+            objectId,
+            objectId,
+            scriptId,
+            properties ?? new Dictionary<string, ScriptPropertyValue>());
+    }
+
     private sealed class CountingScript : IScriptBehavior
     {
         public int InitializeCount { get; private set; }
@@ -362,6 +486,33 @@ public sealed class ScriptRuntimeTests
         }
     }
 
+    private sealed class OrderRecordingScript : IScriptBehavior, IRuntimeUpdateComponent
+    {
+        private readonly string mLabel;
+        private readonly List<string> mOrder;
+
+        public OrderRecordingScript(string label, List<string> order)
+        {
+            mLabel = label;
+            mOrder = order;
+        }
+
+        public void Initialize(ScriptContext context)
+        {
+        }
+
+        public void Update(ScriptContext context)
+        {
+            mOrder.Add(mLabel);
+        }
+
+        public RuntimeUpdateResult Update(RuntimeUpdateContext context)
+        {
+            mOrder.Add(mLabel);
+            return RuntimeUpdateResult.Success();
+        }
+    }
+
     private sealed class RotateSelfScript : IScriptBehavior
     {
         public void Initialize(ScriptContext context)
@@ -389,6 +540,32 @@ public sealed class ScriptRuntimeTests
         public TestTransformComponent Transform { get; } = new();
 
         IRuntimeTransformComponent IScriptSelfObject.Transform => Transform;
+
+        public T? GetComponent<T>() where T : class, IRuntimeComponent
+        {
+            return Transform as T;
+        }
+
+        public bool HasComponent<T>() where T : class, IRuntimeComponent
+        {
+            return GetComponent<T>() is not null;
+        }
+    }
+
+    private sealed class TestRuntimeObject : IRuntimeObject
+    {
+        public TestRuntimeObject(string objectId, string objectName, TestTransformComponent? transform)
+        {
+            ObjectId = objectId;
+            ObjectName = objectName;
+            Transform = transform;
+        }
+
+        public string ObjectId { get; }
+
+        public string ObjectName { get; }
+
+        public TestTransformComponent? Transform { get; }
 
         public T? GetComponent<T>() where T : class, IRuntimeComponent
         {

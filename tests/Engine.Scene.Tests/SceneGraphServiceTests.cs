@@ -112,14 +112,15 @@ public sealed class SceneGraphServiceTests
     }
 
     [Fact]
-    public void SceneRuntimeObject_TransformRemainsCoreFieldAndNotGenericLookupComponent()
+    public void SceneRuntimeObject_TransformConveniencePropertyAndTypedLookupShareInstance()
     {
         var transform = SceneTransformComponent.FromDescription(SceneTransformDescription.Identity);
         var runtimeObject = new SceneRuntimeObject(7, "cube-main", "Cube Main", transform);
 
         Assert.Same(transform, runtimeObject.Transform);
-        Assert.Null(runtimeObject.GetComponent<IRuntimeTransformComponent>());
-        Assert.False(runtimeObject.HasComponent<IRuntimeTransformComponent>());
+        Assert.Same(transform, runtimeObject.GetComponent<SceneTransformComponent>());
+        Assert.Same(transform, runtimeObject.GetComponent<IRuntimeTransformComponent>());
+        Assert.True(runtimeObject.HasComponent<IRuntimeTransformComponent>());
     }
 
     [Fact]
@@ -149,8 +150,11 @@ public sealed class SceneGraphServiceTests
         var runtimeObject = new SceneRuntimeObject(1, "cube-main", "Cube Main", transform, meshRenderer);
 
         Assert.Same(transform, runtimeObject.Transform);
+        Assert.Same(transform, runtimeObject.GetComponent<SceneTransformComponent>());
+        Assert.Same(transform, runtimeObject.GetComponent<IRuntimeTransformComponent>());
         Assert.Same(meshRenderer, runtimeObject.MeshRenderer);
         Assert.Same(meshRenderer, runtimeObject.GetComponent<SceneMeshRendererComponent>());
+        Assert.True(runtimeObject.HasComponent<IRuntimeTransformComponent>());
         Assert.True(runtimeObject.HasComponent<SceneMeshRendererComponent>());
     }
 
@@ -882,6 +886,40 @@ public sealed class SceneGraphServiceTests
         Assert.Equal(transform, firstFrame.Transform);
         Assert.Equal(SceneTransform.Identity, secondSnapshot.LocalTransform);
         Assert.Equal(SceneTransform.Identity, secondFrame.Transform);
+    }
+
+    [Fact]
+    public void RuntimeScene_ComponentLookupTransformChange_IsVisibleInSnapshotAndRenderFrame()
+    {
+        var runtimeScene = new RuntimeScene();
+        runtimeScene.LoadFromDescription(
+            new SceneDescription(
+                "sample-scene",
+                "Sample Scene",
+                null!,
+                new[]
+                {
+                    new SceneObjectDescription(
+                        "cube-main",
+                        "Cube Main",
+                        new Engine.Contracts.SceneMeshRef("mesh://cube"),
+                        new Engine.Contracts.SceneMaterialRef("material://default"),
+                        SceneTransformDescription.Identity)
+                }));
+        var transform = new SceneTransform(
+            new Vector3(4.0f, 5.0f, 6.0f),
+            new Vector3(2.0f, 3.0f, 4.0f),
+            Quaternion.CreateFromYawPitchRoll(0.1f, 0.2f, 0.3f));
+        var runtimeObject = runtimeScene.Objects[0];
+        var component = runtimeObject.GetComponent<IRuntimeTransformComponent>();
+
+        Assert.Same(runtimeObject.Transform, component);
+        component!.SetLocalTransform(transform);
+
+        var snapshot = Assert.Single(runtimeScene.CreateSnapshot().Objects);
+        var renderItem = Assert.Single(runtimeScene.BuildRenderItems());
+        Assert.Equal(transform, snapshot.LocalTransform);
+        Assert.Equal(transform, renderItem.Transform);
     }
 
     [Fact]

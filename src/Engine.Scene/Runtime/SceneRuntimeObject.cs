@@ -24,8 +24,8 @@ internal sealed class SceneRuntimeObject : IRuntimeObject
             ? throw new ArgumentException("ObjectId must not be null or whitespace.", nameof(objectId))
             : objectId;
         ObjectName = string.IsNullOrWhiteSpace(objectName) ? ObjectId : objectName;
-        Transform = transform;
-        mComponents = CreateComponentCollection(meshRenderer, components);
+        mComponents = CreateComponentCollection(transform, meshRenderer, components);
+        Transform = GetComponent<SceneTransformComponent>();
     }
 
     public int NodeId { get; }
@@ -70,19 +70,26 @@ internal sealed class SceneRuntimeObject : IRuntimeObject
     }
 
     private static IReadOnlyList<IRuntimeComponent> CreateComponentCollection(
+        SceneTransformComponent? transform,
         SceneMeshRendererComponent? meshRenderer,
         IEnumerable<IRuntimeComponent>? components)
     {
-        if (meshRenderer is null)
+        var componentList = new List<IRuntimeComponent>();
+        if (transform is not null)
         {
-            return components?.ToArray() ?? Array.Empty<IRuntimeComponent>();
+            componentList.Add(transform);
         }
 
-        if (components is null)
+        if (meshRenderer is not null)
         {
-            return new IRuntimeComponent[] { meshRenderer };
+            componentList.Add(meshRenderer);
         }
 
-        return new IRuntimeComponent[] { meshRenderer }.Concat(components).ToArray();
+        if (components is not null)
+        {
+            componentList.AddRange(components);
+        }
+
+        return componentList.Count == 0 ? Array.Empty<IRuntimeComponent>() : componentList.ToArray();
     }
 }

@@ -180,6 +180,28 @@ public sealed class PhysicsFoundationTests
     }
 
     [Fact]
+    public void ResolveKinematicMove_RepeatedCallsKeepWorldStateUnchanged()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(2.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var before = Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "mover");
+        var desired = new PhysicsTransform(new Vector3(2.0f, 3.0f, 4.0f), Quaternion.Identity, Vector3.One);
+
+        var first = world.ResolveKinematicMove("mover", desired);
+        var second = world.ResolveKinematicMove("mover", desired);
+
+        var after = Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "mover");
+        Assert.Equal(first, second);
+        Assert.Equal(before.Transform, after.Transform);
+        Assert.Equal(before.Aabb, after.Aabb);
+    }
+
+    [Fact]
     public void ResolveKinematicMove_PartialAxisBlockPreservesUnblockedAxesInXyzOrder()
     {
         var world = PhysicsWorld.Load(
@@ -239,6 +261,96 @@ public sealed class PhysicsFoundationTests
         Assert.Contains("was not found", missingBody.Message, StringComparison.Ordinal);
         Assert.Contains("requires a body id", emptyBody.Message, StringComparison.Ordinal);
         Assert.Contains("desired transform values must be finite", invalidTransform.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ApplyKinematicMove_NoCollisionUpdatesDynamicBodyTransformAndAabb()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(5.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var desired = new PhysicsTransform(new Vector3(1.0f, 2.0f, 3.0f), Quaternion.Identity, Vector3.One);
+
+        var result = world.ApplyKinematicMove("mover", desired);
+
+        var mover = Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "mover");
+        Assert.False(result.HasHit);
+        Assert.Equal(desired, result.ResolvedTransform);
+        Assert.Equal(desired, mover.Transform);
+        AssertVectorNearlyEqual(new Vector3(0.5f, 1.5f, 2.5f), mover.Aabb.Min);
+        AssertVectorNearlyEqual(new Vector3(1.5f, 2.5f, 3.5f), mover.Aabb.Max);
+    }
+
+    [Fact]
+    public void ApplyKinematicMove_BlockedMoveUpdatesToResolvedTransformAndAabb()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d),
+                    CreateBody("wall", "Wall", PhysicsBodyType.Static, new Vector3(2.0f, 0.0f, 0.0f), Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+        var desired = new PhysicsTransform(new Vector3(2.0f, 3.0f, 4.0f), Quaternion.Identity, Vector3.One);
+
+        var result = world.ApplyKinematicMove("mover", desired);
+
+        var mover = Assert.Single(world.CreateSnapshot().Bodies, body => body.BodyId == "mover");
+        Assert.True(result.HasHit);
+        Assert.Equal("wall", result.BlockingBodyId);
+        Assert.Equal(new Vector3(0.0f, 3.0f, 4.0f), result.ResolvedTransform.Position);
+        Assert.Equal(result.ResolvedTransform, mover.Transform);
+        AssertVectorNearlyEqual(new Vector3(-0.5f, 2.5f, 3.5f), mover.Aabb.Min);
+        AssertVectorNearlyEqual(new Vector3(0.5f, 3.5f, 4.5f), mover.Aabb.Max);
+    }
+
+    [Fact]
+    public void ApplyKinematicMove_UpdatesSubsequentQueryAndResolveStartState()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("mover", "Mover", PhysicsBodyType.Dynamic, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 1.0d)
+                }));
+
+        world.ApplyKinematicMove("mover", new PhysicsTransform(new Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity, Vector3.One));
+        var second = world.ResolveKinematicMove(
+            "mover",
+            new PhysicsTransform(new Vector3(2.0f, 0.0f, 0.0f), Quaternion.Identity, Vector3.One));
+        var query = world.QueryAabb(new PhysicsAabb(new Vector3(0.75f, -1.0f, -1.0f), new Vector3(1.25f, 1.0f, 1.0f)));
+
+        Assert.Equal(new Vector3(2.0f, 0.0f, 0.0f), second.ResolvedTransform.Position);
+        Assert.Equal(new Vector3(1.0f, 0.0f, 0.0f), Assert.Single(query.Bodies).Transform.Position);
+    }
+
+    [Fact]
+    public void ApplyKinematicMove_StaticBodiesCannotBeMovedAndMalformedInputMatchesResolveDiagnostics()
+    {
+        var world = PhysicsWorld.Load(
+            new PhysicsWorldDefinition(
+                new[]
+                {
+                    CreateBody("static-body", "Static Body", PhysicsBodyType.Static, Vector3.Zero, Vector3.One, Vector3.One, Vector3.Zero, 0.0d)
+                }));
+
+        var staticFailure = Assert.Throws<ArgumentException>(
+            () => world.ApplyKinematicMove(
+                "static-body",
+                new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+        var emptyBody = Assert.Throws<ArgumentException>(
+            () => world.ApplyKinematicMove(" ", new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+        var missingBody = Assert.Throws<ArgumentException>(
+            () => world.ApplyKinematicMove("missing", new PhysicsTransform(Vector3.UnitX, Quaternion.Identity, Vector3.One)));
+
+        Assert.Contains("must be Dynamic", staticFailure.Message, StringComparison.Ordinal);
+        Assert.Contains("requires a body id", emptyBody.Message, StringComparison.Ordinal);
+        Assert.Contains("was not found", missingBody.Message, StringComparison.Ordinal);
+        Assert.Equal(Vector3.Zero, Assert.Single(world.CreateSnapshot().Bodies).Transform.Position);
     }
 
     [Fact]

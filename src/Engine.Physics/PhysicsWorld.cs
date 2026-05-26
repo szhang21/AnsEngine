@@ -80,6 +80,25 @@ public sealed class PhysicsWorld
 
     public PhysicsKinematicMoveResult ResolveKinematicMove(string bodyId, PhysicsTransform desiredTransform)
     {
+        return ResolveKinematicMoveInternal(bodyId, desiredTransform).Result;
+    }
+
+    public PhysicsKinematicMoveResult ApplyKinematicMove(string bodyId, PhysicsTransform desiredTransform)
+    {
+        var resolvedMove = ResolveKinematicMoveInternal(bodyId, desiredTransform);
+        var resolvedTransform = resolvedMove.Result.ResolvedTransform;
+        var mover = resolvedMove.Mover;
+        mBodies[resolvedMove.BodyIndex] = mover with
+        {
+            Transform = resolvedTransform,
+            Aabb = CalculateAabb(resolvedTransform, mover.BoxCollider)
+        };
+
+        return resolvedMove.Result;
+    }
+
+    private ResolvedKinematicMove ResolveKinematicMoveInternal(string bodyId, PhysicsTransform desiredTransform)
+    {
         if (string.IsNullOrWhiteSpace(bodyId))
         {
             throw new ArgumentException("Physics kinematic move requires a body id.", nameof(bodyId));
@@ -92,12 +111,13 @@ public sealed class PhysicsWorld
             throw new ArgumentException("Physics kinematic move desired transform values must be finite.", nameof(desiredTransform));
         }
 
-        var mover = mBodies.FirstOrDefault(body => string.Equals(body.BodyId, bodyId, StringComparison.Ordinal));
-        if (mover is null)
+        var bodyIndex = mBodies.FindIndex(body => string.Equals(body.BodyId, bodyId, StringComparison.Ordinal));
+        if (bodyIndex < 0)
         {
             throw new ArgumentException($"Physics body '{bodyId}' was not found.", nameof(bodyId));
         }
 
+        var mover = mBodies[bodyIndex];
         if (mover.BodyType != PhysicsBodyType.Dynamic)
         {
             throw new ArgumentException($"Physics body '{bodyId}' must be Dynamic to resolve a kinematic move.", nameof(bodyId));
@@ -134,12 +154,13 @@ public sealed class PhysicsWorld
             resolvedPosition,
             desiredTransform.Rotation,
             desiredTransform.Scale);
-        return new PhysicsKinematicMoveResult(
+        var result = new PhysicsKinematicMoveResult(
             bodyId,
             desiredTransform,
             resolvedTransform,
             firstBlockingBodyId is not null,
             firstBlockingBodyId);
+        return new ResolvedKinematicMove(bodyIndex, mover, result);
     }
 
     private static PhysicsBodySnapshot CreateBodySnapshot(PhysicsBodyDefinition body)
@@ -277,6 +298,11 @@ public sealed class PhysicsWorld
 
         resolvedPosition = candidatePosition;
     }
+
+    private sealed record ResolvedKinematicMove(
+        int BodyIndex,
+        PhysicsBodySnapshot Mover,
+        PhysicsKinematicMoveResult Result);
 }
 
 public sealed record PhysicsKinematicMoveResult(
