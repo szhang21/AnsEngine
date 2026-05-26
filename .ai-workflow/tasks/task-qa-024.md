@@ -223,22 +223,41 @@ true
 - Archive readiness notes
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-05/TASK-QA-024.md`
+- ClosedAt: `2026-05-13`
 - Summary:
+  - M23 gate review passed with no MustFix findings.
+  - Verified `ResolveKinematicMove(...)` remains non-mutating and `ApplyKinematicMove(...)` mutates dynamic body Transform/AABB.
+  - Verified App orchestrator uses `ApplyKinematicMove(...)` and writes Physics `ResolvedTransform` back to Scene.
+  - Verified continuous-frame stale PhysicsWorld state regression is covered and Render/SceneData do not know physics state sync.
 - FilesChanged:
+  - `.ai-workflow/boundaries/engine-physics.md`
+  - `.ai-workflow/boundaries/engine-app.md`
+  - `.ai-workflow/tasks/task-qa-024.md`
+  - `.ai-workflow/archive/2026-05/TASK-QA-024.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck:
+  - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; existing `net7.0` EOL warnings only)
+  - Test: pass (`dotnet test AnsEngine.sln --no-restore --nologo -v minimal`; all visible solution test projects passed)
+  - Focused Physics: pass (`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`; 20/20)
+  - Focused App: pass (`dotnet test tests/Engine.App.Tests/Engine.App.Tests.csproj --no-restore --nologo -v minimal`; 28/28)
+  - Dependency: pass (`Engine.Physics` has no project references; `Engine.Scene`, `Engine.Render`, and `Engine.SceneData` do not reference `Engine.Physics`; App remains the bridge)
+  - Smoke: pass (Resolve non-mutating, Apply mutating, App apply/writeback, continuous-frame no stale PhysicsWorld state, Render/SceneData no awareness)
+  - Perf: pass (no full world rebuild, extra SceneData IO, or solver path introduced)
+  - CodeQuality: pass (`NoNewHighRisk=true`, `MustFixCount=0`)
+  - DesignQuality: pass (`DQ-1 SRP`, `DQ-2 DIP`, `DQ-3 OCP-oriented`, `DQ-4 closure readiness`)
+- ModuleAttributionCheck: `pass`

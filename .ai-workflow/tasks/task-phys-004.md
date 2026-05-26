@@ -185,22 +185,38 @@ false
 - 文件组织约定：默认一个类一个文件、一个接口一个文件；仅在小型强耦合辅助类型、嵌套实现细节、测试桩或迁移过渡期允许例外
 
 ## 状态（Status）
-Todo
+Done
 
 ## 完成度（Completion）
-`0`
+`100`
 
 ## 缺陷回流字段（Defect Triage）
 - FailureType: `Other`
 - DetectedAt:
 - ReopenReason:
 - OriginTaskId:
-- HumanSignoff: `pending`
+- HumanSignoff: `pass`
 
 ## 归档（Archive）
-- ArchivePath:
-- ClosedAt:
+- ArchivePath: `.ai-workflow/archive/2026-05/TASK-PHYS-004.md`
+- ClosedAt: `2026-05-13`
 - Summary:
+  - Kept `ResolveKinematicMove(...)` non-mutating.
+  - Added `ApplyKinematicMove(...)` as the explicit mutating kinematic move API.
+  - Successful apply replaces the dynamic body snapshot so Transform and AABB match the resolved transform.
+  - Static body, missing id, blank id, and malformed transform diagnostics reuse existing resolve semantics.
 - FilesChanged:
+  - `src/Engine.Physics/PhysicsWorld.cs`
+  - `tests/Engine.Physics.Tests/PhysicsFoundationTests.cs`
+  - `.ai-workflow/boundaries/engine-physics.md`
+  - `.ai-workflow/tasks/task-phys-004.md`
+  - `.ai-workflow/archive/2026-05/TASK-PHYS-004.md`
+  - `.ai-workflow/archive/archive-index.md`
+  - `.ai-workflow/board.md`
 - ValidationEvidence:
-- ModuleAttributionCheck:
+  - Build: pass (`dotnet build AnsEngine.sln --nologo -v minimal`; existing `net7.0` EOL and Windows Kits `LIB` path warnings only)
+  - Test: pass (`dotnet test tests/Engine.Physics.Tests/Engine.Physics.Tests.csproj --no-restore --nologo -v minimal`; 20/20)
+  - Smoke: pass (two-step apply/query path proves the second resolve starts from updated PhysicsWorld body state)
+  - Perf: pass (no solver/CCD/gravity/full world rebuild introduced; apply replaces one body entry and recalculates one AABB)
+  - Boundary: pass (`Engine.Physics` still has no Engine module dependencies)
+- ModuleAttributionCheck: `pass`
